@@ -2,7 +2,6 @@
 
 * [UNLWS tutorial proof of concept](https://ists-cilveks.github.io/UNLWS-using-images-from-jan-Tepu/)
 * [Snowflake tilings (covering the plane with congruent shapes that have dihedral and rotational symmetry)](https://ists-cilveks.github.io/Snowflake-tilings/)
-* [(Undeveloped) UNLWS renderer](https://ists-cilveks.github.io/UNLWS-Renderer/)
 
 <!---## Welcome to GitHub Pages
 
