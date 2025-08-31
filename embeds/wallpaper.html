@@ -362,8 +362,11 @@
         //   c
         // )
 
+        var value=grid[i][j]
+
+        value = getSmoothWeightedAverage(Math.min(1, 3*j/gridHeight), 0.5, value)
         // context.fillStyle="hsl(0,0%,"+grid[i][j]*100+"%)";//grayscale values
-        context.fillStyle=useGradient.get(grid[i][j]).rgb();//gradient of values
+        context.fillStyle=useGradient.get(value).rgb();//gradient of values
         // context.fillStyle=(aboveBoundaryTotal==2 || aboveBoundaryTotal==3) ? colors.black.rgb() : colors.white.rgb();//pixel outline
         // context.fillStyle=(aboveBoundary1Total==2||aboveBoundary1Total==3||aboveBoundary2Total==2||aboveBoundary2Total==3) ? colors.black.rgb() : colors.white.rgb();//pixel outline
         context.fillRect(i*pixSize, j*pixSize, pixSize, pixSize);
@@ -783,8 +786,8 @@
             })
           )
         }
-        rotationRule(0.4, 0.62, 7, 1750)
-        rotationRule(0.62, 0.3, 5, 2100)
+        rotationRule(0.4, 0.72, 7, 1750)
+        rotationRule(0.62, 0.4, 5, 2100)
 
         // rotationRule(0.1, 0.7, 3, 1700)
         // rotationRule(0.9, 0.65, 3, 1700)
