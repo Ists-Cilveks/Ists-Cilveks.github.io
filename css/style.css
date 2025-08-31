@@ -11,10 +11,16 @@
 
 body {
 	background-color: var(--bg-color);
-	padding: 50px;
 	font: 14px/1.5 "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
 	color: var(--main-color);
 	font-weight: 400;
+	margin: 0;
+	overflow-x: hidden;
+}
+
+.main-content {
+	padding: 50px;
+	margin: 8px;
 }
 
 a {
@@ -29,6 +35,14 @@ h1 {
 	margin-left: 0.5em;
 	margin-right: 0.5em;
 }
+
+iframe {
+	border: none;
+	width: 100%;
+	left: 0;
+	z-index: -1;
+}
+
 
 .centered {
 	text-align: center;
