@@ -1,0 +1,54 @@
+:root {
+	--bg-color: #3a2005;
+	--secondary-bg-color: #4c5f00;
+  --main-color: #FFF;
+	--highlights: #f0f;
+	--framing: #4f1;
+	--subtler: #ddd;
+	--subtle-tinted: #fbf;
+}
+
+
+body {
+	background-color: var(--bg-color);
+	padding: 50px;
+	font: 14px/1.5 "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	color: var(--main-color);
+	font-weight: 400;
+}
+
+a {
+	color: var(--subtler);
+}
+a:visited {
+	color: var(--subtle-tinted);
+}
+
+h1 {
+	color: var(--highlights);
+	margin-left: 0.5em;
+	margin-right: 0.5em;
+}
+
+.centered {
+	text-align: center;
+}
+.deco-text {
+	color: var(--framing);
+	font-size: xx-large;
+}
+.hr {
+	background-color: var(--framing);
+	height: 3px;
+	margin: auto;
+	width: 100%;
+	margin-top: 1em;
+	margin-bottom: 1em;
+}
+txt-pop {
+	color: var(--highlights);
+}
+
+.mini-img {
+	height: 5em;
+}
