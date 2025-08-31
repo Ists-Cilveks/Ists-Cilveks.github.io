@@ -931,7 +931,9 @@
       restart();
     }
     initialiseGrid();
-    // gridOperations();
+    for (var go=0; go<3; go++) {
+      gridOperations();
+    }
     draw();
 
     // canvas.addEventListener("mousemove",function(){
