@@ -18,6 +18,7 @@
       outline: 2px dashed navy;
     }
   </style>
+  <link href="../css/style.css" rel="stylesheet">
 </head>
 <body>
   <canvas id="canvas" width="300" height="300"></canvas>
@@ -72,9 +73,6 @@
       }
       return false;
     }
-    // function multiplyTowards(num, den, v=1) {
-    //   return v-(x*());
-    // }
 
     var canvas=document.getElementById("canvas");
       var context=canvas.getContext("2d");
@@ -87,12 +85,6 @@
       var frameskip=1;
       var keys=[];
       var height=100;
-
-    /* TODO:
-
-      same thing in 3d (better not though)
-
-    */
 
     function Color(r=255, g=0, b=255, a=1) {
       this.r=r;
@@ -141,6 +133,20 @@
         return new Color(Math.sqrt(this.r), Math.sqrt(this.g), Math.sqrt(this.b), this.a);
       }
     }
+    function ColorFromHex(hex) { //from https://stackoverflow.com/a/5624139/10630826 on 26.12.2021
+        // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+        var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+        hex = hex.replace(shorthandRegex, function(m, r, g, b) {
+          return r + r + g + g + b + b;
+        });
+
+        var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? new Color(
+          parseInt(result[1], 16),
+          parseInt(result[2], 16),
+          parseInt(result[3], 16)
+        ) : null;
+      }
     function Gradient(v) {
       this.colors=[];
       this.values=[];
@@ -200,6 +206,21 @@
         slate: new Color(50, 67, 127)
         // brown: new Color(64, 32, 0)
       }
+
+      var style = window.getComputedStyle(document.body)
+      var themeColors = {
+        BG: ColorFromHex(style.getPropertyValue('--bg-color')),
+        secondaryBG: ColorFromHex(style.getPropertyValue('--secondary-bg-color')),
+        beyondBG: ColorFromHex(style.getPropertyValue('--beyond-bg')),
+        main: ColorFromHex(style.getPropertyValue('--main-color')),
+        highlights: ColorFromHex(style.getPropertyValue('--highlights')),
+        framing: ColorFromHex(style.getPropertyValue('--framing')),
+        subtler: ColorFromHex(style.getPropertyValue('--subtler')),
+        subtleTinted: ColorFromHex(style.getPropertyValue('--subtle-tinted')),
+      }
+      console.log(ColorFromHex("#41a34a"))
+      console.log(ColorFromHex(style.getPropertyValue('--bg-color')))
+      console.log(themeColors)
       var gradients={
         leafy: new Gradient([colors.veryDarkGreen, 0, colors.green, 0.5, colors.yellow, 1]),
         rainbow: new Gradient([colors.black, 0, colors.red, 0.1, colors.yellow, 0.26, colors.green, 0.42, colors.cyan, 0.58, colors.blue, 0.74, colors.magenta, 0.9, colors.white, 1]),
@@ -208,9 +229,11 @@
         flame: new Gradient([colors.black, 0, colors.darkBlue, 0.1, colors.white, 0.24, colors.yellow, 0.38, colors.red, 0.7, colors.black, 1]),
         middleBand: new Gradient([colors.black, 0.4, colors.white, 0.401, colors.white, 0.599, colors.black, 0.6]),
         middleNarrowBand: new Gradient([colors.white, 0.47, colors.black, 0.472, colors.black, 0.528, colors.white, 0.53]),
-        blendingTest: new Gradient([colors.green, 0, colors.red, 1])
+        blendingTest: new Gradient([colors.green, 0, colors.red, 1]),
+        theme: new Gradient([themeColors.framing, 0, themeColors.BG, 0.4, themeColors.BG, 0.6, themeColors.highlights, 0.8, themeColors.main, 1]),
       }
-      var useGradient=gradients.flame;
+
+      var useGradient=gradients.theme;
     }
 
     function Vec2(x=0, y=0) {

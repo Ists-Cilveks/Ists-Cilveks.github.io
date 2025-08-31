@@ -1,13 +1,4 @@
-:root {
-	--bg-color: #3a2005;
-	--secondary-bg-color: #4c5f00;
-  --main-color: #FFF;
-	--highlights: #f0f;
-	--framing: #4f1;
-	--subtler: #ddd;
-	--subtle-tinted: #fbf;
-}
-
+@import url(colors.css);
 
 body {
 	background-color: var(--bg-color);
