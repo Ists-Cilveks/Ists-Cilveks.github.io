@@ -5,14 +5,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="../css/style.css" rel="stylesheet">
-    <style id="language-hider">
+    <script>
       /* Hide all language-specific elements except for the selected language (English by default). */
       /* Elements of one language inside an element of (another) language aren't translated, so this selects all the elements that need to be shown/hidden to change the language of the page. To be clear, this is jank. */
-      [lang]:not([lang] [lang]):not([lang='en']) {
-        display: none;
-      }
-    </style>
-    <script>
+
+      /* <style> insertion based on https://stackoverflow.com/a/524721/10630826 */
+      head = document.head || document.getElementsByTagName('head')[0];
+      style = document.createElement('style');
+      head.appendChild(style);
+      style.type = 'text/css';
+      style.id = "language-hider";
+      resetLanguageFromURL();
+
       function resetLanguageFromURL() {
         var urlParams = new URLSearchParams(window.location.search);
         var language = urlParams.get('l') || 'en';
@@ -29,7 +33,6 @@
         // TODO
         setLanguageStyles(language)
       }
-      resetLanguageFromURL();
     </script>
   </head>
   <body class="main-content">
