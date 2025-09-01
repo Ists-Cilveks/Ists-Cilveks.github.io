@@ -93,3 +93,15 @@ txt-pop {
 	left: 0;
 	top: 0;
 }
+
+.gallery-container {
+	text-align: center;
+}
+.gallery-img {
+	width: 100%;
+}
+.gallery-el {
+	width: 30%;
+	margin: 1%;
+	display: inline-block;
+}
