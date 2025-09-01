@@ -9,26 +9,32 @@ style.type = 'text/css'
 style.id = "language-hider"
 resetLanguageFromURL()
 
-// Add the language selection
-let header = document.getElementById("main-header")
-console.log(header);
-// TODO: if no header exists, make one.
-let languageDiv = document.createElement('div')
-languageDiv.className = "language-select"
-header.appendChild(languageDiv)
-
-languages = document.currentScript.getAttribute("my-languges").split(',')
-for (let l = 0; l < languages.length; l++) {
-  const lang = languages[l];
-  let btn = document.createElement('div')
-  btn.innerText = lang.toUpperCase()
-  btn.className = "basic-btn language-btn"
-  btn.addEventListener("click", function () {
-    setLanguage(lang)
-  })
-  languageDiv.appendChild(btn)
+let languages = document.currentScript.getAttribute("my-languges")
+if (languages == null) {
+  languages = []
+} else {
+  languages = languages.split(',')
 }
 
+if (languages.length > 1) {
+  // Add the language selection
+  let header = document.getElementById("main-header")
+  // TODO: if no header exists, make one.
+  let languageDiv = document.createElement('div')
+  languageDiv.className = "language-select"
+  header.appendChild(languageDiv)
+
+  for (let l = 0; l < languages.length; l++) {
+    const lang = languages[l];
+    let btn = document.createElement('div')
+    btn.innerText = lang.toUpperCase()
+    btn.className = "basic-btn language-btn"
+    btn.addEventListener("click", function () {
+      setLanguage(lang)
+    })
+    languageDiv.appendChild(btn)
+  }
+}
 
 function resetLanguageFromURL() {
   // Set the language to whatever the 'l' query is set to, or English as a default
