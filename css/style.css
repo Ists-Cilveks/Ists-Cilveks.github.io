@@ -57,3 +57,32 @@ txt-pop {
 .mini-img {
 	height: 5em;
 }
+.language-select {
+	align-self: flex-end;
+}
+.language-btn {
+	/* TODO */
+}
+.basic-btn {
+	color: var(--main-color);
+	user-select: none;
+	background-color: var(--secondary-bg-color);
+	min-width: 2em;
+	text-align: center;
+	padding: 3px;
+	margin: 5px;
+}
+.basic-btn:hover {
+	color: var(--subtler);
+	cursor: pointer;
+}
+.basic-btn:active {
+	color: var(--subtle-tinted);
+}
+#main-header {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	border-top: 3px solid var(--framing);
+	border-bottom: 3px solid var(--framing);
+}
