@@ -7,15 +7,14 @@ let style = document.createElement('style')
 head.appendChild(style)
 style.type = 'text/css'
 style.id = "language-hider"
-resetLanguageFromURL()
 
-let languages = document.currentScript.getAttribute("my-languges")
-if (languages == null) {
-  languages = []
+let languagesString = document.currentScript.getAttribute("my-languges")
+if (languagesString == null) {
+  var languages = []
 } else {
-  languages = languages.split(',')
+  var languages = languagesString.split(',')
 }
-
+console.log(languages);
 if (languages.length > 1) {
   // Add the language selection
   let header = document.getElementById("main-header")
@@ -39,7 +38,16 @@ if (languages.length > 1) {
 function resetLanguageFromURL() {
   // Set the language to whatever the 'l' query is set to, or English as a default
   let urlParams = new URLSearchParams(window.location.search)
-  let language = urlParams.get('l') || 'en'
+  let language = urlParams.get('l')  
+
+  // Resorts to English if you attempt to use an unsupported language
+  if (!languages.includes(language)) {
+    language = 'en'
+    const url = new URL(window.location)
+    url.searchParams.delete('l')
+    history.pushState(null, '', url)
+  }
+
   setLanguageStyles(language)
 }
 function setLanguageStyles(language) {
@@ -58,3 +66,5 @@ function setLanguage(language) {
   }
   setLanguageStyles(language)
 }
+
+resetLanguageFromURL()
