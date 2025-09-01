@@ -71,6 +71,7 @@ txt-pop {
 	text-align: center;
 	padding: 3px;
 	margin: 5px;
+	text-decoration: none;
 }
 .basic-btn:hover {
 	color: var(--subtler);
@@ -85,4 +86,10 @@ txt-pop {
 	justify-content: space-between;
 	border-top: 3px solid var(--framing);
 	border-bottom: 3px solid var(--framing);
+}
+
+.home-btn {
+	position: absolute;
+	left: 0;
+	top: 0;
 }
