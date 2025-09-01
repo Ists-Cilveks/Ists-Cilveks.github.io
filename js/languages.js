@@ -14,7 +14,7 @@ if (languagesString == null) {
 } else {
   var languages = languagesString.split(',')
 }
-console.log(languages);
+
 if (languages.length > 1) {
   // Add the language selection
   let header = document.getElementById("main-header")
