@@ -30,7 +30,12 @@
         style.textContent = "[lang]:not([lang] [lang]):not([lang='"+language+"']) {display: none;}"
       }
       function setLanguage(language) {
-        // TODO
+        // https://stackoverflow.com/a/41542008/10630826
+        if ('URLSearchParams' in window) {
+          const url = new URL(window.location)
+          url.searchParams.set('l', language)
+          history.pushState(null, '', url);
+        }
         setLanguageStyles(language)
       }
     </script>
