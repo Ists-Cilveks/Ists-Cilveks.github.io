@@ -98,14 +98,19 @@ txt-pop {
 }
 
 .gallery-container {
-	text-align: center;
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	gap: 2em;
+}
+@media only screen and (orientation: portrait){
+	.gallery-container {
+		grid-template-columns: 1fr;
+	}
 }
 .gallery-img {
 	width: 100%;
 }
 .gallery-el {
-	width: 30%;
-	margin: 1%;
 	display: inline-block;
 	text-align: justify;
 }
