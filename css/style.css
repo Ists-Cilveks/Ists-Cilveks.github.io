@@ -105,3 +105,27 @@ txt-pop {
 	margin: 1%;
 	display: inline-block;
 }
+
+/* @font-face {
+  font-family: 'linja pona';
+  src: url("/fonts/linja-pona-4.9.otf");
+  font-weight: 400;
+}
+.lp {
+	font-family: 'linja pona';
+	text-rendering: optimizeLegibility;
+  font-size: 1.39em;
+	font-style: normal;
+} */
+
+@font-face {
+  font-family: 'linja lipamanka';
+  src: url("/fonts/linjalipamanka-normal.woff") format("woff");
+}
+.ll {
+	font-family: 'linja lipamanka';
+	text-rendering: optimizeLegibility;
+  font-size: 1.2em;
+	font-style: normal;
+}
+
