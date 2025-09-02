@@ -35,8 +35,6 @@ h1 {
 iframe {
 	border: none;
 	width: 100%;
-	left: 0;
-	z-index: -1;
 }
 
 
