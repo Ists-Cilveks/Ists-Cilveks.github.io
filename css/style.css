@@ -21,6 +21,11 @@ a:visited {
 	color: var(--subtle-tinted);
 }
 
+p {
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+}
+
 h1 {
 	color: var(--highlights);
 	margin-left: 0.5em;
