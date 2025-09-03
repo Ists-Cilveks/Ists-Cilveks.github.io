@@ -212,7 +212,8 @@
       var themeColors = {
         BG: ColorFromHex(style.getPropertyValue('--bg-color')),
         secondaryBG: ColorFromHex(style.getPropertyValue('--secondary-bg-color')),
-        beyondBG: ColorFromHex(style.getPropertyValue('--beyond-bg')),
+        HC_BG: ColorFromHex(style.getPropertyValue('--hc-bg')),
+        HC_FG: ColorFromHex(style.getPropertyValue('--hc-fg')),
         main: ColorFromHex(style.getPropertyValue('--main-color')),
         highlights: ColorFromHex(style.getPropertyValue('--highlights')),
         framing: ColorFromHex(style.getPropertyValue('--framing')),
@@ -230,6 +231,9 @@
         blendingTest: new Gradient([colors.green, 0, colors.red, 1]),
         theme: new Gradient([themeColors.framing, 0, themeColors.BG, 0.4, themeColors.BG, 0.6, themeColors.highlights, 0.8, themeColors.main, 1]),
       }
+      console.log(style)
+      console.log(gradients.theme)
+      console.log(themeColors)
 
       var useGradient=gradients.theme;
     }

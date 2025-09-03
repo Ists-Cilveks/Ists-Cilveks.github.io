@@ -1,10 +1,27 @@
 :root {
+	/* IMPORTANT NOTE: because I want to do a bunch of fucky things with JS and SVGs, the colors here all need to be hex or rgb or hsl, NOT color-mix or named colors ("plum" etc) or anything with calc. */
+	/* Color palette minimal definition */
 	--bg-color: #3a2005;
-	--secondary-bg-color: #4c5f00;
-	--beyond-bg: #000;
-  --main-color: #fdf;
 	--highlights: #f20898;
 	--framing: #9dff00;
+	--is-light-mode: 0;
+	
+	/* Calculated values */
+	/* this all would've been cool, but alas, not everything i want to mess around with supports it. */
+	/* --hc-bg: hsl(0, 0%, calc(var(--is-light-mode) * 100%));
+	--hc-fg: hsl(0, 0%, calc((1 - var(--is-light-mode)) * 100%));
+	--secondary-bg-color: color-mix(in lab, var(--framing) 5%, var(--bg-color));
+  --main-color: color-mix(in lab, var(--highlights) 15%, var(--hc-fg));
+	--subtle-hc-fg: color-mix(in lab, var(--bg-color) 40%, var(--hc-fg));
+  --subtler: color-mix(in lab, var(--highlights) 10%, var(--subtle-hc-fg));
+	--subtle-tinted: color-mix(in lab, var(--highlights) 20%, var(--subtle-hc-fg)); */
+
+	--hc-bg: #000;
+	--hc-fg: #fff;
+	--secondary-bg-color: #4c5f00;
+  --main-color: #fdf;
+	--subtle-hc-fg: #cca;
 	--subtler: #dbd;
 	--subtle-tinted: #fbf;
+
 }
