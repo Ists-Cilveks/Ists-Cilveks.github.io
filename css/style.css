@@ -142,3 +142,9 @@ txt-pop {
 	font-style: normal;
 }
 
+.svg-container {
+	overflow-x: auto;
+}
+svg {
+	fill: var(--main-color)
+}

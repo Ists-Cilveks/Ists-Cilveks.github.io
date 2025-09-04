@@ -85,13 +85,20 @@
       <div class="gallery-el">
         <img class="gallery-img" src="img/logic.jpg">
       <p lang="en">I wanted to make something with math/logic symbols, and this is what I came up with. It's the definition of
-        <object style="height:2em; margin: 0.2em;" data="infinity.svg" type="image/svg+xml">As t goes to infinity, love goes to infinity</object>
+        <svg style="height: 2em;" viewBox="0 0 7161 1417">
+          <use xlink:href="#infinity"/>
+        </svg>
       </p>
       <p lang="lv">Tā kā es jau mācēju iededzināt burtus un simbolus, gribēju uztaisīt kaut ko Fizmatisku ar matemātiskās loģikas simboliem. Šī ir definīcija apgalvojumam
-        <object style="height:2em; margin: 0.2em;" data="infinity.svg" type="image/svg+xml">Kad t tiecas uz bezgalību, mīlestība tiecas uz bezgalību</object>
+        <svg style="height: 2em;" viewBox="0 0 7161 1417">
+          <use xlink:href="#infinity"/>
+        </svg>
       </p>
       <p lang="tok">mi wile e sike pi sitelen ni: mi kepeken ona lon tomo sona nanpa. sina ken sitelen e toki pi sike ni kepeken nasin ni kin:
-        <object style="height:2em; margin: 0.2em;" data="infinity.svg" type="image/svg+xml">tenpo li kama suli mute la olin li kama suli mute.</object>
+        <span class="svg-container svg-container-infinity"></span>
+        <svg style="height: 2em;" viewBox="0 0 7161 1417">
+          <use xlink:href="#infinity"/>
+        </svg>
       </p>
       </div>
       <div class="gallery-el">
@@ -118,5 +125,21 @@
         <p lang="lv">Viena no manām mīļākajām aprocēm. Man patīk krāsas, un sapērļotās bumbiņas, un kaķis, ko dabūju no veca zīmuļa. Es to vienkārši sazāģēju, izspiedu kodolu, un tam jau ir caurums, caur ko izvērt gumiju. Kaut ko tamlīdzīgu pirmajās aprocēs lietoju daudz.</p>
       </div>
     </div>
+    
+    <div style="display: none;" id="invisible-svg-container"></div>
+
+    <script type="text/javascript">
+      // using https://stackoverflow.com/a/14070928/10630826
+      xhr = new XMLHttpRequest()
+      xhr.open("GET", "infinity.svg", false)
+      xhr.overrideMimeType("image/svg+xml") // just to be on the safe side; not needed if your server delivers SVG with correct MIME type
+      xhr.onload = function(e) {
+        // You might also want to check for xhr.readyState/xhr.status here
+        let cont = document.getElementById("invisible-svg-container")
+        doc=xhr.responseXML.documentElement
+        cont.appendChild(doc)
+      };
+      xhr.send("");
+    </script>
   </body>
 </html>
