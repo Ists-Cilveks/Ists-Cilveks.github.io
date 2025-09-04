@@ -63,9 +63,9 @@ txt-pop {
 .language-select {
 	align-self: flex-end;
 }
-.language-btn {
-	/* TODO */
-}
+/* .language-btn {
+	TODO
+} */
 .basic-btn {
 	color: var(--main-color);
 	user-select: none;
