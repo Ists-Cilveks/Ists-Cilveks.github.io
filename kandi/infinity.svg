@@ -225,5 +225,7 @@
     </g>
   </g>
   </defs>
-  
+  <use
+   xlink:href="#infinity"
+  />
 </svg>
