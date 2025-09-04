@@ -44,6 +44,15 @@ function Color(r=255, g=0, b=255, a=1) {
   this.sqrt=function() {
     return new Color(Math.sqrt(this.r), Math.sqrt(this.g), Math.sqrt(this.b), this.a);
   }
+  this.mix=function(that, amount=0.5) {
+    // Returns this color tinted to have some amount of that mixed into it.
+    
+    // return this.sub(that).mult(1-amount).add(that); // simple, ugly mixing
+    // TODO: color spaces. this squares the colors based on that minutephysics video, but idk what the best calculation is here.
+    return this.square().sub(that.square()).mult(1-amount).add(that.square()).sqrt();
+
+    // TODO: take into account alpha. I think currently it just removes alpha.
+  }
 }
 
 function ColorFromHex(hex) { //from https://stackoverflow.com/a/5624139/10630826 on 26.12.2021
@@ -75,8 +84,7 @@ function Gradient(v) {
           return this.colors[0].copy();
         }
         else {
-          // return this.colors[i].sub(this.colors[i-1]).mult((x-this.values[i-1])/(this.values[i]-this.values[i-1])).add(this.colors[i-1]); // simple, ugly mixing
-          return this.colors[i].square().sub(this.colors[i-1].square()).mult((x-this.values[i-1])/(this.values[i]-this.values[i-1])).add(this.colors[i-1].square()).sqrt(); // complicated, expesive, prettier mixing
+          return this.colors[i-1].mix(this.colors[i], (x-this.values[i-1])/(this.values[i]-this.values[i-1]));
         }
       }
     }
