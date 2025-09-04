@@ -35,6 +35,10 @@ h1 {
 	color: var(--title);
 	margin-left: 0.5em;
 	margin-right: 0.5em;
+	text-shadow: 0.07em 0.07em 0.05em var(--highlights);
+}
+h2 {
+	text-decoration: underline var(--subtle-framing) 0.05em;
 }
 
 iframe {
