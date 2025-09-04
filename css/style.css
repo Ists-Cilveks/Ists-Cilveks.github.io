@@ -15,10 +15,13 @@ body {
 }
 
 a {
-	color: var(--subtler);
+	color: var(--subtle-tinted);
 }
 a:visited {
-	color: var(--subtle-tinted);
+	color: var(--subtler);
+}
+a:hover{
+	color: var(--subtle-glow);
 }
 
 p {
@@ -27,7 +30,7 @@ p {
 }
 
 h1 {
-	color: var(--highlights);
+	color: var(--title);
 	margin-left: 0.5em;
 	margin-right: 0.5em;
 }
@@ -81,7 +84,8 @@ txt-pop {
 	cursor: pointer;
 }
 .basic-btn:active {
-	color: var(--subtle-tinted);
+	background-color: var(--secondary-bg-lowered);
+	color: var(--subtle-lowered);
 }
 #main-header {
 	display: flex;

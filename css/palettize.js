@@ -14,10 +14,15 @@ newCol = {}
 newCol['--hc-bg'] = isLightMode=="1" ? colors.white : colors.black
 newCol['--hc-fg'] = isLightMode=="1" ? colors.black : colors.white
 newCol['--secondary-bg-color'] = BG.mix(framing, 0.15)
+newCol['--secondary-bg-lowered'] = BG.mix(framing, 0.1)
 newCol['--main-color'] = newCol['--hc-fg'].mix(highlights, 0.15)
-newCol['--subtle-hc-fg'] = newCol['--hc-fg'].mix(BG, 0.4)
-newCol['--subtler'] = newCol['--subtle-hc-fg'].mix(highlights, 0.1)
-newCol['--subtle-tinted'] = newCol['--subtle-hc-fg'].mix(highlights, 0.2)
+// newCol['--title'] = newCol['--hc-fg'].mix(highlights, 0.75) // mneh, doesn't look good
+newCol['--title'] = newCol['--main-color']
+newCol['--subtle-hc-fg'] = newCol['--hc-fg'].mix(BG, 0.3)
+newCol['--subtler'] = newCol['--subtle-hc-fg'].mix(highlights, 0.2)
+newCol['--subtle-lowered'] = newCol['--subtler'].mix(BG, 0.3)
+newCol['--subtle-glow'] = newCol['--subtler'].mix(framing, 0.5) // TODO: won't work if framing is not a light and bright color
+newCol['--subtle-tinted'] = newCol['--subtle-hc-fg'].mix(highlights, 0.7)
 
 // assigning properties
 Object.keys(newCol).forEach(function(key,index) {
