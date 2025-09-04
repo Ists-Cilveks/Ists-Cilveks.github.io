@@ -12,6 +12,7 @@ body {
 .main-content {
 	padding: 50px;
 	margin: 8px;
+	overflow-x: auto;
 }
 
 a {
