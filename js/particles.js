@@ -65,7 +65,37 @@ var predefinedMovements = {
       delay: Math.random() * 100
     });
     return animation
-  }
+  },
+  pop: function(particle, x, y, dx, dy, spread) {
+    // Generate a random destination within some distance from the mouse
+    const startX = x;
+    const startY = y;
+
+    const destinationX = startX + (Math.random() - 0.5) * 2 * spread;
+    const destinationY = startY + (Math.random() - 0.5) * 2 * spread;
+
+    const rot1 = Math.random() * 500;
+    const rot2 = Math.random() * 500;
+
+    const animation = particle.animate([
+      { // start position
+        // We offset the particle with half its size to center it around the mouse FIXME
+        transform: `translate(${startX}px, ${startY}px) rotate(${rot1}deg)`,
+        opacity: 1
+      },
+      { // end position
+        transform: `translate(${destinationX}px, ${destinationY}px) rotate(${rot2}deg)`,
+        opacity: 1
+      }
+    ], {
+      // Set a random duration
+      duration: Math.random() * 500 + 300,
+      easing: 'cubic-bezier(0, .9, .57, 1)',
+      // Delay every particle with a random value
+      delay: Math.random() * 100
+    });
+    return animation
+  },
 }
 
 function animatePop (e, particle='theme_disk', movement="spew", particleCount=30, dx=0, dy=0, spread=75) {

@@ -32,7 +32,7 @@ if (languages.length > 1) {// Add the language selection
     btn.className = "basic-btn language-btn"
     btn.addEventListener("click", function (event) {
       setLanguage(lang)
-      animatePop(event, 'leafy', undefined, 5, 35, -20, 20);
+      animatePop(event, 'leafy', 'pop', 6, undefined, undefined, 50);
     })
     languageDiv.appendChild(btn)
   }
