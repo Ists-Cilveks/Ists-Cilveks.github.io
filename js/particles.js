@@ -1,7 +1,7 @@
 // Based on https://css-tricks.com/playing-with-particles-using-the-web-animations-api/ by Louis Hoebregts
 
 var predefinedParticles = {
-  theme_disk: function(sizeMult=1){
+  theme_disk: function(sizeMult=1, passedColors){
     const particle = document.createElement('particle');
     document.body.appendChild(particle);
 
@@ -16,7 +16,7 @@ var predefinedParticles = {
 
     return particle
   },
-  leafy: function(sizeMult=1){
+  leafy: function(sizeMult=1, passedColors){
     const particle = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     particle.classList.add("particle");
     particle.setAttributeNS(null, "viewBox", "-30 -30 60 60")
@@ -31,8 +31,14 @@ var predefinedParticles = {
     particle.style.width = `${size}px`;
     particle.style.height = `${size}px`;
     
-    // // Generate a random theme color
-    color = framing.mix(deepFraming, Math.random()); // FIXME: ugly dependency on having palettize script above it
+    let color
+    // Generate a random theme color
+    if (passedColors) {
+      // color = passedColors[0].mix(passedColors[1], Math.random());
+      color = passedColors[Math.floor(Math.random()*passedColors.length)];
+    } else {
+      color = framing.mix(deepFraming, Math.random()); // FIXME: ugly dependency on having palettize script above it
+    }
     particle.style.fill = color.rgb()
     
     return particle
@@ -98,7 +104,7 @@ var predefinedMovements = {
   },
 }
 
-function animatePop (e, particle='theme_disk', movement="spew", particleCount=30, dx=0, dy=0, spread=75) {
+function animatePop (e, particle='theme_disk', movement="spew", particleCount=30, dx=0, dy=0, spread=75, passedColors) {
   generator = predefinedParticles[particle]
   movement = predefinedMovements[movement]
 
@@ -114,12 +120,12 @@ function animatePop (e, particle='theme_disk', movement="spew", particleCount=30
   }
 
   for (let i = 0; i < particleCount; i++) {
-    createParticle(x, y, generator, movement, dx, dy, spread);
+    createParticle(x, y, generator, movement, dx, dy, spread, passedColors);
   }
 }
 
-function createParticle (x, y, generator, movement, dx=0, dy=0, spread=75) {
-  const particle = generator()
+function createParticle (x, y, generator, movement, dx=0, dy=0, spread=75, passedColors) {
+  const particle = generator(undefined, passedColors)
 
   animation = movement(particle, x, y, dx, dy, spread)
   

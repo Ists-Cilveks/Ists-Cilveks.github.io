@@ -8,6 +8,11 @@ head.appendChild(style)
 style.type = 'text/css'
 style.id = "language-hider"
 
+let languageColors = {
+  "lv": [new Color(100, 0, 0), colors.white],
+  "tok": [new Color(230, 220, 20), new Color(10, 30, 180)],
+}
+
 let languagesString = document.currentScript.getAttribute("my-languges")
 if (languagesString == null) {
   var languages = []
@@ -30,9 +35,10 @@ if (languages.length > 1) {// Add the language selection
     let btn = document.createElement('div')
     btn.innerText = lang.toUpperCase()
     btn.className = "basic-btn language-btn"
+    let colors = languageColors[lang]
     btn.addEventListener("click", function (event) {
       setLanguage(lang)
-      animatePop(event, 'leafy', 'pop', 6, undefined, undefined, 50);
+      animatePop(event, 'leafy', 'pop', 6, undefined, undefined, 50, colors);
     })
     languageDiv.appendChild(btn)
   }
