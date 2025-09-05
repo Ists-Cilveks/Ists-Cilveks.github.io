@@ -99,6 +99,7 @@ txt-pop {
 	justify-content: space-between;
 	border-top: 3px solid var(--framing);
 	border-bottom: 3px solid var(--framing);
+	margin: 0.7em 0em;
 }
 
 .home-btn {
