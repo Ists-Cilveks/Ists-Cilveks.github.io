@@ -88,7 +88,7 @@ function animatePop (e, particle='theme_disk', movement="spew", particleCount=30
 }
 
 function createParticle (x, y, generator, movement, dx=0, dy=0, spread=75) {
-  particle = generator()
+  const particle = generator()
 
   animation = movement(particle, x, y, dx, dy, spread)
   
