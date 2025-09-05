@@ -2,8 +2,9 @@
 
 var predefinedParticles = {
   theme_disk: function(sizeMult=1, passedColors){
-    const particle = document.createElement('particle');
+    const particle = document.createElement('div');
     document.body.appendChild(particle);
+    particle.classList.add('particle');
 
     // Randomize particle size
     const size = Math.floor(Math.random() * 7 + 3);
