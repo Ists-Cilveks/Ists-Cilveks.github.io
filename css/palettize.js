@@ -8,6 +8,7 @@ isLightMode = palette_original_style.getPropertyValue("--is-light-mode")
 BG = getColor('--bg-color')
 highlights = getColor('--highlights')
 framing = getColor('--framing')
+deepFraming = getColor('--deep-framing')
 
 // calculating new values
 newCol = {}

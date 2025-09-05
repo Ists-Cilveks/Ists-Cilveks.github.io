@@ -4,6 +4,7 @@
 	--bg-color: #3a2005;
 	--highlights: #f20898;
 	--framing: #9dff00;
+	--deep-framing: #00a341;
 	--is-light-mode: 0;
 	
 	/* Fallback colors. Should be changed by palettize.js */
