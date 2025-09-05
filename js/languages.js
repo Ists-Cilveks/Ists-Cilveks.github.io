@@ -28,8 +28,9 @@ if (languages.length > 1) {
     let btn = document.createElement('div')
     btn.innerText = lang.toUpperCase()
     btn.className = "basic-btn language-btn"
-    btn.addEventListener("click", function () {
+    btn.addEventListener("click", function (event) {
       setLanguage(lang)
+      animatePop(event, 'leafy', undefined, 5, 35, -20, 20);
     })
     languageDiv.appendChild(btn)
   }
