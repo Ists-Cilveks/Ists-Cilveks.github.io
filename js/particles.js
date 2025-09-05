@@ -22,7 +22,8 @@ var predefinedParticles = {
     particle.setAttributeNS(null, "viewBox", "-30 -30 60 60")
     document.body.appendChild(particle); // TODO: could probably append to event originator instead
     const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-    use.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#monstera1');
+    const elementID = '#monstera'+Math.floor(Math.random()*3+1)
+    use.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', elementID);
     particle.appendChild(use)
 
     // Randomize particle size
