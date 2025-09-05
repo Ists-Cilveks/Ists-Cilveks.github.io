@@ -23,6 +23,9 @@ a:visited {
 	color: var(--subtler);
 }
 a:hover{
+	color: var(--subtle-light);
+}
+a:active{
 	color: var(--subtle-glow);
 }
 
