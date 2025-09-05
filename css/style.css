@@ -155,7 +155,7 @@ svg {
 	fill: var(--main-color)
 }
 
-particle {
+.particle {
   position: fixed;
   left: 0;
   top: 0;

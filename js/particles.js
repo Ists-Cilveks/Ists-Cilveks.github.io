@@ -1,7 +1,10 @@
 // Based on https://css-tricks.com/playing-with-particles-using-the-web-animations-api/ by Louis Hoebregts
 
 var predefinedParticles = {
-  theme_disk: function(particle, sizeMult=1){
+  theme_disk: function(sizeMult=1){
+    const particle = document.createElement('particle');
+    document.body.appendChild(particle);
+
     // Randomize particle size
     const size = Math.floor(Math.random() * 7 + 3);
     particle.style.width = `${size}px`;
@@ -10,23 +13,28 @@ var predefinedParticles = {
     
     // Generate a random theme color
     particle.style.background = highlights.mix(framing, Math.random()).rgb(); // FIXME: ugly dependency on having palettize script above it
+
+    return particle
   },
-  leafy: function(particle, sizeMult=1){
+  leafy: function(sizeMult=1){
+    const particle = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    particle.classList.add("particle");
+    particle.setAttributeNS(null, "viewBox", "-30 -30 60 60")
+    document.body.appendChild(particle); // TODO: could probably append to event originator instead
+    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    use.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#monstera1');
+    particle.appendChild(use)
+
     // Randomize particle size
-    const size = Math.floor(Math.random() * 70 + 3);
+    const size = Math.floor(Math.random() * 20 + 20);
     particle.style.width = `${size}px`;
     particle.style.height = `${size}px`;
     
-    color = framing.mix(deepFraming, Math.random());
-
     // // Generate a random theme color
-    // particle.style.background = highlights.mix(framing, Math.random()).rgb(); // FIXME: ugly dependency on having palettize script above it
+    color = framing.mix(deepFraming, Math.random()); // FIXME: ugly dependency on having palettize script above it
+    particle.style.fill = color.rgb()
     
-    // Add a background image
-    // particle.style.background = "url('/img/chicken.svg') center center / contain no-repeat fixed";
-    particle.style.background = "url(\"data:image/svg+xml,	<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='"+color.rgb()+"' viewBox='0 0 24 24'><path d='M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm1 18h-2v-6h-2v-2h4v8zm-1-9.75c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25z'/></svg>\") center center / contain no-repeat fixed";
-    // particle.style.background = "url(\"data:image/svg+xml,	<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='"+color.rgb()+"' viewBox='0 0 100 100'><use xlink:href='#monstera1' /></svg>\") center center / contain no-repeat fixed";
-    // particle.style.background = "url('/img/monstera.svg') center center / contain no-repeat fixed"; // can't select one of the leaves or change their colors (i think)
+    return particle
   },
 }
 var predefinedMovements = {
@@ -80,10 +88,7 @@ function animatePop (e, particle='theme_disk', movement="spew", particleCount=30
 }
 
 function createParticle (x, y, generator, movement, dx=0, dy=0, spread=75) {
-  const particle = document.createElement('particle');
-  document.body.appendChild(particle);
-
-  generator(particle)
+  particle = generator()
 
   animation = movement(particle, x, y, dx, dy, spread)
   
