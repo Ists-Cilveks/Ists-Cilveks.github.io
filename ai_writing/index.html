@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ML written language</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="/css/style.css" rel="stylesheet">
+  </head>
+  <body class="main-content" lang="en">
+    <script src="/js/Color.js"></script>
+    <script src="/css/palettize.js"></script>
+    <script src="/js/particles.js"></script>
+    <script src="/js/SVGRequests.js"></script>
+    
+    <header id="main-header">
+      <h1>Proof of concept for an ML written language</h1>
+    </header>
+    <script src="/js/languages.js" my-languges="en"></script>
+
+    <a class="basic-btn home-btn" href="/">home</a>
+
+    <p>A little machine learning project I started (and left on undefinite hiatus) in 2022.</p>
+
+    <p>Now, I know what you're thinking: oh god, another art-abusing ai slop generator — now for conlangs too. But my whole goal with this was to make something from the ground up, which doesn't learn language from how it's used by humans, but instead creates its own (super domain-specific) "language" purely by being forced to convey some information.</p>
+    <p>In the little demo I made I generate 10 random numbers, use a neural network to turn those into the endpoints of 3 line segments. I turn those into an image, with some added noise and moving the endpoints around a little. Finally another neural network tries to decipher the original 10 numbers. The networks gets rewarded if the final 10 numbers are close to the original 10.</p>
+
+    <div>
+      <script type="text/javascript">
+        insertSVG("10 numbers 3 strokes, encode decode.svg")
+      </script>
+      <svg style="width: 100%; max-height: 70vh;" viewBox="0 0 891.648 432.576">
+        <use xlink:href="#figure_1"/>
+      </svg>
+      <figcaption style="font-style: italic;">These are 6 examples after some training. On the left are 10 random numbers. Those are used to generate the image in the middle. The images are decoded into the numbers on the right.</figcaption>
+    </div>
+
+    <p>The pie in the sky goal would be to generate a mini-language that is completely alien but still reasonable, interpretable by humans. What would it mean if it came up with a Verb-Subject-Object structure?</p>
+    <p>Artistically, does it make sense to give this to an AI? You could argue that I should instead try to come up with my own exotic ways for how language could work, to train my conlanging muscles. My hope with this was that creating a novel language automatically and then studying it might be easier than coming up with one myself, but who's to say I will know <em>how</em> to analyze it, or that I haven't accidentally programmed in a bunch of assumptions that force the language to behave like human languages. Whatever it comes up with won't really prove anything about language. It's safe to say this is more of an exercise in machine learning than in conlanging or linguistics.</p>
+
+    <p>All that being said, some things to experiment with:
+      <ul>
+        <li>
+          <p>Interesting input data. Maybe images with overlapping colors (think Factory Balls or Minecraft banners), or an irl timelapse (clouds, traffic), or soma math thing (cellular automata, fractal pics). It should be something with recognizable and diverse features (so that the writing is easy to analyze for us but also not so orderly that it just encodes random numbers but with extra steps).</p>
+          <p>Then how do we reward the network? Just recreating the image pixel-by-pixel doesn't seem good, or language-y for that matter. Only some key features need to be encoded. So maybe the decoder network could, instead of trying to recreate the original image, we could give it an image and ask whether this is what the encoder was encoding.</p>
+        </li>
+        <li>
+          <p>Partial data. Human language tends to have removable parts, like you can remove an adjective from a sentence and it'll still make sense. It would make it easier to analyze.</p>
+          <p>If I give the encoder 2 strokes to encode the first 5 numbers, and then another 2 to encode the next 5, how will it do that? Will it place them in consistent positions, say, the first 5 in the bottom left, next 5 in the top right? Would it repeat the same shapes if the first 5 and last 5 numbers are the same?</p>
+        </li>
+      </ul>
+    </p>
+    
+  </body>
+</html>
