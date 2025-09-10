@@ -24,10 +24,10 @@
 <body>
   <canvas id="canvas" width="300" height="300"></canvas>
   <script src="/js/Color.js"></script>
-	<audio controls id="rhythm-track">
+	<audio id="rhythm-track">
 		<source src="tlpog.mp3" type="audio/mpeg">
 		Your browser does not support the audio element.
-	</audio> 
+	</audio>
 
   <script type="text/javascript">
     "use strict";
@@ -41,6 +41,9 @@
       var height=100;
 			var t=0;
 			var startTime=0;
+
+			var missPeriod=200;
+			const magicOffset=0;
     
     var style = window.getComputedStyle(document.body)
     var themeColors = {
@@ -60,52 +63,116 @@
 
     resize();
 
-		function drawArrow(arrow_t, lane) {
-			context.fillStyle=colors.red.rgb();
-      // context.fillRect((lane-1)*width/4, height+(t-arrow_t)/100, width/4, width/4);
-			const cx = (lane-0.5)*width/4
-			const cy = height+(t-arrow_t)-width/4
-			const r = width/4/2*0.8
-      context.fillRect(cx-r, cy-r, 2*r, 2*r)
-
+		function pathUnitDownArrow() {
+			// creates a path along the outline of a down arrow, centered at (0, 0), with a height and width of roughly 2
+			context.beginPath()
+			context.moveTo(0, 0.9)
+			context.lineTo(0.9, 0)
+			context.lineTo(0.9, -0.2)
+			context.lineTo(0.6, -0.5)
+			context.lineTo(0.3, -0.2)
+			context.lineTo(0.3, -0.7)
+			context.lineTo(-0.3, -0.7)
+			context.lineTo(-0.3, -0.2)
+			context.lineTo(-0.6, -0.5)
+			context.lineTo(-0.9, -0.2)
+			context.lineTo(-0.9, 0)
+			context.closePath()
 		}
+		function drawArrow(offset, lane, fill, stroke, lineWidth) {
+			context.fillStyle=fill;
+			context.strokeStyle=stroke;
+			context.lineWidth=lineWidth;
+			// context.fillRect((lane-1)*width/4, height+(t-arrow_t)/100, width/4, width/4);
+			const cx = (lane-0.5)*width/4
+			const cy = height+offset-width/10
+			const r = width/4/2*0.8
+      let rot
+			switch (lane) {
+				case 1:
+					rot = Math.PI*0.5
+					break
+				case 2:
+					rot = 0
+					break
+				case 3:
+					rot = Math.PI
+					break
+				case 4:
+					rot = Math.PI*1.5
+					break
+			}
+			// context.fillRect(cx-r, cy-r, 2*r, 2*r)
+			context.translate(cx, cy)
+			context.scale(r, r)
+			context.rotate(rot)
+			pathUnitDownArrow()
+			if (fill != null) context.fill()
+			context.stroke()
+			context.resetTransform()
+		}
+		function drawMapArrow(arrow_t, lane) {
+			drawArrow(t-arrow_t, lane, themeColors.highlights.rgb(), themeColors.HC_BG.rgb(), 0.1)
+		}
+		function drawReceptor(lane, lineWidth=0.03) {
+			drawArrow(0, lane, null, themeColors.main.rgb(), lineWidth)
+		}
+
 		function notePressed(lane, eventTime)	{
-			const te = eventTime-startTime
+			const tp = eventTime-startTime
 			let possibleNotes = []
 			
 			// find the closest note
 			let closestNote
+			let inaccuracy
 			for (let i = 0; i < 40; i++) { // FIXME: jank if there are a lot of notes in other lanes. but meh.
 				if (noteData.HitObjects.length <= i) break
 				const note = noteData.HitObjects[i]
 				if (note.Lane == lane) {
 					possibleNotes.push([note, i])
-					if (note.t > lane) { // a later note, so no even later notes could be the closest
+					if (note.t >= tp) { // a later note, so no even later notes could be the closest
 						break
 					}
 				}
 			}
-			if (possibleNotes.length==0) {
+			if (possibleNotes.length==0) { // no notes remotely close
 				return
 			}
-			else if (possibleNotes.length==1) {
+			else if (possibleNotes.length==1) { // one note, easy
 				closestNote = possibleNotes[0]
+				inaccuracy = closestNote[0].t - tp
 			}
-			else if (possibleNotes.length==2) {
-				n1 = possibleNotes.pop()
-				n2 = possibleNotes.pop()
-				t1 = Math.abs(n1[0].t - te) // how far each note is from the event time
-				t2 = Math.abs(n2[0].t - te)
-				if (t1<t2) closestNote = n1
-				else closestNote = n2
+			else if (possibleNotes.length>=2) { // at least 2 notes, need to compare the last 2
+				const n1 = possibleNotes.pop()
+				const n2 = possibleNotes.pop()
+				const t1 = n1[0].t - tp // how far each note is from the keypress time
+				const t2 = n2[0].t - tp
+				if (Math.abs(t1)<Math.abs(t2)) {
+					inaccuracy = t1
+					closestNote = n1
+				}
+				else {
+					inaccuracy = t2
+					closestNote = n2
+				}
+			}
+			if (Math.abs(inaccuracy) > missPeriod) { // too imprecise to count as a hit
+				return
 			}
 			const closestIndex = closestNote[1]
 			closestNote = closestNote[0]
 			
 			// announce that closestNote has been pressed
+			recentHits.push({
+				// "time": tp,
+				"time": performance.now(),
+				"note": closestNote,
+			})
+			
 			noteData.HitObjects.splice(closestIndex, 1)
 		}
 
+		var recentHits = [];
 		var noteData;
 
 		fetch('tlpog.json')
@@ -113,46 +180,84 @@
 			.then(function(json){noteData=json});
 
 		var audio = document.getElementById("rhythm-track")
+		audio.volume = 0.3;
 		audio.addEventListener("play", function(){
 			paused=false;
 			requestAnimationFrame(startPlaying);
+			console.log("Unpaused")
 		})
 		audio.addEventListener("pause", function(){
 			paused=true;
+			console.log("Paused")
 		})
 
+		function syncToAudio(curTime) {
+			startTime=curTime-audio.currentTime*1000
+		}
+
 		function startPlaying(curTime) {
-			startTime=curTime-audio.currentTime*1000;
+			syncToAudio(curTime)
 			draw(curTime);
 		}
 
+		var secondarySyncDone = false; // FIXME: dumb fix
+
     function draw(curTime) {
-			t = curTime-startTime
-      if (!paused) {
-				context.clearRect(0, 0, canvas.width, canvas.height);
+			t = curTime-startTime + magicOffset
+
+			context.clearRect(0, 0, canvas.width, canvas.height);
+			for (let i = 0; i < 4; i++) {
+				drawReceptor(i+1, 0.05)
+			}
+
+			if (t>500 && !secondarySyncDone) {
+				secondarySyncDone = true
+				console.log(curTime, performance.now());
 				
+				syncToAudio(performance.now())
+			}
+
+      if (!paused) {
+				for (let i = 0; i < recentHits.length; i++) {
+					const hit = recentHits[i]
+					// const timeSinceHit = curTime - hit.time
+					const timeSinceHit = performance.now() - hit.time
+					if (timeSinceHit > 500) { // no longer recent
+						recentHits.splice(i, 1)
+						i--
+						continue
+					}
+					// ...otherwise
+					// let lineWidth = Math.max(0, (200-timeSinceHit)*0.1) // Pretty funny, but not what I intended. TODO: incorporate this somehow
+					let lineWidth = Math.max(0, (200-timeSinceHit)*0.003)
+					drawReceptor(hit.note.Lane, lineWidth)
+					
+				}
+
 				for (let i = 0; i < 20; i++) { // FIXME: jank when there's a lot of notes.
 					if (noteData.HitObjects.length <= i) break
 					const note = noteData.HitObjects[i]
-					if (t > note.t+300) {
+					if (t > note.t+missPeriod) {
 						noteData.HitObjects.splice(i, 1)
 						i--
 						continue
 					}
-					drawArrow(note.t, note.Lane)
+					drawMapArrow(note.t, note.Lane)
 				}
 
 				requestAnimationFrame(draw);
       }
     }
-
+		
     function resize() {
-      width=canvas.width=window.innerWidth;
-      height=canvas.height=window.innerHeight;
+			width=canvas.width=window.innerWidth
+      height=canvas.height=window.innerHeight
+			draw()
     }
 		if (!paused) {
 			audio.play();
 		}
+		resize()
 
     // canvas.addEventListener("mousemove",function(){
     //   // lastx=event.clientX;
@@ -184,9 +289,12 @@
       // console.log(curKey);
       switch (curKey) {
         case 32://space - pause
-          paused=!paused;
-          console.log(paused?"Paused":"Unpaused");
-          draw();
+					if (paused) {
+						audio.play()
+					}
+					else {
+						audio.pause()
+					}
           break;
         case 68://d - draw
           draw();
@@ -208,7 +316,7 @@
         //   break;
       }
     });
-    // window.addEventListener("resize",function(){resize();})
+    window.addEventListener("resize",function(){resize();})
   </script>
 </body>
 </html>
