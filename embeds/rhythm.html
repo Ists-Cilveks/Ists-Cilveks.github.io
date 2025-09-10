@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>Wallpaper generator</title>
+  <style media="screen">
+    body{
+      background-color: rgb(10,50,40);
+      color: rgb(200, 200, 200);
+      font-size: 40px;
+      overflow: hidden;
+      font-size: 300%;
+    }
+    canvas{
+      position: absolute;
+      left: 0;
+      top: 0;
+      outline: 2px dashed navy;
+			z-index: -3;
+    }
+  </style>
+  <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+  <canvas id="canvas" width="300" height="300"></canvas>
+  <script src="/js/Color.js"></script>
+	<audio controls id="rhythm-track">
+		<source src="tlpog.mp3" type="audio/mpeg">
+		Your browser does not support the audio element.
+	</audio> 
+
+  <script type="text/javascript">
+    "use strict";
+
+    var canvas=document.getElementById("canvas");
+      var context=canvas.getContext("2d");
+      var loops=0;
+      var paused=true;
+      var frameskip=1;
+      var keys=[];
+			var width=100;
+      var height=100;
+			var t=0;
+    
+    var style = window.getComputedStyle(document.body)
+    var themeColors = {
+      BG: ColorFromHex(style.getPropertyValue('--bg-color')),
+      secondaryBG: ColorFromHex(style.getPropertyValue('--secondary-bg-color')),
+      HC_BG: ColorFromHex(style.getPropertyValue('--hc-bg')),
+      HC_FG: ColorFromHex(style.getPropertyValue('--hc-fg')),
+      main: ColorFromHex(style.getPropertyValue('--main-color')),
+      highlights: ColorFromHex(style.getPropertyValue('--highlights')),
+      framing: ColorFromHex(style.getPropertyValue('--framing')),
+      subtler: ColorFromHex(style.getPropertyValue('--subtler')),
+      subtleTinted: ColorFromHex(style.getPropertyValue('--subtle-tinted')),
+    }
+    gradients["theme"] = new Gradient([themeColors.framing, 0, themeColors.BG, 0.4, themeColors.BG, 0.6, themeColors.highlights, 0.8, themeColors.main, 1]);
+
+    var useGradient=gradients.theme;
+
+    resize();
+
+		function drawArrow(arrow_t, lane) {
+			context.fillStyle=colors.red.rgb();
+      // context.fillRect((lane-1)*width/4, height+(t-arrow_t)/100, width/4, width/4);
+			const cx = (lane-0.5)*width/4
+			const cy = height+(t-arrow_t)-width/4
+			const r = width/4/2*0.8
+      context.fillRect(cx-r, cy-r, 2*r, 2*r);
+		}
+		function notePressed(lane)	{
+			console.log(lane);
+			
+		}
+
+		var audio = document.getElementById("rhythm-track")
+		audio.addEventListener("play", function(){
+			paused=false;
+			draw();
+		})
+		audio.addEventListener("pause", function(){
+			paused=true;
+		})
+
+    function draw() {
+      if (!paused) {
+        // if (loops% frameskip <1) {//animation
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          
+					drawArrow(1000, 1)
+					drawArrow(1300, 2)
+					t = audio.currentTime*1000
+					
+					
+        // }
+        loops++;
+        window.requestAnimationFrame(draw);
+      }
+    }
+
+    function restart() {
+      loops=0;
+    }
+    function resize() {
+      width=canvas.width=window.innerWidth;
+      height=canvas.height=window.innerHeight;
+      restart();
+    }
+    draw();
+
+    // canvas.addEventListener("mousemove",function(){
+    //   // lastx=event.clientX;
+    //   // lasty=event.clientY;
+    //   var n=1;
+    //   lastx=(event.clientX+lastx*n)/(n+1);
+    //   lasty=(event.clientY+lasty*n)/(n+1);
+    // });
+    // window.addEventListener("dblclick",function(){location.reload();});
+    window.addEventListener("mousedown",function(){
+      notePressed(Math.floor(event.clientX/width*4)+1)
+    });
+    window.addEventListener("keyup",function(){
+      var curKey=event.keyCode;
+      keys[curKey]=false;
+      // console.log(keys);
+    });
+    window.addEventListener("keydown",function(){
+      var curKey=event.keyCode;
+      keys[curKey]=true;
+      // if (curKey<58 && curKey>48) {//numbers - pixsize
+      //   pixSize=2**(curKey-49);
+      //   // var pixSize=14;
+      //   gridWidth=canvas.width/pixSize; gridHeight=canvas.height/pixSize;
+      //   initialiseGrid();
+      //   draw();
+      // }
+      // console.log(keys);
+      // console.log(curKey);
+      switch (curKey) {
+        case 32://space - pause
+          paused=!paused;
+          console.log(paused?"Paused":"Unpaused");
+          draw();
+          break;
+        case 68://d - draw
+          draw();
+          break;
+				case 65://a
+					notePressed(1)
+          break;
+				case 75://k
+					notePressed(3)
+          break;
+				case 76://l
+					notePressed(4)
+          break;
+				case 83://s
+					notePressed(2)
+					break;
+        // case 37://left
+        //   move.left();
+        //   break;
+      }
+    });
+    // window.addEventListener("resize",function(){resize();})
+  </script>
+</body>
+</html>
