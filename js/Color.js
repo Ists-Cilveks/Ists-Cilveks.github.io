@@ -69,6 +69,22 @@ function ColorFromHex(hex) { //from https://stackoverflow.com/a/5624139/10630826
     parseInt(result[3], 16)
   ) : null;
 }
+function ColorFromRGB(rgb) {
+  var numStrings = rgb.replace(/^rgba?\(|\s+|\)$/g,'').split(',')
+  return new Color(
+    parseInt(numStrings[0]),
+    parseInt(numStrings[1]),
+    parseInt(numStrings[2]),
+    parseInt(numStrings[3]),
+  )
+}
+function ColorFromString(str) {
+  if (str.startsWith("#")) {
+    return ColorFromHex(str)
+  } else if (str.startsWith("rgb")) {
+    return ColorFromRGB(str)
+  }
+}
 
 function Gradient(v) {
   this.colors=[];

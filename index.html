@@ -23,51 +23,70 @@
 		</header>
 		<script src="/js/languages.js" my-languges="en,tok"></script>
 
-		<div class="w60 landscape-column">
-			<h2 lang="en">cool things i've done</h2>
-			<h2 lang="tok">mi pali e ijo suli ni:</h2>
-			<ul>
-				<li>
-					<a href="https://ists-cilveks.github.io/UNLWS-using-images-from-jan-Tepu/">
-						<img class="mini-img" src="img/chicken.svg" alt="A very large bird">
-						<span lang="en">UNLWS tutorial proof of concept</span>
-						<span lang="tok">o kama sona e toki sitelen Anlasi kepeken sitelen musi!</span>
-					</a>
-				</li>
-				<li>
-					<a href="https://ists-cilveks.github.io/Snowflake-tilings/">
-						<img class="mini-img" src="img/snowflake.svg" alt="A tileable snowflake">
-						<span lang="en">Snowflake tilings (covering the plane with congruent shapes that have dihedral symmetry)</span>
-						<span lang="tok">ko lete lon supa.</span>
-					</a>
-					<span lang="tok">
-					o lukin e ijo wan lon ko walo lete. luka tu tu tu li lon ona.<br>
-					tenpo la, luka en kon pi poka luka li sama tawa lukin. sama ni: luka pi ijo wan li ken jo e luka pi ijo sama. ken la mi ken pali e supa suli sama ni: ijo sama mute li lon ona, li jo e luka pi ijo ante, la lupa ala li lon insa ona.<br>
-					mi alasa mute e sona. pini la, mi pali e ilo ni. ilo li sitelen mute e ijo pi luka tu tu tu. ijo ale li sama. taso lupa ala li lon insa ona. tan ni: luka pi ijo wan li jo e luka pi ijo ante.
-					</span>
-				</li>
-			</ul>
-	
-			<h2 lang="en">posts</h2>
-			<h2 lang="tok">mi sitelen e lipu ni:</h2>
-			<ul>
-				<li>
-					<a lang="en" href="kandi">A gallery of my kandi bracelets</a>
-					<span lang="tok">mi pali e sike luka pi kule mute. ona li musi mute! <a href="kandi/index.html?l=tok">o lukin!</a></span>
-				</li>
-				<li>
-					<a lang="en" href="ai-writing">A concept for a written language made by machine learning.</a>
-					<span lang="tok"><a href="ai-writing">ilo li ken ala ken pali e toki sin? (lipu li toki Inli taso)</a></span>
-				</li>
-			</ul>
-		</div>
-
-		<div class="w40 landscape-column">
-			<iframe style="height: 90vh;" src="embeds/rhythm.html"></iframe>
-		</div>
+		<div class="landscape-row">
+			<div class="landscape-column">
+				<h2 lang="en">cool things i've done</h2>
+				<h2 lang="tok">mi pali e ijo suli ni:</h2>
+				<ul>
+					<li>
+						<a href="https://ists-cilveks.github.io/UNLWS-using-images-from-jan-Tepu/">
+							<img class="mini-img" src="img/chicken.svg" alt="A very large bird">
+							<span lang="en">UNLWS tutorial proof of concept</span>
+							<span lang="tok">o kama sona e toki sitelen Anlasi kepeken sitelen musi!</span>
+						</a>
+					</li>
+					<li>
+						<a href="https://ists-cilveks.github.io/Snowflake-tilings/">
+							<img class="mini-img" src="img/snowflake.svg" alt="A tileable snowflake">
+							<span lang="en">Snowflake tilings (covering the plane with congruent shapes that have dihedral symmetry)</span>
+							<span lang="tok">ko lete lon supa.</span>
+						</a>
+						<span lang="tok">
+						o lukin e ijo wan lon ko walo lete. luka tu tu tu li lon ona.<br>
+						tenpo la, luka en kon pi poka luka li sama tawa lukin. sama ni: luka pi ijo wan li ken jo e luka pi ijo sama. ken la mi ken pali e supa suli sama ni: ijo sama mute li lon ona, li jo e luka pi ijo ante, la lupa ala li lon insa ona.<br>
+						mi alasa mute e sona. pini la, mi pali e ilo ni. ilo li sitelen mute e ijo pi luka tu tu tu. ijo ale li sama. taso lupa ala li lon insa ona. tan ni: luka pi ijo wan li jo e luka pi ijo ante.
+						</span>
+					</li>
+				</ul>
 		
+				<h2 lang="en">posts</h2>
+				<h2 lang="tok">mi sitelen e lipu ni:</h2>
+				<ul>
+					<li>
+						<a lang="en" href="kandi">A gallery of my kandi bracelets</a>
+						<span lang="tok">mi pali e sike luka pi kule mute. ona li musi mute! <a href="kandi/index.html?l=tok">o lukin!</a></span>
+					</li>
+					<li>
+						<a lang="en" href="ai-writing">A concept for a written language made by machine learning.</a>
+						<span lang="tok"><a href="ai-writing">ilo li ken ala ken pali e toki sin? (lipu li toki Inli taso)</a></span>
+					</li>
+				</ul>
+			</div>
+				
+			<div class="landscape-column" style="position: relative; min-height: 80vh;">
+				<div id="info-before-rhythm-game" style="position: absolute; left: 0; top: 0; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 90%;">
+					<p>I recently <a href="https://quavergame.com/user/784084#maps">made some maps</a> for Quaver, a rhythm game. You can try this one out! (i haven't implemented long notes tho >_>)</p>
+					<p>Music: <a href="https://patriciataxxon.bandcamp.com/album/doraemon"><em>The Loudest Patch of Grass</em></a> by Patricia Taxxon.</p>
+					Controls:<br>
+					space – pause/resume<br>
+					A S K L or tapping – hit the notes<br>
+					<button style="font-size: 150%;" onclick="document.getElementById('info-before-rhythm-game').style.display = 'none'; audio.play();">Start</button>
+				</div>
+				<div id="rhythm-container" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;">
+					<canvas id="rhythm-canvas">
+					</canvas>
+				</div>
+			</div>
+			
+		</div>
 		<p class="centered deco-text">·✧<non-portrait>*✭✧</non-portrait>✾<txt-pop>❀</txt-pop>❉<txt-pop>✿</txt-pop>❉<txt-pop>❀</txt-pop>✾<non-portrait>✧✭*</non-portrait>✧·</p>
 	</div>
+	
+	<audio id="rhythm-track">
+		<source src="/embeds/tlpog.mp3" type="audio/mpeg">
+		Your browser does not support the audio element.
+	</audio>
+	<script src="/embeds/rhythm.js"></script>
 
 	<iframe style="height: 30vh;" src="embeds/wallpaper.html"></iframe>
 

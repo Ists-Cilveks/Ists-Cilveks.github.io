@@ -168,22 +168,16 @@ svg {
   opacity: 0;
 }
 
-.landscape-column {
-	float: left;
-}
-/* FIXME: hack */
-.w40{
-	width: 40%;
-}
-.w60{
-	width: 60%;
+.landscape-row {
+	display: grid;
+	grid-template-columns: 6fr 4fr;
 }
 
 @media only screen and (orientation: portrait){
 	non-portrait {
 		display: none;
 	}
-	.landscape-column {
-		width: 100%;
+	.landscape-row {
+		grid-template-columns: 1fr;
 	}
 }

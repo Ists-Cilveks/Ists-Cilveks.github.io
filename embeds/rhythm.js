@@ -1,0 +1,285 @@
+var canvas=document.getElementById("rhythm-canvas");
+	var context=canvas.getContext("2d");
+	var rhythmContainer=document.getElementById("rhythm-container");
+	var paused=true;
+	var keys=[];
+	var width=100;
+	var height=100;
+	var t=0;
+	var startTime=0;
+
+	var missPeriod=200;
+	const magicOffset=0;
+
+var style_in_rhythmJS = window.getComputedStyle(document.body)
+var getCSSColor = (name) => ColorFromString(style_in_rhythmJS.getPropertyValue(name))
+var themeColors = {
+	BG: getCSSColor('--bg-color'),
+	secondaryBG: getCSSColor('--secondary-bg-color'),
+	HC_BG: getCSSColor('--hc-bg'),
+	HC_FG: getCSSColor('--hc-fg'),
+	main: getCSSColor('--main-color'),
+	highlights: getCSSColor('--highlights'),
+	framing: getCSSColor('--framing'),
+	subtler: getCSSColor('--subtler'),
+	subtleTinted: getCSSColor('--subtle-tinted'),
+}
+gradients["theme"] = new Gradient([themeColors.framing, 0, themeColors.BG, 0.4, themeColors.BG, 0.6, themeColors.highlights, 0.8, themeColors.main, 1]);
+
+var useGradient=gradients.theme;
+
+resize();
+
+function pathUnitDownArrow() {
+	// creates a path along the outline of a down arrow, centered at (0, 0), with a height and width of roughly 2
+	context.beginPath()
+	context.moveTo(0, 0.9)
+	context.lineTo(0.9, 0)
+	context.lineTo(0.9, -0.2)
+	context.lineTo(0.6, -0.5)
+	context.lineTo(0.3, -0.2)
+	context.lineTo(0.3, -0.7)
+	context.lineTo(-0.3, -0.7)
+	context.lineTo(-0.3, -0.2)
+	context.lineTo(-0.6, -0.5)
+	context.lineTo(-0.9, -0.2)
+	context.lineTo(-0.9, 0)
+	context.closePath()
+}
+function drawArrow(offset, lane, fill, stroke, lineWidth) {
+	context.fillStyle=fill;
+	context.strokeStyle=stroke;
+	context.lineWidth=lineWidth;
+	// context.fillRect((lane-1)*width/4, height+(t-arrow_t)/100, width/4, width/4);
+	const cx = (lane-0.5)*width/4
+	const cy = height+offset-width/10
+	const r = width/4/2*0.8
+	let rot
+	switch (lane) {
+		case 1:
+			rot = Math.PI*0.5
+			break
+		case 2:
+			rot = 0
+			break
+		case 3:
+			rot = Math.PI
+			break
+		case 4:
+			rot = Math.PI*1.5
+			break
+	}
+	// context.fillRect(cx-r, cy-r, 2*r, 2*r)
+	context.translate(cx, cy)
+	context.scale(r, r)
+	context.rotate(rot)
+	pathUnitDownArrow()
+	if (fill != null) context.fill()
+	context.stroke()
+	context.resetTransform()
+}
+function drawMapArrow(arrow_t, lane) {
+	drawArrow(t-arrow_t, lane, themeColors.highlights.rgb(), themeColors.HC_BG.rgb(), 0.1)
+}
+function drawReceptor(lane, lineWidth=0.03) {
+	drawArrow(0, lane, null, themeColors.main.rgb(), lineWidth)
+}
+
+function notePressed(lane, eventTime)	{
+	const tp = eventTime-startTime
+	let possibleNotes = []
+	
+	// find the closest note
+	let closestNote
+	let inaccuracy
+	for (let i = 0; i < 40; i++) { // FIXME: jank if there are a lot of notes in other lanes. but meh.
+		if (noteData.HitObjects.length <= i) break
+		const note = noteData.HitObjects[i]
+		if (note.Lane == lane) {
+			possibleNotes.push([note, i])
+			if (note.t >= tp) { // a later note, so no even later notes could be the closest
+				break
+			}
+		}
+	}
+	if (possibleNotes.length==0) { // no notes remotely close
+		return
+	}
+	else if (possibleNotes.length==1) { // one note, easy
+		closestNote = possibleNotes[0]
+		inaccuracy = closestNote[0].t - tp
+	}
+	else if (possibleNotes.length>=2) { // at least 2 notes, need to compare the last 2
+		const n1 = possibleNotes.pop()
+		const n2 = possibleNotes.pop()
+		const t1 = n1[0].t - tp // how far each note is from the keypress time
+		const t2 = n2[0].t - tp
+		if (Math.abs(t1)<Math.abs(t2)) {
+			inaccuracy = t1
+			closestNote = n1
+		}
+		else {
+			inaccuracy = t2
+			closestNote = n2
+		}
+	}
+	if (Math.abs(inaccuracy) > missPeriod) { // too imprecise to count as a hit
+		return
+	}
+	const closestIndex = closestNote[1]
+	closestNote = closestNote[0]
+	
+	// announce that closestNote has been pressed
+	recentHits.push({
+		// "time": tp,
+		"time": performance.now(),
+		"note": closestNote,
+	})
+	
+	noteData.HitObjects.splice(closestIndex, 1)
+}
+
+var recentHits = [];
+var noteData;
+
+fetch('/embeds/tlpog.json')
+	.then((response) => response.json())
+	.then(function(json){noteData=json});
+
+var audio = document.getElementById("rhythm-track")
+audio.volume = 0.3;
+audio.addEventListener("play", function(){
+	paused=false;
+	requestAnimationFrame(startPlaying);
+	// console.log("Unpaused")
+})
+audio.addEventListener("pause", function(){
+	paused=true;
+	// console.log("Paused")
+})
+
+function syncToAudio(curTime) {
+	startTime=curTime-audio.currentTime*1000
+}
+
+function startPlaying(curTime) {
+	syncToAudio(curTime)
+	draw(curTime);
+}
+
+var secondarySyncDone = false; // FIXME: dumb fix
+
+function draw(curTime) {
+	t = curTime-startTime + magicOffset
+
+	context.clearRect(0, 0, canvas.width, canvas.height);
+	for (let i = 0; i < 4; i++) {
+		drawReceptor(i+1, 0.05)
+	}
+
+	if (t>500 && !secondarySyncDone) {
+		secondarySyncDone = true
+		syncToAudio(performance.now())
+	}
+
+	if (!paused) {
+		for (let i = 0; i < recentHits.length; i++) {
+			const hit = recentHits[i]
+			// const timeSinceHit = curTime - hit.time
+			const timeSinceHit = performance.now() - hit.time
+			if (timeSinceHit > 500) { // no longer recent
+				recentHits.splice(i, 1)
+				i--
+				continue
+			}
+			// ...otherwise
+			// let lineWidth = Math.max(0, (200-timeSinceHit)*0.1) // Pretty funny, but not what I intended. TODO: incorporate this somehow
+			let lineWidth = Math.max(0, (200-timeSinceHit)*0.003)
+			drawReceptor(hit.note.Lane, lineWidth)
+			
+		}
+
+		for (let i = 0; i < 20; i++) { // FIXME: jank when there's a lot of notes.
+			if (noteData.HitObjects.length <= i) break
+			const note = noteData.HitObjects[i]
+			if (t > note.t+missPeriod) {
+				noteData.HitObjects.splice(i, 1)
+				i--
+				continue
+			}
+			drawMapArrow(note.t, note.Lane)
+		}
+
+		requestAnimationFrame(draw);
+	}
+}
+
+function resize() {
+	width=canvas.width=rhythmContainer.clientWidth
+	height=canvas.height=rhythmContainer.clientHeight
+	draw()
+}
+if (!paused) {
+	audio.play();
+}
+resize()
+
+// canvas.addEventListener("mousemove",function(){
+//   // lastx=event.clientX;
+//   // lasty=event.clientY;
+//   var n=1;
+//   lastx=(event.clientX+lastx*n)/(n+1);
+//   lasty=(event.clientY+lasty*n)/(n+1);
+// });
+// window.addEventListener("dblclick",function(){location.reload();});
+window.addEventListener("mousedown",function(){
+	notePressed(Math.floor(event.clientX/width*4)+1, event.timeStamp)
+});
+window.addEventListener("keyup",function(){
+	var curKey=event.keyCode;
+	keys[curKey]=false;
+	// console.log(keys);
+});
+window.addEventListener("keydown",function(){
+	var curKey=event.keyCode;
+	keys[curKey]=true;
+	// if (curKey<58 && curKey>48) {//numbers - pixsize
+	//   pixSize=2**(curKey-49);
+	//   // var pixSize=14;
+	//   gridWidth=canvas.width/pixSize; gridHeight=canvas.height/pixSize;
+	//   initialiseGrid();
+	//   draw();
+	// }
+	// console.log(keys);
+	// console.log(curKey);
+	switch (curKey) {
+		case 32://space - pause
+			if (paused) {
+				audio.play()
+			}
+			else {
+				audio.pause()
+			}
+			break;
+		case 68://d - draw
+			draw();
+			break;
+		case 65://a
+			notePressed(1, event.timeStamp)
+			break;
+		case 75://k
+			notePressed(3, event.timeStamp)
+			break;
+		case 76://l
+			notePressed(4, event.timeStamp)
+			break;
+		case 83://s
+			notePressed(2, event.timeStamp)
+			break;
+		// case 37://left
+		//   move.left();
+		//   break;
+	}
+});
+window.addEventListener("resize",function(){resize();})
+
