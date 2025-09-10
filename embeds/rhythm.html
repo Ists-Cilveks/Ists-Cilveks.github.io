@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html dir="ltr">
 <head>
   <meta charset="utf-8">
-  <title>Wallpaper generator</title>
+  <title>Rhythm game</title>
   <style media="screen">
     body{
       background-color: rgb(10,50,40);
@@ -16,7 +16,6 @@
       left: 0;
       top: 0;
       outline: 2px dashed navy;
-			z-index: -3;
     }
   </style>
   <link href="../css/style.css" rel="stylesheet">
@@ -35,7 +34,6 @@
     var canvas=document.getElementById("canvas");
       var context=canvas.getContext("2d");
       var paused=true;
-      var frameskip=1;
       var keys=[];
 			var width=100;
       var height=100;
