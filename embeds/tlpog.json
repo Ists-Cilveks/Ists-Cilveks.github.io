@@ -1,0 +1,3859 @@
+{
+  "TimingPoints":
+  {
+    "t": 950,
+    "Bpm": 170
+  },
+  "HitObjects":
+  [
+  {
+    "t": 950,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 1302,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 1655,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 1920,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 2185,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 2537,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 2714,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 3067,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 3332,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 3596,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 3949,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 4126,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 4479,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 4743,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 5008,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 5361,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 5537,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 5890,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 6155,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 6420,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 6596,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 6949,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 7302,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 7567,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 7832,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 8185,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 8361,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 8714,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 8979,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 9243,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 9596,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 9773,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 10126,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 10390,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 10655,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 11008,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 11185,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 11537,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 11802,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 11979,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 12067,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 12243,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 12596,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 12773,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 12949,
+    "Lane": 4,
+    "EndTime": 13126,
+    "KeySounds": []
+  },
+  {
+    "t": 13126,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 13214,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 13390,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 13479,
+    "Lane": 3,
+    "EndTime": 13743,
+    "KeySounds": []
+  },
+  {
+    "t": 13832,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 14008,
+    "Lane": 3,
+    "EndTime": 14185,
+    "KeySounds": []
+  },
+  {
+    "t": 14185,
+    "Lane": 2,
+    "EndTime": 14361,
+    "KeySounds": []
+  },
+  {
+    "t": 14361,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 14537,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 14626,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 14802,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 14890,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 14979,
+    "Lane": 2,
+    "EndTime": 15243,
+    "KeySounds": []
+  },
+  {
+    "t": 15243,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 15420,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 15596,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 15773,
+    "Lane": 4,
+    "EndTime": 15949,
+    "KeySounds": []
+  },
+  {
+    "t": 16037,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 16302,
+    "Lane": 4,
+    "EndTime": 16567,
+    "KeySounds": []
+  },
+  {
+    "t": 16655,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 16832,
+    "Lane": 2,
+    "EndTime": 17008,
+    "KeySounds": []
+  },
+  {
+    "t": 17008,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 17185,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 17361,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 17449,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 17714,
+    "Lane": 1,
+    "EndTime": 17890,
+    "KeySounds": []
+  },
+  {
+    "t": 18067,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 18155,
+    "Lane": 2,
+    "EndTime": 18332,
+    "KeySounds": []
+  },
+  {
+    "t": 18420,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 18596,
+    "Lane": 4,
+    "EndTime": 18773,
+    "KeySounds": []
+  },
+  {
+    "t": 18861,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 19126,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 19170,
+    "Lane": 3,
+    "EndTime": 19390,
+    "KeySounds": []
+  },
+  {
+    "t": 19479,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 19655,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 19832,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 20008,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 20052,
+    "Lane": 3,
+    "EndTime": 20273,
+    "KeySounds": []
+  },
+  {
+    "t": 20273,
+    "Lane": 2,
+    "EndTime": 20449,
+    "KeySounds": []
+  },
+  {
+    "t": 20537,
+    "Lane": 4,
+    "EndTime": 20979,
+    "KeySounds": []
+  },
+  {
+    "t": 21067,
+    "Lane": 1,
+    "EndTime": 21243,
+    "KeySounds": []
+  },
+  {
+    "t": 21243,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 21420,
+    "Lane": 3,
+    "EndTime": 21596,
+    "KeySounds": []
+  },
+  {
+    "t": 21685,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 21949,
+    "Lane": 4,
+    "EndTime": 22214,
+    "KeySounds": []
+  },
+  {
+    "t": 22302,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 22479,
+    "Lane": 2,
+    "EndTime": 22655,
+    "KeySounds": []
+  },
+  {
+    "t": 22655,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 22832,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 23008,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 23096,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 23273,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 23361,
+    "Lane": 2,
+    "EndTime": 23537,
+    "KeySounds": []
+  },
+  {
+    "t": 23890,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 24067,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 24244,
+    "Lane": 4,
+    "EndTime": 24420,
+    "KeySounds": []
+  },
+  {
+    "t": 24420,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 24508,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 24685,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 24773,
+    "Lane": 3,
+    "EndTime": 25037,
+    "KeySounds": []
+  },
+  {
+    "t": 25126,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 25302,
+    "Lane": 3,
+    "EndTime": 25479,
+    "KeySounds": []
+  },
+  {
+    "t": 25479,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 25655,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 25832,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 25920,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 26096,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 26185,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 26273,
+    "Lane": 2,
+    "EndTime": 26537,
+    "KeySounds": []
+  },
+  {
+    "t": 26537,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 26714,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 26890,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 27067,
+    "Lane": 4,
+    "EndTime": 27243,
+    "KeySounds": []
+  },
+  {
+    "t": 27332,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 27596,
+    "Lane": 4,
+    "EndTime": 27861,
+    "KeySounds": []
+  },
+  {
+    "t": 27949,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 28126,
+    "Lane": 2,
+    "EndTime": 28302,
+    "KeySounds": []
+  },
+  {
+    "t": 28302,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 28479,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 28655,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 28743,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 29008,
+    "Lane": 1,
+    "EndTime": 29185,
+    "KeySounds": []
+  },
+  {
+    "t": 29361,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 29449,
+    "Lane": 2,
+    "EndTime": 29626,
+    "KeySounds": []
+  },
+  {
+    "t": 29714,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 29890,
+    "Lane": 4,
+    "EndTime": 30067,
+    "KeySounds": []
+  },
+  {
+    "t": 30155,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 30420,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 30464,
+    "Lane": 3,
+    "EndTime": 30685,
+    "KeySounds": []
+  },
+  {
+    "t": 30773,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 30949,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 31126,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 31302,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 31346,
+    "Lane": 3,
+    "EndTime": 31567,
+    "KeySounds": []
+  },
+  {
+    "t": 31567,
+    "Lane": 2,
+    "EndTime": 31743,
+    "KeySounds": []
+  },
+  {
+    "t": 31832,
+    "Lane": 4,
+    "EndTime": 32273,
+    "KeySounds": []
+  },
+  {
+    "t": 32361,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 32537,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 32714,
+    "Lane": 3,
+    "EndTime": 32890,
+    "KeySounds": []
+  },
+  {
+    "t": 32979,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 33243,
+    "Lane": 4,
+    "EndTime": 33508,
+    "KeySounds": []
+  },
+  {
+    "t": 33596,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 33773,
+    "Lane": 2,
+    "EndTime": 33949,
+    "KeySounds": []
+  },
+  {
+    "t": 33949,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 34126,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 34302,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 34390,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 34655,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 34832,
+    "Lane": 1,
+    "EndTime": 35361,
+    "KeySounds": []
+  },
+  {
+    "t": 34832,
+    "Lane": 3,
+    "EndTime": 35185,
+    "KeySounds": []
+  },
+  {
+    "t": 35361,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 35537,
+    "Lane": 4,
+    "EndTime": 36420,
+    "KeySounds": []
+  },
+  {
+    "t": 35537,
+    "Lane": 3,
+    "EndTime": 35890,
+    "KeySounds": []
+  },
+  {
+    "t": 35979,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 36067,
+    "Lane": 2,
+    "EndTime": 36597,
+    "KeySounds": []
+  },
+  {
+    "t": 36596,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 36773,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 36949,
+    "Lane": 2,
+    "EndTime": 38185,
+    "KeySounds": []
+  },
+  {
+    "t": 36949,
+    "Lane": 1,
+    "EndTime": 37302,
+    "KeySounds": []
+  },
+  {
+    "t": 37479,
+    "Lane": 3,
+    "EndTime": 38008,
+    "KeySounds": []
+  },
+  {
+    "t": 38185,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 38361,
+    "Lane": 4,
+    "EndTime": 38714,
+    "KeySounds": []
+  },
+  {
+    "t": 38361,
+    "Lane": 3,
+    "EndTime": 39596,
+    "KeySounds": []
+  },
+  {
+    "t": 38890,
+    "Lane": 2,
+    "EndTime": 40302,
+    "KeySounds": []
+  },
+  {
+    "t": 39773,
+    "Lane": 1,
+    "EndTime": 41008,
+    "KeySounds": []
+  },
+  {
+    "t": 40479,
+    "Lane": 3,
+    "EndTime": 40832,
+    "KeySounds": []
+  },
+  {
+    "t": 41008,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 41185,
+    "Lane": 1,
+    "EndTime": 42332,
+    "KeySounds": []
+  },
+  {
+    "t": 41185,
+    "Lane": 4,
+    "EndTime": 41537,
+    "KeySounds": []
+  },
+  {
+    "t": 41714,
+    "Lane": 3,
+    "EndTime": 42243,
+    "KeySounds": []
+  },
+  {
+    "t": 42420,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 42596,
+    "Lane": 2,
+    "EndTime": 42949,
+    "KeySounds": []
+  },
+  {
+    "t": 42773,
+    "Lane": 4,
+    "EndTime": 43655,
+    "KeySounds": []
+  },
+  {
+    "t": 43126,
+    "Lane": 1,
+    "EndTime": 43832,
+    "KeySounds": []
+  },
+  {
+    "t": 43832,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 44008,
+    "Lane": 3,
+    "EndTime": 44361,
+    "KeySounds": []
+  },
+  {
+    "t": 44008,
+    "Lane": 4,
+    "EndTime": 44361,
+    "KeySounds": []
+  },
+  {
+    "t": 44537,
+    "Lane": 1,
+    "EndTime": 45949,
+    "KeySounds": []
+  },
+  {
+    "t": 44537,
+    "Lane": 3,
+    "EndTime": 45067,
+    "KeySounds": []
+  },
+  {
+    "t": 45244,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 45420,
+    "Lane": 4,
+    "EndTime": 45949,
+    "KeySounds": []
+  },
+  {
+    "t": 46126,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 46126,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 46302,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 46479,
+    "Lane": 1,
+    "HitSound": ["Normal", "Clap"],
+    "KeySounds": []
+  },
+  {
+    "t": 46655,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 46832,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 47008,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 47185,
+    "Lane": 1,
+    "HitSound": ["Normal", "Clap"],
+    "KeySounds": []
+  },
+  {
+    "t": 47361,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 47361,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 47714,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 47891,
+    "Lane": 3,
+    "HitSound": "Clap",
+    "KeySounds": []
+  },
+  {
+    "t": 48067,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 48243,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 48420,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 48597,
+    "Lane": 3,
+    "HitSound": "Clap",
+    "KeySounds": []
+  },
+  {
+    "t": 48773,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 48773,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 49126,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 49302,
+    "Lane": 3,
+    "HitSound": "Clap",
+    "KeySounds": []
+  },
+  {
+    "t": 49479,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 49655,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 49832,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 50008,
+    "Lane": 3,
+    "HitSound": "Clap",
+    "KeySounds": []
+  },
+  {
+    "t": 50185,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 50185,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 50538,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 50714,
+    "Lane": 2,
+    "HitSound": "Clap",
+    "KeySounds": []
+  },
+  {
+    "t": 50891,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 51067,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 51244,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 51420,
+    "Lane": 2,
+    "HitSound": "Clap",
+    "KeySounds": []
+  },
+  {
+    "t": 51597,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 51773,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 51773,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 51949,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 52126,
+    "Lane": 1,
+    "HitSound": ["Normal", "Clap"],
+    "KeySounds": []
+  },
+  {
+    "t": 52302,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 52479,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 52655,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 52832,
+    "Lane": 1,
+    "HitSound": ["Normal", "Clap"],
+    "KeySounds": []
+  },
+  {
+    "t": 53008,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 53008,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 53361,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 53538,
+    "Lane": 3,
+    "HitSound": "Clap",
+    "KeySounds": []
+  },
+  {
+    "t": 53714,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 53891,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 54067,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 54244,
+    "Lane": 3,
+    "HitSound": "Clap",
+    "KeySounds": []
+  },
+  {
+    "t": 54420,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 54420,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 54773,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 54949,
+    "Lane": 3,
+    "HitSound": "Clap",
+    "KeySounds": []
+  },
+  {
+    "t": 55126,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 55302,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 55479,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 55655,
+    "Lane": 3,
+    "HitSound": "Clap",
+    "KeySounds": []
+  },
+  {
+    "t": 55832,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 55832,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 56185,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 56361,
+    "Lane": 2,
+    "HitSound": "Clap",
+    "KeySounds": []
+  },
+  {
+    "t": 56538,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 56714,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 56891,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 57067,
+    "Lane": 2,
+    "HitSound": "Clap",
+    "KeySounds": []
+  },
+  {
+    "t": 57244,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 57420,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 57773,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 58126,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 58390,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 58655,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 59008,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 59185,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 59537,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 59802,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 60067,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 60420,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 60596,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 60949,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 61214,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 61479,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 61832,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 62008,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 62361,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 62626,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 62890,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 63067,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 63420,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 63773,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 64037,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 64302,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 64655,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 64832,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 65185,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 65449,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 65714,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 66067,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 66243,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 66596,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 66861,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 67126,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 67479,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 67655,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 68008,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 68273,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 68449,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 68537,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 69067,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 69243,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 69420,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 69596,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 69685,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 69861,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 69949,
+    "Lane": 3,
+    "EndTime": 70214,
+    "KeySounds": []
+  },
+  {
+    "t": 70302,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 70479,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 70655,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 70832,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 71008,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 71096,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 71273,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 71361,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 71449,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 71714,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 71890,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 72067,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 72243,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 72508,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 72773,
+    "Lane": 4,
+    "EndTime": 73037,
+    "KeySounds": []
+  },
+  {
+    "t": 73126,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 73302,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 73479,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 73655,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 73832,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 73920,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 74185,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 74537,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 74626,
+    "Lane": 2,
+    "EndTime": 74802,
+    "KeySounds": []
+  },
+  {
+    "t": 74890,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 75067,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 75332,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 75597,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 75641,
+    "Lane": 3,
+    "EndTime": 75861,
+    "KeySounds": []
+  },
+  {
+    "t": 75949,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 76126,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 76302,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 76479,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 76523,
+    "Lane": 3,
+    "EndTime": 76743,
+    "KeySounds": []
+  },
+  {
+    "t": 76743,
+    "Lane": 2,
+    "EndTime": 76920,
+    "KeySounds": []
+  },
+  {
+    "t": 77008,
+    "Lane": 4,
+    "EndTime": 77449,
+    "KeySounds": []
+  },
+  {
+    "t": 77537,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 77714,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 77890,
+    "Lane": 3,
+    "EndTime": 78067,
+    "KeySounds": []
+  },
+  {
+    "t": 78155,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 78420,
+    "Lane": 4,
+    "EndTime": 78685,
+    "KeySounds": []
+  },
+  {
+    "t": 78773,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 78949,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 79126,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 79302,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 79479,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 79567,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 79832,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 80008,
+    "Lane": 1,
+    "EndTime": 80538,
+    "KeySounds": []
+  },
+  {
+    "t": 80008,
+    "Lane": 3,
+    "EndTime": 80361,
+    "KeySounds": []
+  },
+  {
+    "t": 80538,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 80714,
+    "Lane": 4,
+    "EndTime": 81596,
+    "KeySounds": []
+  },
+  {
+    "t": 80714,
+    "Lane": 3,
+    "EndTime": 81067,
+    "KeySounds": []
+  },
+  {
+    "t": 81155,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 81243,
+    "Lane": 2,
+    "EndTime": 81950,
+    "KeySounds": []
+  },
+  {
+    "t": 81773,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 81949,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 82126,
+    "Lane": 2,
+    "EndTime": 83361,
+    "KeySounds": []
+  },
+  {
+    "t": 82126,
+    "Lane": 1,
+    "EndTime": 82479,
+    "KeySounds": []
+  },
+  {
+    "t": 82655,
+    "Lane": 3,
+    "EndTime": 83185,
+    "KeySounds": []
+  },
+  {
+    "t": 83361,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 83538,
+    "Lane": 4,
+    "EndTime": 83891,
+    "KeySounds": []
+  },
+  {
+    "t": 83538,
+    "Lane": 3,
+    "EndTime": 84773,
+    "KeySounds": []
+  },
+  {
+    "t": 84067,
+    "Lane": 2,
+    "EndTime": 85479,
+    "KeySounds": []
+  },
+  {
+    "t": 84949,
+    "Lane": 1,
+    "EndTime": 85479,
+    "KeySounds": []
+  },
+  {
+    "t": 85655,
+    "Lane": 4,
+    "EndTime": 86008,
+    "KeySounds": []
+  },
+  {
+    "t": 85655,
+    "Lane": 3,
+    "EndTime": 86185,
+    "KeySounds": []
+  },
+  {
+    "t": 86185,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 86361,
+    "Lane": 1,
+    "EndTime": 87597,
+    "KeySounds": []
+  },
+  {
+    "t": 86361,
+    "Lane": 4,
+    "EndTime": 86714,
+    "KeySounds": []
+  },
+  {
+    "t": 86891,
+    "Lane": 3,
+    "EndTime": 87244,
+    "KeySounds": []
+  },
+  {
+    "t": 87420,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 87597,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 87773,
+    "Lane": 2,
+    "EndTime": 88126,
+    "KeySounds": []
+  },
+  {
+    "t": 87949,
+    "Lane": 4,
+    "EndTime": 88832,
+    "KeySounds": []
+  },
+  {
+    "t": 88302,
+    "Lane": 1,
+    "EndTime": 89008,
+    "KeySounds": []
+  },
+  {
+    "t": 89185,
+    "Lane": 3,
+    "EndTime": 89538,
+    "KeySounds": []
+  },
+  {
+    "t": 89185,
+    "Lane": 4,
+    "EndTime": 89538,
+    "KeySounds": []
+  },
+  {
+    "t": 89714,
+    "Lane": 1,
+    "EndTime": 91303,
+    "KeySounds": []
+  },
+  {
+    "t": 89714,
+    "Lane": 3,
+    "EndTime": 90243,
+    "KeySounds": []
+  },
+  {
+    "t": 90420,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 90596,
+    "Lane": 4,
+    "EndTime": 91126,
+    "KeySounds": []
+  },
+  {
+    "t": 91302,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 91655,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 91832,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 92008,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 92185,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 92273,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 92450,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 92538,
+    "Lane": 3,
+    "EndTime": 92802,
+    "KeySounds": []
+  },
+  {
+    "t": 92891,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 93067,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 93244,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 93420,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 93597,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 93685,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 93861,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 93950,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 94038,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 94302,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 94479,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 94655,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 94832,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 95097,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 95361,
+    "Lane": 4,
+    "EndTime": 95626,
+    "KeySounds": []
+  },
+  {
+    "t": 95714,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 95891,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 96067,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 96244,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 96420,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 96508,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 96773,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 97126,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 97214,
+    "Lane": 2,
+    "EndTime": 97391,
+    "KeySounds": []
+  },
+  {
+    "t": 97479,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 97655,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 97920,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 98185,
+    "Lane": 3,
+    "EndTime": 98450,
+    "KeySounds": []
+  },
+  {
+    "t": 98538,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 98714,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 98891,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 99067,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 99111,
+    "Lane": 3,
+    "EndTime": 99332,
+    "KeySounds": []
+  },
+  {
+    "t": 99332,
+    "Lane": 2,
+    "EndTime": 99508,
+    "KeySounds": []
+  },
+  {
+    "t": 99597,
+    "Lane": 4,
+    "EndTime": 100038,
+    "KeySounds": []
+  },
+  {
+    "t": 100126,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 100302,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 100479,
+    "Lane": 3,
+    "EndTime": 100655,
+    "KeySounds": []
+  },
+  {
+    "t": 100744,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 101008,
+    "Lane": 4,
+    "EndTime": 101273,
+    "KeySounds": []
+  },
+  {
+    "t": 101361,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 101538,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 101714,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 101891,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 102067,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 102155,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 102420,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 102597,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 102949,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 103302,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 103567,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 103832,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 104185,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 104361,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 104714,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 104979,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 105244,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 105596,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 105773,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 106126,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 106390,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 106655,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 107008,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 107185,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 107537,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 107802,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 108067,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 108244,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 108244,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 108596,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 108773,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 108949,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 109126,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 109214,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 109390,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 109479,
+    "Lane": 3,
+    "EndTime": 109743,
+    "KeySounds": []
+  },
+  {
+    "t": 109832,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 110008,
+    "Lane": 3,
+    "EndTime": 110185,
+    "KeySounds": []
+  },
+  {
+    "t": 110185,
+    "Lane": 2,
+    "EndTime": 110361,
+    "KeySounds": []
+  },
+  {
+    "t": 110361,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 110537,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 110626,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 110802,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 110890,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 110979,
+    "Lane": 2,
+    "EndTime": 111243,
+    "KeySounds": []
+  },
+  {
+    "t": 111243,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 111420,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 111596,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 111773,
+    "Lane": 4,
+    "EndTime": 111949,
+    "KeySounds": []
+  },
+  {
+    "t": 112037,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 112302,
+    "Lane": 4,
+    "EndTime": 112567,
+    "KeySounds": []
+  },
+  {
+    "t": 112655,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 112832,
+    "Lane": 2,
+    "EndTime": 113008,
+    "KeySounds": []
+  },
+  {
+    "t": 113008,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 113185,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 113361,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 113449,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 113714,
+    "Lane": 1,
+    "EndTime": 113890,
+    "KeySounds": []
+  },
+  {
+    "t": 114067,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 114155,
+    "Lane": 2,
+    "EndTime": 114332,
+    "KeySounds": []
+  },
+  {
+    "t": 114420,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 114596,
+    "Lane": 4,
+    "EndTime": 114773,
+    "KeySounds": []
+  },
+  {
+    "t": 114861,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 115126,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 115170,
+    "Lane": 3,
+    "EndTime": 115390,
+    "KeySounds": []
+  },
+  {
+    "t": 115479,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 115655,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 115832,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 116008,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 116052,
+    "Lane": 3,
+    "EndTime": 116273,
+    "KeySounds": []
+  },
+  {
+    "t": 116273,
+    "Lane": 2,
+    "EndTime": 116449,
+    "KeySounds": []
+  },
+  {
+    "t": 116537,
+    "Lane": 4,
+    "EndTime": 116979,
+    "KeySounds": []
+  },
+  {
+    "t": 117067,
+    "Lane": 1,
+    "EndTime": 117243,
+    "KeySounds": []
+  },
+  {
+    "t": 117243,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 117420,
+    "Lane": 3,
+    "EndTime": 117596,
+    "KeySounds": []
+  },
+  {
+    "t": 117685,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 117949,
+    "Lane": 4,
+    "EndTime": 118214,
+    "KeySounds": []
+  },
+  {
+    "t": 118302,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 118479,
+    "Lane": 2,
+    "EndTime": 118655,
+    "KeySounds": []
+  },
+  {
+    "t": 118655,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 118832,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 119008,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 119096,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 119361,
+    "Lane": 2,
+    "EndTime": 119537,
+    "KeySounds": []
+  },
+  {
+    "t": 119890,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 120067,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 120244,
+    "Lane": 4,
+    "EndTime": 120420,
+    "KeySounds": []
+  },
+  {
+    "t": 120420,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 120508,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 120685,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 120773,
+    "Lane": 3,
+    "EndTime": 121037,
+    "KeySounds": []
+  },
+  {
+    "t": 121126,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 121302,
+    "Lane": 3,
+    "EndTime": 121479,
+    "KeySounds": []
+  },
+  {
+    "t": 121479,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 121655,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 121832,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 121920,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 122096,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 122185,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 122273,
+    "Lane": 2,
+    "EndTime": 122537,
+    "KeySounds": []
+  },
+  {
+    "t": 122537,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 122714,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 122890,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 123067,
+    "Lane": 4,
+    "EndTime": 123243,
+    "KeySounds": []
+  },
+  {
+    "t": 123332,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 123596,
+    "Lane": 4,
+    "EndTime": 123861,
+    "KeySounds": []
+  },
+  {
+    "t": 123949,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 124126,
+    "Lane": 2,
+    "EndTime": 124302,
+    "KeySounds": []
+  },
+  {
+    "t": 124302,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 124479,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 124655,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 124743,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 125008,
+    "Lane": 1,
+    "EndTime": 125185,
+    "KeySounds": []
+  },
+  {
+    "t": 125361,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 125449,
+    "Lane": 2,
+    "EndTime": 125626,
+    "KeySounds": []
+  },
+  {
+    "t": 125714,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 125890,
+    "Lane": 4,
+    "EndTime": 126067,
+    "KeySounds": []
+  },
+  {
+    "t": 126155,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 126420,
+    "Lane": 3,
+    "EndTime": 126685,
+    "KeySounds": []
+  },
+  {
+    "t": 126773,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 126949,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 127126,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 127302,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 127346,
+    "Lane": 3,
+    "EndTime": 127567,
+    "KeySounds": []
+  },
+  {
+    "t": 127567,
+    "Lane": 2,
+    "EndTime": 127743,
+    "KeySounds": []
+  },
+  {
+    "t": 127832,
+    "Lane": 4,
+    "EndTime": 128273,
+    "KeySounds": []
+  },
+  {
+    "t": 128361,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 128537,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 128714,
+    "Lane": 3,
+    "EndTime": 128890,
+    "KeySounds": []
+  },
+  {
+    "t": 128979,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 129243,
+    "Lane": 4,
+    "EndTime": 129508,
+    "KeySounds": []
+  },
+  {
+    "t": 129596,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 129773,
+    "Lane": 2,
+    "EndTime": 129949,
+    "KeySounds": []
+  },
+  {
+    "t": 129949,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 130126,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 130302,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 130390,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 130655,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 130832,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 130832,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 131008,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 131185,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 131361,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 131538,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 131714,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 131891,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 132067,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 132244,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 132244,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 132420,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 132597,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 132773,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 132949,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 133126,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 133302,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 133479,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 133655,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 133655,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 133832,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 134008,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 134185,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 134361,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 134538,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 134714,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 134891,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 135067,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 135067,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 135244,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 135420,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 135597,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 135773,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 135949,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 136126,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 136302,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 136479,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 136479,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 136655,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 136832,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 137008,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 137185,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 137361,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 137538,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 137714,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 137891,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 137891,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 138067,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 138244,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 138420,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 138597,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 138773,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 138949,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 139126,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 139302,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 139302,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 139479,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 139655,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 139832,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 140008,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 140185,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 140361,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 140538,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 140714,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 140714,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 140891,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 141067,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 141244,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 141420,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 141597,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 141773,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 141949,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 142126,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 142126,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 142479,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 142655,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 142832,
+    "Lane": 4,
+    "EndTime": 143008,
+    "KeySounds": []
+  },
+  {
+    "t": 143008,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 143096,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 143273,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 143361,
+    "Lane": 3,
+    "EndTime": 143626,
+    "KeySounds": []
+  },
+  {
+    "t": 143714,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 143890,
+    "Lane": 3,
+    "EndTime": 144067,
+    "KeySounds": []
+  },
+  {
+    "t": 144067,
+    "Lane": 2,
+    "EndTime": 144243,
+    "KeySounds": []
+  },
+  {
+    "t": 144243,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 144420,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 144508,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 144685,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 144773,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 144861,
+    "Lane": 2,
+    "EndTime": 145126,
+    "KeySounds": []
+  },
+  {
+    "t": 145126,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 145302,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 145479,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 145655,
+    "Lane": 4,
+    "EndTime": 145832,
+    "KeySounds": []
+  },
+  {
+    "t": 145920,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 146185,
+    "Lane": 4,
+    "EndTime": 146449,
+    "KeySounds": []
+  },
+  {
+    "t": 146537,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 146714,
+    "Lane": 2,
+    "EndTime": 146890,
+    "KeySounds": []
+  },
+  {
+    "t": 146890,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 147067,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 147243,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 147332,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 147596,
+    "Lane": 1,
+    "EndTime": 147773,
+    "KeySounds": []
+  },
+  {
+    "t": 147949,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 148037,
+    "Lane": 2,
+    "EndTime": 148214,
+    "KeySounds": []
+  },
+  {
+    "t": 148302,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 148479,
+    "Lane": 4,
+    "EndTime": 148655,
+    "KeySounds": []
+  },
+  {
+    "t": 148743,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 149008,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 149052,
+    "Lane": 3,
+    "EndTime": 149273,
+    "KeySounds": []
+  },
+  {
+    "t": 149361,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 149537,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 149714,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 149890,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 149935,
+    "Lane": 3,
+    "EndTime": 150155,
+    "KeySounds": []
+  },
+  {
+    "t": 150155,
+    "Lane": 2,
+    "EndTime": 150332,
+    "KeySounds": []
+  },
+  {
+    "t": 150420,
+    "Lane": 4,
+    "EndTime": 150861,
+    "KeySounds": []
+  },
+  {
+    "t": 150773,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 150949,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 151126,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 151302,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 151479,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 151655,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 151832,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 152008,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 152097,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 152185,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 152273,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 152361,
+    "Lane": 4,
+    "KeySounds": []
+  },
+  {
+    "t": 152449,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 152538,
+    "Lane": 2,
+    "KeySounds": []
+  },
+  {
+    "t": 152626,
+    "Lane": 1,
+    "KeySounds": []
+  },
+  {
+    "t": 152714,
+    "Lane": 4,
+    "HitSound": ["Normal", "Clap"],
+    "KeySounds": []
+  },
+  {
+    "t": 152714,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 153067,
+    "Lane": 4,
+    "HitSound": ["Normal", "Clap"],
+    "KeySounds": []
+  },
+  {
+    "t": 153067,
+    "Lane": 3,
+    "KeySounds": []
+  },
+  {
+    "t": 153420,
+    "Lane": 3,
+    "EndTime": 153773,
+    "KeySounds": []
+  },
+  {
+    "t": 153420,
+    "Lane": 1,
+    "EndTime": 153949,
+    "KeySounds": []
+  },
+  {
+    "t": 154126,
+    "Lane": 4,
+    "EndTime": 155008,
+    "KeySounds": []
+  },
+  {
+    "t": 154126,
+    "Lane": 3,
+    "EndTime": 154479,
+    "KeySounds": []
+  },
+  {
+    "t": 154655,
+    "Lane": 2,
+    "EndTime": 155361,
+    "KeySounds": []
+  },
+  {
+    "t": 155537,
+    "Lane": 2,
+    "EndTime": 156773,
+    "KeySounds": []
+  },
+  {
+    "t": 155537,
+    "Lane": 1,
+    "EndTime": 155890,
+    "KeySounds": []
+  },
+  {
+    "t": 156067,
+    "Lane": 3,
+    "EndTime": 156596,
+    "KeySounds": []
+  },
+  {
+    "t": 156949,
+    "Lane": 4,
+    "EndTime": 157302,
+    "KeySounds": []
+  },
+  {
+    "t": 156949,
+    "Lane": 3,
+    "EndTime": 158185,
+    "KeySounds": []
+  },
+  {
+    "t": 157479,
+    "Lane": 2,
+    "EndTime": 158890,
+    "KeySounds": []
+  },
+  {
+    "t": 158361,
+    "Lane": 1,
+    "EndTime": 158890,
+    "KeySounds": []
+  },
+  {
+    "t": 159067,
+    "Lane": 4,
+    "EndTime": 159420,
+    "KeySounds": []
+  },
+  {
+    "t": 159067,
+    "Lane": 3,
+    "EndTime": 159597,
+    "KeySounds": []
+  },
+  {
+    "t": 159773,
+    "Lane": 1,
+    "EndTime": 160920,
+    "KeySounds": []
+  },
+  {
+    "t": 159773,
+    "Lane": 4,
+    "EndTime": 160126,
+    "KeySounds": []
+  },
+  {
+    "t": 160302,
+    "Lane": 3,
+    "EndTime": 160655,
+    "KeySounds": []
+  },
+  {
+    "t": 161185,
+    "Lane": 2,
+    "EndTime": 161537,
+    "KeySounds": []
+  },
+  {
+    "t": 161361,
+    "Lane": 4,
+    "EndTime": 162243,
+    "KeySounds": []
+  },
+  {
+    "t": 161714,
+    "Lane": 1,
+    "EndTime": 162420,
+    "KeySounds": []
+  },
+  {
+    "t": 162596,
+    "Lane": 3,
+    "EndTime": 162949,
+    "KeySounds": []
+  },
+  {
+    "t": 162596,
+    "Lane": 4,
+    "EndTime": 162949,
+    "KeySounds": []
+  },
+  {
+    "t": 163126,
+    "Lane": 1,
+    "EndTime": 164537,
+    "KeySounds": []
+  },
+  {
+    "t": 163126,
+    "Lane": 3,
+    "EndTime": 163655,
+    "KeySounds": []
+  },
+  {
+    "t": 164008,
+    "Lane": 4,
+    "EndTime": 166479,
+    "KeySounds": []
+  },
+  {
+    "t": 164714,
+    "Lane": 2,
+    "EndTime": 166743,
+    "KeySounds": []
+  }
+  ]
+}

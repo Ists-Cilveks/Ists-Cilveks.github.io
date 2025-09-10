@@ -34,13 +34,13 @@
 
     var canvas=document.getElementById("canvas");
       var context=canvas.getContext("2d");
-      var loops=0;
       var paused=true;
       var frameskip=1;
       var keys=[];
 			var width=100;
       var height=100;
 			var t=0;
+			var startTime=0;
     
     var style = window.getComputedStyle(document.body)
     var themeColors = {
@@ -66,47 +66,95 @@
 			const cx = (lane-0.5)*width/4
 			const cy = height+(t-arrow_t)-width/4
 			const r = width/4/2*0.8
-      context.fillRect(cx-r, cy-r, 2*r, 2*r);
+      context.fillRect(cx-r, cy-r, 2*r, 2*r)
+
 		}
-		function notePressed(lane)	{
-			console.log(lane);
+		function notePressed(lane, eventTime)	{
+			const te = eventTime-startTime
+			let possibleNotes = []
 			
+			// find the closest note
+			let closestNote
+			for (let i = 0; i < 40; i++) { // FIXME: jank if there are a lot of notes in other lanes. but meh.
+				if (noteData.HitObjects.length <= i) break
+				const note = noteData.HitObjects[i]
+				if (note.Lane == lane) {
+					possibleNotes.push([note, i])
+					if (note.t > lane) { // a later note, so no even later notes could be the closest
+						break
+					}
+				}
+			}
+			if (possibleNotes.length==0) {
+				return
+			}
+			else if (possibleNotes.length==1) {
+				closestNote = possibleNotes[0]
+			}
+			else if (possibleNotes.length==2) {
+				n1 = possibleNotes.pop()
+				n2 = possibleNotes.pop()
+				t1 = Math.abs(n1[0].t - te) // how far each note is from the event time
+				t2 = Math.abs(n2[0].t - te)
+				if (t1<t2) closestNote = n1
+				else closestNote = n2
+			}
+			const closestIndex = closestNote[1]
+			closestNote = closestNote[0]
+			
+			// announce that closestNote has been pressed
+			noteData.HitObjects.splice(closestIndex, 1)
 		}
+
+		var noteData;
+
+		fetch('tlpog.json')
+			.then((response) => response.json())
+			.then(function(json){noteData=json});
 
 		var audio = document.getElementById("rhythm-track")
 		audio.addEventListener("play", function(){
 			paused=false;
-			draw();
+			requestAnimationFrame(startPlaying);
 		})
 		audio.addEventListener("pause", function(){
 			paused=true;
 		})
 
-    function draw() {
+		function startPlaying(curTime) {
+			startTime=curTime-audio.currentTime*1000;
+			draw(curTime);
+		}
+
+    function draw(curTime) {
+			t = curTime-startTime
       if (!paused) {
-        // if (loops% frameskip <1) {//animation
-          context.clearRect(0, 0, canvas.width, canvas.height);
-          
-					drawArrow(1000, 1)
-					drawArrow(1300, 2)
-					t = audio.currentTime*1000
-					
-					
-        // }
-        loops++;
-        window.requestAnimationFrame(draw);
+				context.clearRect(0, 0, canvas.width, canvas.height);
+				console.log("aaa");
+				
+				
+				for (let i = 0; i < 20; i++) { // FIXME: jank when there's a lot of notes.
+					if (noteData.HitObjects.length <= i) break
+					const note = noteData.HitObjects[i]
+					if (t > note.t+300) {
+						noteData.HitObjects.splice(i, 1)
+						i--
+						continue
+					}
+					drawArrow(note.t, note.Lane)
+				}
+
+				requestAnimationFrame(draw);
       }
     }
 
-    function restart() {
-      loops=0;
-    }
     function resize() {
       width=canvas.width=window.innerWidth;
       height=canvas.height=window.innerHeight;
-      restart();
     }
-    draw();
+		if (!paused) {
+			audio.play();
+		}
 
     // canvas.addEventListener("mousemove",function(){
     //   // lastx=event.clientX;
@@ -117,7 +165,7 @@
     // });
     // window.addEventListener("dblclick",function(){location.reload();});
     window.addEventListener("mousedown",function(){
-      notePressed(Math.floor(event.clientX/width*4)+1)
+      notePressed(Math.floor(event.clientX/width*4)+1, event.timeStamp)
     });
     window.addEventListener("keyup",function(){
       var curKey=event.keyCode;
@@ -146,16 +194,16 @@
           draw();
           break;
 				case 65://a
-					notePressed(1)
+					notePressed(1, event.timeStamp)
           break;
 				case 75://k
-					notePressed(3)
+					notePressed(3, event.timeStamp)
           break;
 				case 76://l
-					notePressed(4)
+					notePressed(4, event.timeStamp)
           break;
 				case 83://s
-					notePressed(2)
+					notePressed(2, event.timeStamp)
 					break;
         // case 37://left
         //   move.left();
