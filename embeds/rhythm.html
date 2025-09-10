@@ -184,11 +184,11 @@
 		audio.addEventListener("play", function(){
 			paused=false;
 			requestAnimationFrame(startPlaying);
-			console.log("Unpaused")
+			// console.log("Unpaused")
 		})
 		audio.addEventListener("pause", function(){
 			paused=true;
-			console.log("Paused")
+			// console.log("Paused")
 		})
 
 		function syncToAudio(curTime) {
@@ -212,8 +212,6 @@
 
 			if (t>500 && !secondarySyncDone) {
 				secondarySyncDone = true
-				console.log(curTime, performance.now());
-				
 				syncToAudio(performance.now())
 			}
 
