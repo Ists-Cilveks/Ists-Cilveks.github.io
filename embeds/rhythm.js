@@ -235,14 +235,17 @@ resize()
 window.addEventListener("mousedown",function(){
 	notePressed(Math.floor(event.clientX/width*4)+1, event.timeStamp)
 });
-window.addEventListener("keyup",function(){
-	var curKey=event.keyCode;
-	keys[curKey]=false;
-	// console.log(keys);
-});
-window.addEventListener("keydown",function(){
-	var curKey=event.keyCode;
-	keys[curKey]=true;
+// window.addEventListener("keyup",function(){
+// 	var curKey=event.keyCode;
+// 	keys[curKey]=false;
+// 	// console.log(keys);
+// });
+window.addEventListener("keydown",function(event){
+	var curKey=event.key;
+	if (event.repeat) { // Don't interpret held down keys as being rapidly mashed
+		return
+	}
+	// keys[curKey]=true;
 	// if (curKey<58 && curKey>48) {//numbers - pixsize
 	//   pixSize=2**(curKey-49);
 	//   // var pixSize=14;
@@ -253,7 +256,7 @@ window.addEventListener("keydown",function(){
 	// console.log(keys);
 	// console.log(curKey);
 	switch (curKey) {
-		case 32://space - pause
+		case " "://space - pause
 			if (paused) {
 				audio.play()
 			}
@@ -261,20 +264,20 @@ window.addEventListener("keydown",function(){
 				audio.pause()
 			}
 			break;
-		case 68://d - draw
-			draw();
-			break;
-		case 65://a
+		// case 68://d - draw
+		// 	draw();
+		// 	break;
+		case "a"://a
 			notePressed(1, event.timeStamp)
 			break;
-		case 75://k
+		case "s"://s
+			notePressed(2, event.timeStamp)
+			break;
+		case "k"://k
 			notePressed(3, event.timeStamp)
 			break;
-		case 76://l
+		case "l"://l
 			notePressed(4, event.timeStamp)
-			break;
-		case 83://s
-			notePressed(2, event.timeStamp)
 			break;
 		// case 37://left
 		//   move.left();
