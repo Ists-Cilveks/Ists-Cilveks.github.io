@@ -64,6 +64,10 @@
 			</div>
 				
 			<div class="landscape-column" style="position: relative; min-height: 80vh;">
+				<div id="rhythm-container" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;">
+					<canvas id="rhythm-canvas">
+					</canvas>
+				</div>
 				<div id="info-before-rhythm-game" style="position: absolute; left: 0; top: 0; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 90%;">
 					<p>I recently <a href="https://quavergame.com/user/784084#maps">made some maps</a> for Quaver, a rhythm game. You can try this one out! (i haven't implemented long notes tho >_>)</p>
 					<p>Music: <a href="https://patriciataxxon.bandcamp.com/album/doraemon"><em>The Loudest Patch of Grass</em></a> by Patricia Taxxon.</p>
@@ -71,10 +75,6 @@
 					space – pause/resume<br>
 					A S K L or tapping – hit the notes<br>
 					<button style="font-size: 150%;" onclick="document.getElementById('info-before-rhythm-game').style.display = 'none'; audio.play();">Start</button>
-				</div>
-				<div id="rhythm-container" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;">
-					<canvas id="rhythm-canvas">
-					</canvas>
 				</div>
 			</div>
 			
