@@ -232,8 +232,11 @@ resize()
 //   lasty=(event.clientY+lasty*n)/(n+1);
 // });
 // window.addEventListener("dblclick",function(){location.reload();});
-window.addEventListener("mousedown",function(){
-	notePressed(Math.floor(event.clientX/width*4)+1, event.timeStamp)
+canvas.addEventListener("mousedown",function(event){
+	const lane = Math.floor(event.offsetX/width*4)+1
+	if (1 <= lane && lane <= 4) {
+		notePressed(lane, event.timeStamp)
+	}
 });
 // window.addEventListener("keyup",function(){
 // 	var curKey=event.keyCode;
