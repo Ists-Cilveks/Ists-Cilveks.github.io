@@ -32,7 +32,7 @@ if (languages.length > 1) {// Add the language selection
   
   for (let l = 0; l < languages.length; l++) {
     const lang = languages[l];
-    let btn = document.createElement('div')
+    let btn = document.createElement('button')
     btn.innerText = lang.toUpperCase()
     btn.className = "basic-btn language-btn"
     let colors = languageColors[lang]

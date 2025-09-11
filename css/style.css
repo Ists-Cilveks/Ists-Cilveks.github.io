@@ -76,6 +76,8 @@ txt-pop {
 	position: relative;
 	right: 0;
 	top: 0;
+	display: grid;
+	height: min-content;
 }
 /* .language-btn {
 	TODO
@@ -84,10 +86,11 @@ txt-pop {
 	color: var(--main-color);
 	user-select: none;
 	background-color: var(--secondary-bg-color);
-	min-width: 2em;
+	min-width: 3em;
 	text-align: center;
-	padding: 3px;
-	margin: 5px;
+	padding: 4px;
+	margin: 3px;
+	border: none;
 	text-decoration: none;
 }
 .basic-btn:hover {
