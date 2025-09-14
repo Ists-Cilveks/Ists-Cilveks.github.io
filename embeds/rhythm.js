@@ -1,6 +1,7 @@
 var canvas=document.getElementById("rhythm-canvas");
 	var context=canvas.getContext("2d");
 	var rhythmContainer=document.getElementById("rhythm-container");
+	var rhythmPlayButton=document.getElementById("rhythm-play-button");
 	var paused=true;
 	var keys=[];
 	var width=100;
@@ -152,7 +153,10 @@ var noteData;
 
 fetch('/embeds/tlpog.json')
 	.then((response) => response.json())
-	.then(function(json){noteData=json});
+	.then(function(json){
+		noteData=json
+		rhythmPlayButton.removeAttribute("disabled");
+	});
 
 var audio = document.getElementById("rhythm-track")
 audio.volume = 0.3;
