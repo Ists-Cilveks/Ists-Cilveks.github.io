@@ -1,0 +1,10 @@
+#vn-textbox {
+  position: absolute;
+  bottom: 2vh;
+  left: 2vw;
+  right: 2vw;
+  min-height: 6em;
+  padding: 0.5em;
+
+  border: 2px solid var(--framing);
+}

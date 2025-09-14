@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>jan Talisoso's new online home</title>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link href="/css/style.css" rel="stylesheet">
+		<link href="vn.css" rel="stylesheet">
+	</head>
+	<body class="main-content">
+	
+	<script src="/js/Color.js"></script>
+	<script src="/css/palettize.js"></script>
+	<script src="/js/particles.js"></script>
+	<script src="/js/SVGRequests.js"></script>
+	
+  <header id="main-header">
+  </header>
+  <script src="/js/languages.js" my-languges="en"></script>
+
+  <div id="vn-textbox" onclick="progressText()">
+    <p>Click to progress the text. This likely won't work with screen readers.</p>
+  </div>
+
+  <div id="all-vn-content" style="display: none;"></div>
+
+  <script type="text/javascript">
+    const textbox = document.getElementById('vn-textbox')
+    const allContent = document.getElementById('all-vn-content')
+    let currentContent
+    let contentDiv
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", "test.html", true);
+    xhr.responseType = "document";
+    xhr.onload = function(e) {
+      let myDoc = xhr.responseXML.documentElement
+      allContent.appendChild(myDoc)
+      
+      // textbox.textContent = ""
+      
+      contentDiv = document.getElementById("vn-content").firstElementChild
+      
+      // currentContent = contentDiv.firstElementChild
+      // textbox.appendChild(currentContent)
+    };
+    xhr.send("");
+    
+    
+    function progressText() {
+      let newContent = contentDiv.firstElementChild
+      if (!newContent) {
+        newContentDiv = contentDiv.nextElementSibling
+        if(!newContentDiv) { // out of content
+          return
+        }
+        contentDiv = newContentDiv
+        newContent = contentDiv.firstElementChild
+      }
+      textbox.textContent = ""
+      textbox.appendChild(newContent)
+      currentContent = newContent
+    }
+  </script>
+	</body>
+</html>
