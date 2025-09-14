@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>jan Talisoso's new online home</title>
+		<title>TEST TEST TEST</title>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link href="/css/style.css" rel="stylesheet">
@@ -24,6 +24,8 @@
 
   <div id="all-vn-content" style="display: none;"></div>
 
+  <div id="proto-container"></div>
+
   <script type="text/javascript">
     const textbox = document.getElementById('vn-textbox')
     const allContent = document.getElementById('all-vn-content')
@@ -36,18 +38,17 @@
     xhr.onload = function(e) {
       let myDoc = xhr.responseXML.documentElement
       allContent.appendChild(myDoc)
-      
-      // textbox.textContent = ""
-      
       contentDiv = document.getElementById("vn-content").firstElementChild
-      
-      // currentContent = contentDiv.firstElementChild
-      // textbox.appendChild(currentContent)
     };
     xhr.send("");
+
+    const protoContainer = document.getElementById('proto-container')
+    insertSVG("proto/proto.svg", protoContainer)
+    let currentProtoEmotion = "proto-neutral"
     
     
     function progressText() {
+      // Get next element
       let newContent = contentDiv.firstElementChild
       if (!newContent) {
         newContentDiv = contentDiv.nextElementSibling
@@ -57,9 +58,26 @@
         contentDiv = newContentDiv
         newContent = contentDiv.firstElementChild
       }
+
+      // Replace
       textbox.textContent = ""
       textbox.appendChild(newContent)
       currentContent = newContent
+
+      // Look for expressions
+      const classes = currentContent.className.split(' ')
+      let emotion
+      for (const cl of classes) {
+        if (cl.startsWith("proto-")) {
+          emotion = cl
+          break
+        }
+      }
+      if (emotion) {
+        document.getElementById(currentProtoEmotion).style.display = "none"
+        document.getElementById(emotion).style.display = "inline"
+        currentProtoEmotion = emotion
+      }
     }
   </script>
 	</body>
