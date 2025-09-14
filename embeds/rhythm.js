@@ -24,10 +24,15 @@ var themeColors = {
 	framing: getCSSColor('--framing'),
 	subtler: getCSSColor('--subtler'),
 	subtleTinted: getCSSColor('--subtle-tinted'),
+	lightUp: getCSSColor('--light-up'),
+	deepFraming: getCSSColor('--deep-framing'),
 }
-gradients["theme"] = new Gradient([themeColors.framing, 0, themeColors.BG, 0.4, themeColors.BG, 0.6, themeColors.highlights, 0.8, themeColors.main, 1]);
-
-var useGradient=gradients.theme;
+var noteColors = {
+	onBeat: themeColors.highlights,
+	offBeat: themeColors.framing.mix(themeColors.deepFraming),
+	quarter: themeColors.lightUp.mix(themeColors.deepFraming, 0.2),
+	other: themeColors.main.mix(themeColors.BG, 0.3),
+}
 
 resize();
 
@@ -79,8 +84,29 @@ function drawArrow(offset, lane, fill, stroke, lineWidth=0) {
 	if (stroke != null) context.stroke()
 	context.resetTransform()
 }
-function drawMapArrow(arrow_t, lane) {
-	drawArrow(t-arrow_t, lane, themeColors.highlights.rgb(), themeColors.HC_BG.rgb(), 0.1)
+function drawNote(note) {
+	const offset = t - note.t
+	const lane = note.Lane
+	const timingPoint = noteData.TimingPoints[0] // FIXME: won't work for maps with multiple timing points
+	const beatLength = 60000 / timingPoint.Bpm
+	const position = (((note.t - timingPoint.t) % beatLength + beatLength) % beatLength) / beatLength
+	let color
+	let tempPosition = Math.abs(position-0.5) // V shaped
+	if (tempPosition > 0.45) {
+		color = noteColors.onBeat
+	} else if (tempPosition < 0.05) {
+		color = noteColors.offBeat
+	}
+	else {
+		tempPosition = Math.abs(tempPosition-0.25) // VV shaped
+		if (tempPosition < 0.05) { 
+			color = noteColors.quarter
+		}
+		else {
+			color = noteColors.other
+		}
+	}
+	drawArrow(offset, lane, color.rgb(), themeColors.HC_BG.rgb(), 0.1)
 }
 function drawReceptor(lane, lineWidth=0.03) {
 	drawArrow(0, lane, null, themeColors.main.rgb(), lineWidth)
@@ -218,12 +244,12 @@ function draw(curTime) {
 		for (let i = 0; i < 20; i++) { // FIXME: jank when there's a lot of notes.
 			if (noteData.HitObjects.length <= i) break
 			const note = noteData.HitObjects[i]
-			if (t > note.t+missPeriod) {
+			if (t > note.t+missPeriod) { // Remove missed notes. TODO: visual effect from missing a note
 				noteData.HitObjects.splice(i, 1)
 				i--
 				continue
 			}
-			drawMapArrow(note.t, note.Lane)
+			drawNote(note)
 		}
 
 		requestAnimationFrame(draw);

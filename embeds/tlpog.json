@@ -1,9 +1,11 @@
 {
   "TimingPoints":
+  [
   {
     "t": 950,
     "Bpm": 170
-  },
+  }
+  ],
   "HitObjects":
   [
   {
