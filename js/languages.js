@@ -38,7 +38,7 @@ if (languages.length > 1) {// Add the language selection
     let colors = languageColors[lang]
     btn.addEventListener("click", function (event) {
       setLanguage(lang)
-      animatePop(event, 'leafy', 'pop', 6, undefined, undefined, 50, colors);
+      animatePop(event, btn, 'leafy', 'pop', 6, undefined, undefined, 50, colors);
     })
     languageDiv.appendChild(btn)
   }

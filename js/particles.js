@@ -105,14 +105,14 @@ var predefinedMovements = {
   },
 }
 
-function animatePop (e, particle='theme_disk', movement="spew", particleCount=30, dx=0, dy=0, spread=75, passedColors) {
+function animatePop (e, element, particle='theme_disk', movement="spew", particleCount=30, dx=0, dy=0, spread=75, passedColors) {
   generator = predefinedParticles[particle]
   movement = predefinedMovements[movement]
 
   let x, y
   // Quick check if user clicked the button using a keyboard, then the particle is in the middle of the button
   if (e.clientX === 0 && e.clientY === 0) { // TODO: this is a bad check
-    const bbox = document.querySelector('#button').getBoundingClientRect();
+    const bbox = element.getBoundingClientRect();
     x = bbox.left + bbox.width / 2;
     y = bbox.top + bbox.height / 2;
   } else {
