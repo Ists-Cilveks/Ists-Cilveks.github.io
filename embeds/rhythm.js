@@ -46,7 +46,7 @@ function pathUnitDownArrow() {
 	context.lineTo(-0.9, 0)
 	context.closePath()
 }
-function drawArrow(offset, lane, fill, stroke, lineWidth) {
+function drawArrow(offset, lane, fill, stroke, lineWidth=0) {
 	context.fillStyle=fill;
 	context.strokeStyle=stroke;
 	context.lineWidth=lineWidth;
@@ -75,7 +75,7 @@ function drawArrow(offset, lane, fill, stroke, lineWidth) {
 	context.rotate(rot)
 	pathUnitDownArrow()
 	if (fill != null) context.fill()
-	context.stroke()
+	if (stroke != null) context.stroke()
 	context.resetTransform()
 }
 function drawMapArrow(arrow_t, lane) {
@@ -84,6 +84,14 @@ function drawMapArrow(arrow_t, lane) {
 function drawReceptor(lane, lineWidth=0.03) {
 	drawArrow(0, lane, null, themeColors.main.rgb(), lineWidth)
 }
+function drawGhostNote(lane, missedBy) {
+	// Draws a faint note at the position where it was hit. Helps to see if you're early or late
+	const badness = Math.abs(missedBy)/missPeriod
+	let color = colors.white.mix(colors.red, badness)
+	color.a = 0.3
+	const drawingOffset = missedBy/3 // ¯\_(ツ)_/¯
+	drawArrow(drawingOffset, lane, color.rgba(), null)
+}
 
 function notePressed(lane, eventTime)	{
 	const tp = eventTime-startTime
@@ -91,7 +99,7 @@ function notePressed(lane, eventTime)	{
 	
 	// find the closest note
 	let closestNote
-	let inaccuracy
+	let missedBy
 	for (let i = 0; i < 40; i++) { // FIXME: jank if there are a lot of notes in other lanes. but meh.
 		if (noteData.HitObjects.length <= i) break
 		const note = noteData.HitObjects[i]
@@ -107,23 +115,23 @@ function notePressed(lane, eventTime)	{
 	}
 	else if (possibleNotes.length==1) { // one note, easy
 		closestNote = possibleNotes[0]
-		inaccuracy = closestNote[0].t - tp
+		missedBy = tp - closestNote[0].t
 	}
 	else if (possibleNotes.length>=2) { // at least 2 notes, need to compare the last 2
 		const n1 = possibleNotes.pop()
 		const n2 = possibleNotes.pop()
-		const t1 = n1[0].t - tp // how far each note is from the keypress time
-		const t2 = n2[0].t - tp
+		const t1 = tp - n1[0].t // how far each note is from the keypress time
+		const t2 = tp - n2[0].t
 		if (Math.abs(t1)<Math.abs(t2)) {
-			inaccuracy = t1
+			missedBy = t1
 			closestNote = n1
 		}
 		else {
-			inaccuracy = t2
+			missedBy = t2
 			closestNote = n2
 		}
 	}
-	if (Math.abs(inaccuracy) > missPeriod) { // too imprecise to count as a hit
+	if (Math.abs(missedBy) > missPeriod) { // too imprecise to count as a hit
 		return
 	}
 	const closestIndex = closestNote[1]
@@ -131,7 +139,7 @@ function notePressed(lane, eventTime)	{
 	
 	// announce that closestNote has been pressed
 	recentHits.push({
-		// "time": tp,
+		"missedBy": missedBy,
 		"time": performance.now(),
 		"note": closestNote,
 	})
@@ -193,10 +201,14 @@ function draw(curTime) {
 				continue
 			}
 			// ...otherwise
+			const lane = hit.note.Lane
+			
+			const missedBy = hit.missedBy
+			drawGhostNote(lane, missedBy)
+
 			// let lineWidth = Math.max(0, (200-timeSinceHit)*0.1) // Pretty funny, but not what I intended. TODO: incorporate this somehow
 			let lineWidth = Math.max(0, (200-timeSinceHit)*0.003)
-			drawReceptor(hit.note.Lane, lineWidth)
-			
+			drawReceptor(lane, lineWidth)
 		}
 
 		for (let i = 0; i < 20; i++) { // FIXME: jank when there's a lot of notes.

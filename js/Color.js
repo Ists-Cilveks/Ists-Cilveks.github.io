@@ -38,6 +38,9 @@ function Color(r=255, g=0, b=255, a=1) {
   this.rgb=function() {
     return "rgb("+this.r+","+this.g+","+this.b+")";
   }
+  this.rgba=function() {
+    return "rgb("+this.r+","+this.g+","+this.b+","+this.a+")";
+  }
   this.square=function() {
     return new Color(this.r**2, this.g**2, this.b**2, this.a);
   }
