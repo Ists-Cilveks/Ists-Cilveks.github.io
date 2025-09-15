@@ -44,9 +44,11 @@
 
     var characters = []
     class Character {
-      constructor(name, displayName, container, svgPath) {
+      constructor(name, displayName, accessibleName, container, svgPath) {
         this.name = name
         this.displayName = displayName
+        this.accessibleName = accessibleName
+        // TODO: <span role="img" aria-label="Kit">K¡t</span>
         if (container) {
           this.container = container
         } else {
@@ -73,7 +75,7 @@
       }
     }
     
-    characters.push(new Character("proto", "Protogen", undefined, "proto/proto.svg"))
+    characters.push(new Character("kit", "K¡t", "Kit", undefined, "kit/kit.svg"))
 
     function progressText() {
       // Get next element

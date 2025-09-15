@@ -8,7 +8,7 @@
    version="1.1"
    id="svg1"
    inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
-   sodipodi:docname="proto.svg"
+   sodipodi:docname="kit.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -33,12 +33,12 @@
      inkscape:window-x="-9"
      inkscape:window-y="-9"
      inkscape:window-maximized="1"
-     inkscape:current-layer="proto-shock"
+     inkscape:current-layer="kit-shock"
      showgrid="false" />
   <g
      inkscape:label="base"
      inkscape:groupmode="layer"
-     id="proto-base"
+     id="kit-base"
      style="display:inline;stroke-width:0.233338"
      transform="matrix(4.2856325,0,0,4.2856325,3.9824046,-51.932362)">
     <path
@@ -434,7 +434,7 @@
   </g>
   <g
      inkscape:groupmode="layer"
-     id="proto-shock"
+     id="kit-shock"
      inkscape:label="shock"
      style="display:none;stroke-width:0.233338"
      transform="matrix(4.2856,0,0,4.2856,3.9824,-51.932)">
@@ -485,7 +485,7 @@
   </g>
   <g
      inkscape:groupmode="layer"
-     id="proto-neutral"
+     id="kit-neutral"
      inkscape:label="neutral"
      style="display:inline;stroke-width:0.233338"
      transform="matrix(4.2856,0,0,4.2856,3.9824,-51.932)">
@@ -536,7 +536,7 @@
   </g>
   <g
      inkscape:groupmode="layer"
-     id="proto-annoy"
+     id="kit-annoy"
      style="display:none;stroke-width:0.233338"
      transform="matrix(4.2856,0,0,4.2856,3.9824,-51.932)"
      inkscape:label="annoy">
@@ -565,7 +565,7 @@
   </g>
   <g
      inkscape:groupmode="layer"
-     id="proto-nervous"
+     id="kit-nervous"
      style="display:none;stroke-width:0.233338"
      transform="matrix(4.2856,0,0,4.2856,3.9824,-51.932)"
      inkscape:label="nervous">
@@ -634,7 +634,7 @@
   </g>
   <g
      inkscape:groupmode="layer"
-     id="proto-nice"
+     id="kit-nice"
      style="display:none;stroke-width:0.233338"
      transform="matrix(4.2856325,0,0,4.2856325,3.9824046,-51.932362)"
      inkscape:label="nice">
