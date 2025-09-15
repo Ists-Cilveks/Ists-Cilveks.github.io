@@ -25,15 +25,15 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="0.093873631"
-     inkscape:cx="-1475.3877"
-     inkscape:cy="1347.5563"
+     inkscape:zoom="0.26551473"
+     inkscape:cx="1120.4652"
+     inkscape:cy="1463.1957"
      inkscape:window-width="1920"
      inkscape:window-height="1051"
      inkscape:window-x="-9"
      inkscape:window-y="-9"
      inkscape:window-maximized="1"
-     inkscape:current-layer="proto-base"
+     inkscape:current-layer="proto-shock"
      showgrid="false" />
   <g
      inkscape:label="base"
@@ -351,8 +351,8 @@
   </g>
   <g
      inkscape:groupmode="layer"
-     id="proto-wow"
-     inkscape:label="wow"
+     id="proto-shock"
+     inkscape:label="shock"
      style="display:none;stroke-width:0.233338"
      transform="matrix(4.2856325,0,0,4.2856325,-0.24535341,-50.393606)">
     <path
@@ -448,8 +448,8 @@
   </g>
   <g
      inkscape:groupmode="layer"
-     id="proto-nice"
-     inkscape:label="nice"
+     id="proto-nervous"
+     inkscape:label="nervous"
      style="display:none;stroke-width:0.233338"
      transform="matrix(4.2856325,0,0,4.2856325,-0.24535341,-50.393606)">
     <path
