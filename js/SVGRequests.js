@@ -3,7 +3,7 @@ invisibleSVGContainer.style.display = "none"
 invisibleSVGContainer.style.display = "invisible-svg-container"
 document.body.appendChild(invisibleSVGContainer)
 
-function insertSVG(fileName, container=invisibleSVGContainer) {
+function insertSVG(fileName, container=invisibleSVGContainer, cutomOnload) {
   // using https://stackoverflow.com/a/14070928/10630826
   const xhr = new XMLHttpRequest()
   xhr.open("GET", fileName, true)
@@ -12,6 +12,7 @@ function insertSVG(fileName, container=invisibleSVGContainer) {
     // You might also want to check for xhr.readyState/xhr.status here
     doc = xhr.responseXML.documentElement
     container.appendChild(doc)
+    if (cutomOnload) cutomOnload(e)
   };
   xhr.send("");
 }

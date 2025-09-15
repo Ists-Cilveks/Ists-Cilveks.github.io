@@ -24,7 +24,7 @@
 
   <div id="all-vn-content" style="display: none;"></div>
 
-  <div id="proto-container"></div>
+  <div id="vn-stage"></div>
 
   <script type="text/javascript">
     const textbox = document.getElementById('vn-textbox')
@@ -32,18 +32,25 @@
     let currentContent
     let contentDiv
 
-    const xhr = new XMLHttpRequest();
-    xhr.open("GET", "test.html", true);
-    xhr.responseType = "document";
+    const xhr = new XMLHttpRequest()
+    xhr.open("GET", "test.html", true)
+    xhr.responseType = "document"
     xhr.onload = function(e) {
       let myDoc = xhr.responseXML.documentElement
       allContent.appendChild(myDoc)
       contentDiv = document.getElementById("vn-content").firstElementChild
-    };
-    xhr.send("");
+    }
+    xhr.send("")
 
-    const protoContainer = document.getElementById('proto-container')
-    insertSVG("proto/proto.svg", protoContainer)
+    const protoContainer = document.createElement('div')
+    protoContainer.className = 'characer-container'
+    document.getElementById('vn-stage').appendChild(protoContainer)
+
+
+    insertSVG("proto/proto.svg", protoContainer, function(e) {
+      protoContainer.firstElementChild.setAttribute("height", "80vh")
+      protoContainer.firstElementChild.removeAttribute("width")
+    })
     let currentProtoEmotion = "proto-neutral"
     
     
