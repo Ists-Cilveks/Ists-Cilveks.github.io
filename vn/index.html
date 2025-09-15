@@ -42,18 +42,39 @@
     }
     xhr.send("")
 
-    const protoContainer = document.createElement('div')
-    protoContainer.className = 'characer-container'
-    document.getElementById('vn-stage').appendChild(protoContainer)
+    var characters = []
+    class Character {
+      constructor(name, displayName, container, svgPath) {
+        this.name = name
+        this.displayName = displayName
+        if (container) {
+          this.container = container
+        } else {
+          this.container = document.createElement("div")
+          this.container.className = "characer-container"
+          this.container.id = name+"-container"
+          document.getElementById("vn-stage").appendChild(this.container)
+        }
+        if (svgPath) {
+          insertSVG(svgPath, this.container, function(e, characterSVG) {
+            characterSVG.setAttribute("height", "80vh") // FIXME: images should be scaled equally (bigger images remain bigger), instead of all being a certain height
+            characterSVG.removeAttribute("width")
+          })
+        }
+        this.expression = "neutral"
+      }
 
+      setExpression (newExp) {
+        const currentExpressionID = this.name+"-"+this.expression
+        const newExpressionID = this.name+"-"+newExp
+        document.getElementById(currentExpressionID).style.display = "none"
+        document.getElementById(newExpressionID).style.display = "inline"
+        this.expression = newExp
+      }
+    }
+    
+    characters.push(new Character("proto", "Protogen", undefined, "proto/proto.svg"))
 
-    insertSVG("proto/proto.svg", protoContainer, function(e) {
-      protoContainer.firstElementChild.setAttribute("height", "80vh")
-      protoContainer.firstElementChild.removeAttribute("width")
-    })
-    let currentProtoEmotion = "proto-neutral"
-    
-    
     function progressText() {
       // Get next element
       let newContent = contentDiv.firstElementChild
@@ -72,18 +93,19 @@
       currentContent = newContent
 
       // Look for expressions
-      const classes = currentContent.className.split(' ')
-      let emotion
-      for (const cl of classes) {
-        if (cl.startsWith("proto-")) {
-          emotion = cl
-          break
+      const classes = currentContent.className.split(" ")
+      for (const char of characters) {
+        let emotion
+        for (const cl of classes) {
+          if (cl.startsWith(char.name+"-")) {
+            emotion = cl.slice(char.name.length+1)
+            break
+          }
         }
-      }
-      if (emotion) {
-        document.getElementById(currentProtoEmotion).style.display = "none"
-        document.getElementById(emotion).style.display = "inline"
-        currentProtoEmotion = emotion
+        
+        if (emotion) {
+          char.setExpression(emotion)
+        }
       }
     }
   </script>

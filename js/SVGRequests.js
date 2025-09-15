@@ -12,7 +12,7 @@ function insertSVG(fileName, container=invisibleSVGContainer, cutomOnload) {
     // You might also want to check for xhr.readyState/xhr.status here
     doc = xhr.responseXML.documentElement
     container.appendChild(doc)
-    if (cutomOnload) cutomOnload(e)
+    if (cutomOnload) cutomOnload(e, container.firstElementChild)
   };
   xhr.send("");
 }
