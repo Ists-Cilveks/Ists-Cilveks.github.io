@@ -18,18 +18,22 @@
   </header>
   <script src="/js/languages.js" my-languges="en"></script>
 
-  <div id="vn-textbox" onclick="progressText()">
-    <p>Click to progress the text. This likely won't work with screen readers.</p>
-  </div>
 
   <template id="all-vn-content" style="display: none;"></template>
-
-  <div id="vn-stage"></div>
+  
+  <div id="vn-stage" onclick="progressText()" lang="en">
+    <div id="vn-temp-display"></div>
+    <div id="vn-textbox">
+      <!-- TODO: how to handle translations? -->
+      <p>Click to progress the text.</p>
+    </div>
+  </div>
 
   <script type="text/javascript">
     const textbox = document.getElementById('vn-textbox')
+    const tempDisplay = document.getElementById('vn-temp-display')
     const allContent = document.getElementById('all-vn-content')
-    let currentContent
+    let lastAddedContent
     let contentDiv
 
     const xhr = new XMLHttpRequest()
@@ -53,7 +57,7 @@
           this.container = container
         } else {
           this.container = document.createElement("div")
-          this.container.className = "characer-container"
+          this.container.className = "character-container"
           this.container.id = name+"-container"
           document.getElementById("vn-stage").appendChild(this.container)
         }
@@ -77,8 +81,7 @@
     
     characters.push(new Character("kit", "K¡t", "Kit", undefined, "kit/kit.svg"))
 
-    function progressText() {
-      // Get next element
+    function takeNextElement() {
       let newContent = contentDiv.firstElementChild
       if (!newContent) {
         newContentDiv = contentDiv.nextElementSibling
@@ -88,14 +91,17 @@
         contentDiv = newContentDiv
         newContent = contentDiv.firstElementChild
       }
+      const classes = newContent.className.split(" ")
 
-      // Replace
-      textbox.textContent = ""
-      textbox.appendChild(newContent)
-      currentContent = newContent
+      // Add to appropriate place
+      if (classes[0]=="vn-show-off") { // FIXME: lazy ass check, i better remember to fix this before it gives me a wild goose chase
+        tempDisplay.appendChild(newContent)
+      } else {
+        textbox.appendChild(newContent)
+      }
+      lastAddedContent = newContent
 
       // Look for expressions
-      const classes = currentContent.className.split(" ")
       for (const char of characters) {
         let emotion
         for (const cl of classes) {
@@ -109,7 +115,45 @@
           char.setExpression(emotion)
         }
       }
+
+      for (const cl of classes) {
+        if (cl=="vn-take-next") {
+          takeNextElement()
+        }
+      }
     }
+    function progressText() {
+      // Escape from hidden state
+      if (textbox.style.display == "none") {
+        textbox.style.display = "initial"
+        return
+      }
+
+      // TODO: if animating text, skip to end of animation
+
+      // TODO: how to prevent this from happening if there is no more text to show? Should I have a separate final textbox state instead of staying on the last line?
+      textbox.textContent = ""
+      tempDisplay.textContent = ""
+
+      // Get next element
+      takeNextElement()
+    }
+
+    document.addEventListener("keydown", function (event) {
+      let key = event.key
+      switch (key) {
+        case "ArrowRight":
+        case "Enter":
+        case " ":
+          progressText()
+          break
+      }
+      key = key.toLocaleLowerCase()
+      switch (key) {
+        case "h":
+          textbox.style.display = textbox.style.display == "none" ? "initial" : "none"
+      }
+    })
   </script>
 	</body>
 </html>
