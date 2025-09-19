@@ -11,12 +11,12 @@ body {
 }
 
 .main-content {
-	padding: 2em;
+	margin: 2em;
 	overflow-x: auto;
 }
 @media only screen and (orientation: portrait){
 	.main-content {
-		padding: 1em;
+		margin: 1em;
 	}
 }
 
