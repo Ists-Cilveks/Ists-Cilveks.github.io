@@ -1,3 +1,5 @@
+let finished = false
+
 // Make necessary elements if not defined in the given document
 if (!document.getElementById('vn-stage')) {
   let stage = document.createElement('div')
@@ -86,6 +88,11 @@ function takeNextElement() {
     textbox.appendChild(newContent)
   }
   lastAddedContent = newContent
+  // Last line of text
+  
+  if (classes.contains("vn-end-text")) {
+    finished = true
+  }  
 
   // Look for expressions
   for (const char of characters) {
@@ -112,6 +119,10 @@ function progressText() {
   // Escape from hidden state
   if (textbox.style.display == "none") {
     textbox.style.display = "initial"
+    return
+  }
+
+  if (finished) { // Don't change the text if the last line has been reached
     return
   }
 
