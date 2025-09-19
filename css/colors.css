@@ -20,3 +20,26 @@
 	--is-dark-mode: 1;
 
 }
+
+@media (prefers-color-scheme: light) {
+:root {
+	/* Color palette minimal definition */
+	--bg-color: #fff5ea;
+	--highlights: #f20898;
+	--light-up: #bae900;
+	--framing: #70d900;
+	--deep-framing: #00a341;
+	--is-light-mode: 1;
+	
+	/* Fallback colors. Should be changed by palettize.js */
+	--hc-bg: #fff;
+	--hc-fg: #000;
+	--secondary-bg-color: #cad4a5;
+  --main-color: #290029;
+	--subtle-hc-fg: #363603;
+	--subtler: #4e0a4e;
+	--subtle-tinted: #9b119b;
+	--subtle-framing: #6ca909bd;
+	--is-dark-mode: 0;
+}
+}
