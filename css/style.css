@@ -188,3 +188,10 @@ svg {
 		grid-template-columns: 1fr;
 	}
 }
+
+.invert-in-dark-mode {
+	filter: invert(var(--is-dark-mode)) contrast(0.8);
+}
+.invert-in-light-mode {
+	filter: invert(var(--is-light-mode));
+}

@@ -13,6 +13,7 @@ deepFraming = getColor('--deep-framing')
 
 // calculating new values
 newCol = {}
+
 newCol['--hc-bg'] = isLightMode=="1" ? colors.white : colors.black
 newCol['--hc-fg'] = isLightMode=="1" ? colors.black : colors.white
 newCol['--secondary-bg-color'] = BG.mix(framing, 0.15)
@@ -33,3 +34,5 @@ newCol['--subtle-framing'] = framing.mix(BG, 0.4)
 Object.keys(newCol).forEach(function(key,index) {
     document.body.style.setProperty(key, newCol[key].rgb())
 });
+
+document.body.style.setProperty('--is-dark-mode', isLightMode=="1" ? "0" : "1")
