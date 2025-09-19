@@ -21,7 +21,7 @@
 
     <p>A little machine learning project I started (and left on undefinite hiatus) in 2022.</p>
 
-    <p>Now, I know what you're thinking: oh god, another art-abusing ai slop generator — now for conlangs too. But my whole goal with this was to make something from the ground up, which doesn't learn language from how it's used by humans, but instead creates its own (super domain-specific) "language" purely by being forced to convey some information.</p>
+    <p>Now, I know what you're thinking: oh god, another art-abusing ai slop generator — now for conlangs too. But this doesn't learn language by looking at human languages: my whole goal with this was to make something from the ground up, so the network would create its own (super domain-specific) "language" purely by being forced to convey some information.</p>
     <p>In the little demo I made I generate 10 random numbers, use a neural network to turn those into the endpoints of 3 line segments. I turn those into an image, with some added noise and moving the endpoints around a little. Finally another neural network tries to decipher the original 10 numbers. The networks gets rewarded if the final 10 numbers are close to the original 10.</p>
 
     <div>
@@ -41,7 +41,7 @@
       <ul>
         <li>
           <p>Interesting input data. Maybe images with overlapping colors (think Factory Balls or Minecraft banners), or an irl timelapse (clouds, traffic), or soma math thing (cellular automata, fractal pics). It should be something with recognizable and diverse features (so that the writing is easy to analyze for us but also not so orderly that it just encodes random numbers but with extra steps).</p>
-          <p>Then how do we reward the network? Just recreating the image pixel-by-pixel doesn't seem good, or language-y for that matter. Only some key features need to be encoded. So maybe the decoder network could, instead of trying to recreate the original image, we could give it an image and ask whether this is what the encoder was encoding.</p>
+          <p>Then how do we reward the network? Just recreating the image pixel-by-pixel doesn't seem good, or language-y for that matter. Only some key features need to be encoded. So maybe, instead of the decoder network trying to recreate the original image, we could give it an image and ask whether this is what the encoder was given.</p>
         </li>
         <li>
           <p>Partial data. Human language tends to have removable parts, like you can remove an adjective from a sentence and it'll still make sense. It would make it easier to analyze.</p>
