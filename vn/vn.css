@@ -44,16 +44,24 @@
   /* z-index: 1; */
 }
 
-.vn-show-off {
+.character-container {
   position: absolute;
-  height: 70vh;
+  right: 10%;
+  z-index: -1;
+}
+
+.vn-show-off {
+  max-width: 100%;
+}
+*:not(.scene)>.vn-show-off { /* In the VN viewer */
+  /* TODO: pretty specific. How should I go about this in general? */
+  position: absolute;
   margin: 3em;
   top: 0;
   left: 0;
+  max-height: 70vh; /* FIXME: only works because the image is large as-is */
 }
-
-.character-container {
-  position: absolute;
-  right: 0;
-  z-index: -1;
+.scene>.vn-show-off { /* Regular HTML layout */
+  display: block;
+  margin: 1em auto;
 }
