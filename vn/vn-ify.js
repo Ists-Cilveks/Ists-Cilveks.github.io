@@ -77,10 +77,10 @@ function takeNextElement() {
     contentDiv = newContentDiv
     newContent = contentDiv.firstElementChild
   }
-  const classes = newContent.className.split(" ")
+  const classes = newContent.classList
 
   // Add to appropriate place
-  if (classes[0]=="vn-show-off") { // FIXME: lazy ass check, i better remember to fix this before it gives me a wild goose chase
+  if (classes.contains("vn-show-off")) {
     tempDisplay.appendChild(newContent)
   } else {
     textbox.appendChild(newContent)
