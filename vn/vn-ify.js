@@ -62,6 +62,7 @@ class Character {
 }
 
 characters.push(new Character("kit", "K¡t", "Kit", undefined, "/vn/kit/kit.svg"))
+// characters.push(new Character("sparkledog", "sparkledog", "sparkledog", undefined, "/vn/sparkledog/sparkledog.svg"))
 
 function viewInline() {
   vnStage.style.display = "none"
