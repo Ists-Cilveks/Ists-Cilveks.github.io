@@ -83,6 +83,14 @@ txt-pop {
 	display: grid;
 	height: min-content;
 }
+.theme-select {
+	position: relative;
+	right: 0;
+	top: 0;
+	display: grid;
+	height: min-content;
+	/* FIXME: if the title is short enough, it'll float in the middle between the end of the title and the language select */
+}
 /* .language-btn {
 	TODO
 } */
