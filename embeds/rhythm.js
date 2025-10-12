@@ -112,7 +112,7 @@ function drawDrag(startOffset, endOffset, lane, fill, stroke, lineWidth=0) {
 function drawNote(note) {
 	const offset = t - note.t
 	const lane = note.Lane
-	
+	const color = noteColors[note.positionName]
 	drawArrow(offset, lane, color.rgb(), themeColors.HC_BG.rgb(), 0.1)
 }
 function drawNoteDrag(note) {
@@ -121,11 +121,10 @@ function drawNoteDrag(note) {
 	const lane = note.Lane
 	let bgColor
 	if (note.isBeingHeld) {
-		bgColor = themeColors.secondaryBG
-		console.log(bgColor.rgba())
+		bgColor = noteColors[note.positionName].mix(themeColors.HC_BG, 0.4)
 	} else {
-		bgColor = themeColors.HC_FG.copy()
-		bgColor.a = 0.1
+		bgColor = noteColors[note.positionName]
+		bgColor.a = 0.2
 	}
 	drawDrag(startOffset, endOffset, lane, bgColor.rgba(), themeColors.HC_BG.rgba(), 0.01)
 }
@@ -225,8 +224,25 @@ fetch('/embeds/tlpog.json')
 	.then((response) => response.json())
 	.then(function(json){
 		noteData=json
-		for (const note of noteData) {
-			note.color = 
+		for (const note of noteData.HitObjects) {
+			const timingPoint = noteData.TimingPoints[0] // FIXME: won't work for maps with multiple timing points
+			const beatLength = 60000 / timingPoint.Bpm
+			const position = (((note.t - timingPoint.t) % beatLength + beatLength) % beatLength) / beatLength
+			let tempPosition = Math.abs(position-0.5) // V shaped
+			if (tempPosition > 0.45) {
+				note.positionName = "onBeat"
+			} else if (tempPosition < 0.05) {
+				note.positionName = "offBeat"
+			}
+			else {
+				tempPosition = Math.abs(tempPosition-0.25) // VV shaped
+				if (tempPosition < 0.05) {
+					note.positionName = "quarter"
+				}
+				else {
+					note.positionName = "other"
+				}
+			}
 		}
 		rhythmPlayButton.removeAttribute("disabled")
 	});
