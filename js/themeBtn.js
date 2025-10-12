@@ -29,8 +29,8 @@ let btn = document.createElement('button')
 btn.style.width = "2em"
 insertSVG("/js/theme icons.svg")
 btn.innerHTML = `
-<svg style="width: 100%; fill: black;" viewbox="0 0 48.697 46.475">
-  <use id="theme-button-use-element" xlink:href="#theme-icon-dark">
+<svg style="width: 100%;" viewbox="0 0 48.697 46.475">
+  <use id="theme-button-use-element" xlink:href="#theme-icon-dark" style="color: var(--main-color);">
   </use>
 </svg>
 `
