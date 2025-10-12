@@ -84,6 +84,30 @@ function drawArrow(offset, lane, fill, stroke, lineWidth=0) {
 	if (stroke != null) context.stroke()
 	context.resetTransform()
 }
+function drawDrag(startOffset, endOffset, lane, fill, stroke, lineWidth=0) {
+	context.fillStyle=fill;
+	context.strokeStyle=stroke;
+	context.lineWidth=lineWidth*width;
+	const cx = (lane-0.5)*width/4
+	const startY = height+startOffset-width/10
+	const endY = height+endOffset-width/10
+	const relativeEndY = endY-startY
+	const r = width/4/2*0.5
+	context.translate(cx, startY)
+
+	context.beginPath()
+	context.moveTo(-r, 0)
+	context.lineTo(-r, relativeEndY)
+	context.lineTo(0, relativeEndY-r)
+	context.lineTo(r, relativeEndY)
+	context.lineTo(r, 0)
+	context.closePath()
+
+	if (fill != null) context.fill()
+	if (stroke != null) context.stroke()
+
+	context.resetTransform()
+}
 function drawNote(note) {
 	const offset = t - note.t
 	const lane = note.Lane
@@ -99,12 +123,16 @@ function drawNote(note) {
 	}
 	else {
 		tempPosition = Math.abs(tempPosition-0.25) // VV shaped
-		if (tempPosition < 0.05) { 
+		if (tempPosition < 0.05) {
 			color = noteColors.quarter
 		}
 		else {
 			color = noteColors.other
 		}
+	}
+	if ("EndTime" in note) {
+		const endOffset = t - note.EndTime
+		drawDrag(offset, endOffset, lane, themeColors.secondaryBG.rgb(), themeColors.HC_BG.rgb(), 0.01)
 	}
 	drawArrow(offset, lane, color.rgb(), themeColors.HC_BG.rgb(), 0.1)
 }
@@ -172,6 +200,9 @@ function notePressed(lane, eventTime)	{
 	})
 	
 	noteData.HitObjects.splice(closestIndex, 1)
+}
+function noteReleased(lane, eventTime) {
+	// TODO
 }
 
 var recentHits = [];
@@ -244,11 +275,13 @@ function draw(curTime) {
 		for (let i = 0; i < 20; i++) { // FIXME: jank when there's a lot of notes.
 			if (noteData.HitObjects.length <= i) break
 			const note = noteData.HitObjects[i]
-			if (t > note.t+missPeriod) { // Remove missed notes. TODO: visual effect from missing a note
+			const disappearTime = "EndTime" in note ? note.EndTime : note.t // What time determines when a note is offscreen? (either the time of a normal note or the end time of a held note)
+			if (t > disappearTime+missPeriod) { // Remove missed notes
 				noteData.HitObjects.splice(i, 1)
 				i--
 				continue
 			}
+			// if (t > note.t) {} // TODO: visual effect from missing a note
 			drawNote(note)
 		}
 
@@ -280,17 +313,34 @@ canvas.addEventListener("mousedown",function(event){
 		notePressed(lane, event.timeStamp)
 	}
 });
-// window.addEventListener("keyup",function(){
-// 	var curKey=event.keyCode;
-// 	keys[curKey]=false;
-// 	// console.log(keys);
-// });
+window.addEventListener("keyup",function(event){
+	var curKey=event.key;
+	keys[curKey]=false;
+	// console.log(keys);
+	switch (curKey) {
+		case "a"://a
+			noteReleased(1, event.timeStamp)
+			break;
+		case "s"://s
+			noteReleased(2, event.timeStamp)
+			break;
+		case "k"://k
+			noteReleased(3, event.timeStamp)
+			break;
+		case "l"://l
+			noteReleased(4, event.timeStamp)
+			break;
+		// case 37://left
+		//   move.left();
+		//   break;
+	}
+});
 window.addEventListener("keydown",function(event){
 	var curKey=event.key;
 	if (event.repeat) { // Don't interpret held down keys as being rapidly mashed
 		return
 	}
-	// keys[curKey]=true;
+	keys[curKey]=true;
 	// if (curKey<58 && curKey>48) {//numbers - pixsize
 	//   pixSize=2**(curKey-49);
 	//   // var pixSize=14;
