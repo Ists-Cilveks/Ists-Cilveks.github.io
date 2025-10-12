@@ -19,8 +19,9 @@ function recomputePalette() {
     
     newCol['--hc-bg'] = isLightMode=="1" ? colors.white : colors.black
     newCol['--hc-fg'] = isLightMode=="1" ? colors.black : colors.white
-    newCol['--secondary-bg-color'] = BG.mix(framing, 0.15)
-    newCol['--secondary-bg-lowered'] = BG.mix(framing, 0.1)
+    newCol['--secondary-bg-color'] = BG.mix(deepFraming, 0.2)
+    newCol['--secondary-bg-lowered'] = newCol['--secondary-bg-color'].mix(colors.black, 0.2).mix(BG, 0.4)
+    // newCol['--subtle-framing'] = deepFraming.mix(newCol['--hc-fg'], 0.4).mix(BG, 0.5)
     newCol['--main-color'] = newCol['--hc-fg'].mix(highlights, 0.15)
     // newCol['--title'] = newCol['--hc-fg'].mix(highlights, 0.75) // mneh, doesn't look good
     newCol['--title'] = newCol['--main-color']
@@ -31,7 +32,7 @@ function recomputePalette() {
     newCol['--subtle-glow'] = newCol['--subtler'].mix(framing, 0.5) // TODO: won't work if framing is not a light and bright color
     newCol['--subtle-tinted'] = newCol['--subtle-hc-fg'].mix(highlights, 0.7)
     
-    newCol['--subtle-framing'] = framing.mix(BG, 0.4)
+    newCol['--subtle-framing'] = deepFraming.mix(newCol['--hc-fg'], 0.05).mix(BG, 0.3)
     
     // assigning properties
     Object.keys(newCol).forEach(function(key,index) {
