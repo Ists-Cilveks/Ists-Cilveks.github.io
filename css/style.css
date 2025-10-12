@@ -113,6 +113,30 @@ txt-pop {
 	background-color: var(--secondary-bg-lowered);
 	color: var(--subtle-lowered);
 }
+
+.big-btn {
+	/* TODO: make the button pop. probably use the main color (pink) for its bg */
+	color: var(--main-color);
+	user-select: none;
+	background-color: var(--secondary-bg-color);
+	min-width: 3em;
+	text-align: center;
+	padding: 4px;
+	margin: 3px;
+	border-color: var(--deep-framing);
+	border-style: solid;
+	border-radius: 2px;
+	text-decoration: none;
+}
+.big-btn:hover {
+	color: var(--subtler);
+	cursor: pointer;
+}
+.big-btn:active {
+	background-color: var(--secondary-bg-lowered);
+	color: var(--subtle-lowered);
+}
+
 #main-header {
 	display: flex;
 	flex-direction: row;
@@ -202,4 +226,32 @@ svg {
 }
 .invert-in-light-mode {
 	filter: invert(var(--is-light-mode));
+}
+
+ul.no-bullets {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+kbd {
+	/* from https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/kbd */
+	font: unset;
+  background-color: var(--secondary-bg-color
+	);
+  border-radius: 3px;
+  border: 2px solid var(--subtle-framing);
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.5),
+    0 2px 0 0 var(--secondary-bg-lowered
+	) inset;
+  display: inline-block;
+  line-height: 1;
+  padding: 3px 5px;
+  white-space: nowrap;
+}
+kbd:not(.font-unset) {
+	font-family: monospace;
+	font-size: 1.3em;
+  font-weight: 600;
 }
