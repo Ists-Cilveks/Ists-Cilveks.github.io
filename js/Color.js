@@ -74,6 +74,7 @@ function ColorFromHex(hex) { //from https://stackoverflow.com/a/5624139/10630826
 }
 function ColorFromRGB(rgb) {
   var numStrings = rgb.replace(/^rgba?\(|\s+|\)$/g,'').split(',')
+  if (isNaN(numStrings[3])) numStrings[3] = 1
   return new Color(
     parseInt(numStrings[0]),
     parseInt(numStrings[1]),
