@@ -4,6 +4,7 @@ var canvas=document.getElementById("rhythm-canvas");
 	var rhythmPlayButton=document.getElementById("rhythm-play-button");
 	var paused=true;
 	var keys=[];
+	var currentlyHeldLanes=[];
 	var width=100;
 	var height=100;
 	var t=0;
@@ -111,30 +112,22 @@ function drawDrag(startOffset, endOffset, lane, fill, stroke, lineWidth=0) {
 function drawNote(note) {
 	const offset = t - note.t
 	const lane = note.Lane
-	const timingPoint = noteData.TimingPoints[0] // FIXME: won't work for maps with multiple timing points
-	const beatLength = 60000 / timingPoint.Bpm
-	const position = (((note.t - timingPoint.t) % beatLength + beatLength) % beatLength) / beatLength
-	let color
-	let tempPosition = Math.abs(position-0.5) // V shaped
-	if (tempPosition > 0.45) {
-		color = noteColors.onBeat
-	} else if (tempPosition < 0.05) {
-		color = noteColors.offBeat
-	}
-	else {
-		tempPosition = Math.abs(tempPosition-0.25) // VV shaped
-		if (tempPosition < 0.05) {
-			color = noteColors.quarter
-		}
-		else {
-			color = noteColors.other
-		}
-	}
-	if ("EndTime" in note) {
-		const endOffset = t - note.EndTime
-		drawDrag(offset, endOffset, lane, themeColors.secondaryBG.rgb(), themeColors.HC_BG.rgb(), 0.01)
-	}
+	
 	drawArrow(offset, lane, color.rgb(), themeColors.HC_BG.rgb(), 0.1)
+}
+function drawNoteDrag(note) {
+	const startOffset = t - note.t
+	const endOffset = t - note.EndTime
+	const lane = note.Lane
+	let bgColor
+	if (note.isBeingHeld) {
+		bgColor = themeColors.secondaryBG
+		console.log(bgColor.rgba())
+	} else {
+		bgColor = themeColors.HC_FG.copy()
+		bgColor.a = 0.1
+	}
+	drawDrag(startOffset, endOffset, lane, bgColor.rgba(), themeColors.HC_BG.rgba(), 0.01)
 }
 function drawReceptor(lane, lineWidth=0.03) {
 	drawArrow(0, lane, null, themeColors.main.rgb(), lineWidth)
@@ -149,6 +142,7 @@ function drawGhostNote(lane, missedBy) {
 }
 
 function notePressed(lane, eventTime)	{
+	currentlyHeldLanes[lane] = true
 	const tp = eventTime-startTime
 	let possibleNotes = []
 	
@@ -198,21 +192,43 @@ function notePressed(lane, eventTime)	{
 		"time": performance.now(),
 		"note": closestNote,
 	})
-	
-	noteData.HitObjects.splice(closestIndex, 1)
+
+	if ("EndTime" in closestNote) {
+		closestNote.isBeingHeld = true
+		currentlyHeldNotes[lane] = closestNote
+	}
+	else {
+		noteData.HitObjects.splice(closestIndex, 1)
+	}
 }
 function noteReleased(lane, eventTime) {
-	// TODO
+	currentlyHeldLanes[lane] = false
+	note = currentlyHeldNotes[lane]
+	if (!note) return
+	currentlyHeldNotes[lane] = undefined
+	note.isBeingHeld = false
+
+	recentRealeases.push({
+		"missedBy": eventTime - note.EndTime,
+		"time": performance.now(),
+		"note": note,
+	})
+	// TODO: preferably remove the note once it's finished
 }
 
-var recentHits = [];
-var noteData;
+var recentHits = []
+var recentRealeases = []
+var currentlyHeldNotes = []
+var noteData
 
 fetch('/embeds/tlpog.json')
 	.then((response) => response.json())
 	.then(function(json){
 		noteData=json
-		rhythmPlayButton.removeAttribute("disabled");
+		for (const note of noteData) {
+			note.color = 
+		}
+		rhythmPlayButton.removeAttribute("disabled")
 	});
 
 var audio = document.getElementById("rhythm-track")
@@ -241,17 +257,43 @@ var secondarySyncDone = false; // FIXME: dumb fix
 function draw(curTime) {
 	t = curTime-startTime + magicOffset
 
-	context.clearRect(0, 0, canvas.width, canvas.height);
-	for (let i = 0; i < 4; i++) {
-		drawReceptor(i+1, 0.05)
-	}
-
 	if (t>500 && !secondarySyncDone) {
 		secondarySyncDone = true
 		syncToAudio(performance.now())
 	}
 
 	if (!paused) {
+
+		context.clearRect(0, 0, canvas.width, canvas.height);
+
+		// Get rid of offscreen notes and draw holds
+		for (let i = 0; i < 20; i++) { // FIXME: jank when there's a lot of notes.
+			if (noteData.HitObjects.length <= i) break
+			const note = noteData.HitObjects[i]
+			const isLong = "EndTime" in note
+			const disappearTime = isLong ? note.EndTime : note.t // What time determines when a note is offscreen? (either the time of a normal note or the end time of a held note)
+			if (t > disappearTime+missPeriod) { // Remove missed notes
+				noteData.HitObjects.splice(i, 1)
+				i--
+				continue
+			}
+			// if (t > note.t) {} // TODO: visual effect from missing a note
+			if (isLong) {
+				drawNoteDrag(note)
+			}
+		}
+
+		// Draw receptors
+		for (let lane = 1; lane <= 4; lane++) {
+			if (currentlyHeldLanes[lane]) {
+				// drawGhostNote(lane, 0) // doesn't look very good together with the missed note indicators. TODO: maybe change the color?
+				drawReceptor(lane, 0.1)
+			} else {
+				drawReceptor(lane, 0.05)
+			}
+		}
+
+		// Draw ghost notes and thickened receptors
 		for (let i = 0; i < recentHits.length; i++) {
 			const hit = recentHits[i]
 			// const timeSinceHit = curTime - hit.time
@@ -272,7 +314,8 @@ function draw(curTime) {
 			drawReceptor(lane, lineWidth)
 		}
 
-		for (let i = 0; i < 20; i++) { // FIXME: jank when there's a lot of notes.
+		// Draw notes
+		for (let i = 0; i < 20; i++) {
 			if (noteData.HitObjects.length <= i) break
 			const note = noteData.HitObjects[i]
 			const disappearTime = "EndTime" in note ? note.EndTime : note.t // What time determines when a note is offscreen? (either the time of a normal note or the end time of a held note)
