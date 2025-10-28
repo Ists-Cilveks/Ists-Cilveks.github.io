@@ -62,6 +62,12 @@ class Character {
     this.show()
   }
 
+  setPosition (newPos) {
+    this.container.classList.remove()
+    this.position = newPos
+    this.container.classList.add()
+  }
+
   hide () {
     this.hidden = true
     this.container.style.display = "none"
@@ -108,19 +114,23 @@ function takeNextElement() {
 
   // Look for expressions
   for (const char of characters) {
-    let emotion
+    let action
     for (const cl of classes) {
       if (cl.startsWith(char.name+"-")) {
-        emotion = cl.slice(char.name.length+1)
+        action = cl.slice(char.name.length+1)
         break
       }
     }
     
-    if (emotion == "hide") {
+    if (action == "hide") {
       char.hide()
     }
-    else if (emotion) {
-      char.setExpression(emotion)
+    else if (action.startsWith("pos-")) {
+      position = action.slice(4)
+      char.setPosition(position)
+    }
+    else if (action) {
+      char.setExpression(action)
     }
   }
 
