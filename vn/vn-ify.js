@@ -50,6 +50,7 @@ class Character {
       })
     }
     this.expression = "neutral"
+    this.hide()
   }
 
   setExpression (newExp) {
@@ -58,11 +59,21 @@ class Character {
     document.getElementById(currentExpressionID).style.display = "none"
     document.getElementById(newExpressionID).style.display = "inline"
     this.expression = newExp
+    this.show()
+  }
+
+  hide () {
+    this.hidden = true
+    this.container.style.display = "none"
+  }
+  show () {
+    this.hidden = false
+    this.container.style.display = "block"
   }
 }
 
 characters.push(new Character("kit", "K¡t", "Kit", undefined, "/vn/kit/kit.svg"))
-// characters.push(new Character("sparkledog", "sparkledog", "sparkledog", undefined, "/vn/sparkledog/sparkledog.svg"))
+characters.push(new Character("sparkledog", "sparkledog", "sparkledog", undefined, "/vn/sparkledog/sparkledog.svg"))
 
 function viewInline() {
   vnStage.style.display = "none"
@@ -105,7 +116,10 @@ function takeNextElement() {
       }
     }
     
-    if (emotion) {
+    if (emotion == "hide") {
+      char.hide()
+    }
+    else if (emotion) {
       char.setExpression(emotion)
     }
   }
