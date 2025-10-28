@@ -41,6 +41,7 @@ function lerp(x, v1, v2) {
   return x*(v2-v1)+v1;
 }
 function map(x, a1, a2, b1, b2) {
+  if (a1==a2) return (b1+b2)/2;
   return (x-a1)/(a2-a1)*(b2-b1)+b1;
 }
 function arrayContains(arr, val) {
@@ -98,7 +99,7 @@ function Vec2(x=0, y=0) {
     return this.x+this.y;
   }
   this.screen=function() {//coordinates for drawing
-    return new Vec2(this.x*height, this.y*height);
+    return new Vec2(this.x*this.height, this.y*this.height);
   }
 }
 
@@ -140,6 +141,10 @@ class OffsetGrid {
   attemptWrite (val, i, j) {
     this.grid.attemptWrite(val, i+this.offsetX, j+this.offsetY)
   }
+
+  minDistToEdge (i, j) {
+    return this.grid.minDistToEdge(i+this.offsetX, j+this.offsetY)
+  }
 }
 
 class Grid {
@@ -165,15 +170,22 @@ class Grid {
   }
 
   attemptRead (i, j) {
-    if (i>=0 && i<this.grid.length && j>=0 && j<this.grid[0].length) {
+    if (i>=0 && i<this.width && j>=0 && j<this.height) {
       return this.grid[Math.floor(i)][Math.floor(j)];
     }
   }
 
   attemptWrite (val, i, j) {
-    if (val!=undefined && i>=0 && i<this.grid.length && j>=0 && j<this.grid[0].length) {
+    if (val!=undefined && i>=0 && i<this.width && j>=0 && j<this.height) {
       this.grid[Math.floor(i)][Math.floor(j)]=val;
     }
+  }
+
+  minDistToEdge (i, j) {
+    var minDistToVerticalEdge=Math.min(this.width-i, i);
+    var minDistToHorizontalEdge=Math.min(this.height-j, j);
+    var minDistToEdge=Math.min(minDistToHorizontalEdge, minDistToVerticalEdge);
+    return minDistToEdge
   }
 }
 
@@ -233,23 +245,21 @@ class PhyllotaxisRule {
               this.x+(i*this.rotationTrig[rot][0]-j*this.rotationTrig[rot][1])*(Math.sqrt(curLen**2+this.leafDist*(rot-10)))/curLen,
               this.y+(i*this.rotationTrig[rot][1]+j*this.rotationTrig[rot][0])*(Math.sqrt(curLen**2+this.leafDist*(rot-10)))/curLen
             )
-            var minDistToVerticalEdge=Math.min(this.generator.gridWidth-curPos.x, curPos.x);
-            var minDistToHorizontalEdge=Math.min(this.generator.gridHeight-curPos.y, curPos.y);
-            var minDistToEdge=Math.min(minDistToHorizontalEdge, minDistToVerticalEdge);
+            var minDistToEdge=gridInParent.minDistToEdge(i, j);
 
-            if (minDistToEdge>0) {//position is outside the screen, weight = 0
-              if (minDistToEdge<40/pixSize) {//current position is close to the edge of the screen, weight < 1
-                var curWeight=smootherStep(minDistToEdge/(40/pixSize));
-              }
-              else {//not close to the edge, weight = 1
-                var curWeight=1;
-              }
-              var curTotalAdd=this.generator.attemptGridRead(curPos.x, curPos.y)*curWeight;// TODO: in case of 0 weight skip
-              if (!isNaN(curTotalAdd)) {
-                runningTotal+=curTotalAdd;
-                runningWeight+=curWeight;
-              }
+            if (minDistToEdge<0) continue // position is outside the screen, weight = 0
+            
+            if (minDistToEdge<40/pixSize) { // current position is close to the edge of the screen, weight < 1
+              var curWeight=smootherStep(minDistToEdge/(40/pixSize));
             }
+            else {//not close to the edge, weight = 1
+              var curWeight=1;
+            }
+            var curTotalAdd=this.generator.attemptGridRead(curPos.x, curPos.y)*curWeight;// TODO: in case of 0 weight skip
+            if (isNaN(curTotalAdd)) continue // out of bounds
+
+            runningTotal+=curTotalAdd;
+            runningWeight+=curWeight;
           }
           var runningAverage=runningTotal/runningWeight;
           // this.generator.attemptGridWrite(lerp(smootherStep(curLen/this.ruleSize*2), runningAverage, this.generator.attemptGridRead(this.x+i, this.y+j)), this.x+i, this.y+j, newGrid)
@@ -280,10 +290,7 @@ class RotationRule {
     this.sectors = sectors
     this.ruleSize = ruleSize
 
-    this.minI=Math.max(-this.ruleSize/2, -this.x);
-    this.maxI=Math.min(this.ruleSize/2, generator.gridWidth+1-this.x);
-    this.minJ=Math.max(-this.ruleSize/2, -this.y);
-    this.maxJ=Math.min(this.ruleSize/2, generator.gridHeight+1-this.y);
+    // cos and sin values to quickly rotate points
     this.rotationTrig=[];
     for (var i = 0; i < this.sectors; i++) {
       this.rotationTrig.push([Math.cos(TAU*i/this.sectors), Math.sin(TAU*i/this.sectors)]);
@@ -291,12 +298,12 @@ class RotationRule {
   }
 
   enforce () {
-    let newGrid = new Grid(this.ruleSize, this.ruleSize);
-    let gridInParent = new OffsetGrid(this.generator.grid, -this.ruleSize/2+this.x, -this.ruleSize/2+this.y)
-    console.log("x, y:", this.x, this.y)
-    console.log("basic read:", gridInParent.attemptRead(1, 1))
-    console.log("basicer:", this.generator.grid.attemptRead(1, 1))
-    newGrid = new OffsetGrid(newGrid, -this.ruleSize/2, -this.ruleSize/2)
+    let gridInParent = new OffsetGrid(this.generator.grid, this.x, this.y)
+    let newGrid = new OffsetGrid(
+      new Grid(this.ruleSize, this.ruleSize),
+      this.ruleSize/2,
+      this.ruleSize/2,
+    )
 
     for (var i = -this.ruleSize/2; i < this.ruleSize/2; i++) {
       for (var j = -this.ruleSize/2; j < this.ruleSize/2; j++) {
@@ -311,46 +318,42 @@ class RotationRule {
           var runningTotal=0; var runningWeight=0;
           for (var sec = 0; sec < this.sectors; sec++) {
             // var curPos=new Vec2(this.x+Math.cos(curAng+TAU*sec/this.sectors)*curLen, this.y+Math.sin(curAng+TAU*sec/this.sectors)*curLen)
-            var curPos=new Vec2(
-              i*this.rotationTrig[sec][0]-j*this.rotationTrig[sec][1],
-              i*this.rotationTrig[sec][1]+j*this.rotationTrig[sec][0]
-            )
-            var minDistToVerticalEdge=Math.min(this.generator.gridWidth-curPos.x, curPos.x);
-            var minDistToHorizontalEdge=Math.min(this.generator.gridHeight-curPos.y, curPos.y);
-            var minDistToEdge=Math.min(minDistToHorizontalEdge, minDistToVerticalEdge);
+            let rotI = i*this.rotationTrig[sec][0]-j*this.rotationTrig[sec][1]
+            let rotJ = i*this.rotationTrig[sec][1]+j*this.rotationTrig[sec][0]
 
-            if (minDistToEdge<40/this.generator.pixSize) {//current position is close to the edge of the screen, weight < 1
-              if (minDistToEdge<=0) {//position is outside the screen, weight = 0
-                var curWeight=0;
-              }
-              else {
-                var curWeight=smootherStep(minDistToEdge/(40/this.generator.pixSize));
-              }
-            }
-            else {//not close to the edge, weight = 1
-              var curWeight=1;
+            var minDistToEdge=gridInParent.minDistToEdge(i, j);
+
+            if (minDistToEdge<=0) continue // position is outside the screen, this point can't contribute anything
+            
+            let curWeight=1;
+            if (minDistToEdge<40/this.generator.pixSize) {// position is close to the edge of the screen, weight < 1
+              curWeight=smootherStep(minDistToEdge/(40/this.generator.pixSize));
             }
 
-            var curTotalAdd=gridInParent.attemptRead(curPos.x, curPos.y)*curWeight;// TODO: in case of 0 weight skip
-            if (!isNaN(curTotalAdd)) {
-              runningTotal+=curTotalAdd;
-              runningWeight+=curWeight;
-            }
+            var curTotalAdd=gridInParent.attemptRead(rotI, rotJ)*curWeight;
+            // if (randProb(0.0001)) {
+            //   // console.log(gridInParent.attemptRead(rotI, rotJ), curWeight, rotI, rotJ);
+            //   console.log(rotI, this.ruleSize/2, this.x, "→", rotI-this.ruleSize/2+this.x, rotJ-this.ruleSize/2+this.y, this.generator.attemptGridRead(rotI-this.ruleSize/2+this.x, rotJ-this.ruleSize/2+this.y));
+            // }
+            if (isNaN(curTotalAdd)) continue // out of bounds
+            
+            runningTotal+=curTotalAdd;
+            runningWeight+=curWeight;
           }
-          if (runningWeight==0) continue
+          // if (randProb(0.1)) console.log(runningTotal, runningWeight, ";", i, j);
+          if (runningWeight==0) continue // didn't find any valid values
           var averageValue=runningTotal/runningWeight;
           let weight = smootherStep(curLen/this.ruleSize*2)
+
           let oldValue = gridInParent.attemptRead(i, j)
           if (isNaN(oldValue)) continue // (i, j) was out of bounds
-          let newValue = lerp(weight, averageValue, oldValue)
-          gridInParent.attemptWrite(newValue, i, j)
-          // console.log(gridInParent.attemptRead(i, j))
-          // if(TEMPVALUE) {
-          //   console.log(runningTotal, runningWeight, runningAverage, this.x+i, this.y+j, this.generator.attemptGridRead(this.x+i, this.y+j));
-          //   // this.generator.attemptGridWrite(1, i+this.ruleSize/2, j+this.ruleSize/2, newGrid)
-          // }
-          // this.generator.attemptGridWrite(runningAverage, i+this.ruleSize/2, j+this.ruleSize/2, newGrid)
+          
           // this.generator.attemptGridWrite(0.8, i+this.ruleSize/2, j+this.ruleSize/2, newGrid)
+          let newValue = lerp(weight, averageValue, oldValue)
+          newGrid.attemptWrite(newValue, i, j)
+          // this.generator.attemptGridWrite(lerp(smootherStep(curLen/this.ruleSize*2), runningAverage, this.generator.attemptGridRead(this.x+i, this.y+j)), i+this.ruleSize/2, j+this.ruleSize/2, newGrid)
+          // gridInParent.attemptWrite(0.8, i, j)
+          // this.generator.attemptGridWrite(runningAverage, i+this.ruleSize/2, j+this.ruleSize/2, newGrid)
         }
       }
     }
@@ -368,15 +371,18 @@ class RotationRule {
 
 
 class WallpaperGenerator {
-  constructor(passedCanvas) {
+  constructor(passedCanvas, pixSize=5, fadeTop=false) {
     this.canvas = passedCanvas
+    this.container = this.canvas.parentElement
+    this.resize();
+    
     this.context = this.canvas.getContext("2d")
+    this.fadeTop = fadeTop
 
     this.loops=0;
     this.paused=false;
-    var frameskip=1;
-    var keys=[];
-    this.height=100;
+    this.frameskip=1;
+    this.keys=[];
 
     var style = window.getComputedStyle(document.body)
     var themeColors = {
@@ -390,20 +396,17 @@ class WallpaperGenerator {
       subtler: ColorFromString(style.getPropertyValue('--subtler')),
       subtleTinted: ColorFromString(style.getPropertyValue('--subtle-tinted')),
     }
-    gradients["theme"] = new Gradient([themeColors.framing, 0, themeColors.BG, 0.4, themeColors.BG, 0.6, themeColors.highlights, 0.8, themeColors.main, 1]);    
+    gradients["theme"] = new Gradient([themeColors.framing, 0, themeColors.BG, 0.4, themeColors.BG, 0.6, themeColors.highlights, 0.8, themeColors.main, 1]);
 
     this.useGradient=gradients.theme;
 
     
-
-    resize();
     this.globSeed=rand(10)+1;
-    this.pixSize=5;
-    // this.pixSize=14;
-    this.gridWidth=this.canvas.width/this.pixSize; this.gridHeight=this.canvas.height/this.pixSize;
+    this.pixSize=pixSize;
+    this.gridWidth=this.width/this.pixSize; this.gridHeight=this.height/this.pixSize;
     this.grid = new Grid(this.gridWidth, this.gridHeight);
     this.outlineBoundary=0.5;
-
+    
     this.rules=[];
 
     var numRandomRules=3;
@@ -460,8 +463,8 @@ class WallpaperGenerator {
       //     sectors: Math.floor(lerp(Math.random()**2, 5, 18)),
       //     // phase: 0,
       //     ruleSize: randRange(240, 560)/pixSize,
-      //     // ruleSize: this.canvas.height/pixSize*1.5,
-      //     // ruleSize: this.canvas.height/pixSize,
+      //     // ruleSize: this.height/pixSize*1.5,
+      //     // ruleSize: this.height/pixSize,
       //     enforce: this.enforceFuncs.rotation
       //   })
       // }
@@ -476,8 +479,8 @@ class WallpaperGenerator {
           // y: rand(generator.gridHeight),
           angle: TAU*(2-PHI),
           // ruleSize: randRange(240, 560)/pixSize,
-          ruleSize: this.canvas.height/pixSize*2,
-          // ruleSize: this.canvas.height/pixSize,
+          ruleSize: this.height/pixSize*2,
+          // ruleSize: this.height/pixSize,
           // leafDist: randRange(70, 200)/pixSize,
           // leafDist: 600/pixSize,
           // leafDist: 200/pixSize,
@@ -514,7 +517,7 @@ class WallpaperGenerator {
         // this.context.fillRect(this.rules[i].x*pixSize, this.rules[i].y*pixSize, pixSize, pixSize);
       }
     }
-
+    
     if (true) {//custom placed rules
       // this.addPhyllotaxisRule(0.5, 0.5, 2200)
       // this.addPhyllotaxisRule(0.7, 0.2, 2100)
@@ -522,7 +525,7 @@ class WallpaperGenerator {
       // this.addPhyllotaxisRule(0.1, 0.7, 1700)
       // this.addPhyllotaxisRule(0.7, 0.65, 1700)
 
-      // this.addRotationRule(0.4, 0.72, 7, 1750)
+      this.addRotationRule(0.4, 0.72, 7, 1750)
       this.addRotationRule(0.62, 0.4, 5, 2100)
 
       // this.addRotationRule(0.1, 0.7, 3, 1700)
@@ -536,10 +539,10 @@ class WallpaperGenerator {
 
     this.initialiseGrid();
     
-    // for (var go=0; go<3; go++) {
-    //   this.gridOperations();
-    // }
-
+    for (var go=0; go<3; go++) {
+      this.gridOperations();
+    }
+    
     this.draw();
   }
 
@@ -554,8 +557,10 @@ class WallpaperGenerator {
 
       var value = this.grid.grid[i][j]
 
-      // Fade out near the top TODO: option to turn it on/off
-      value = getSmoothWeightedAverage(Math.min(1, 3*j/this.gridHeight), 0.5, value)
+      // Fade out near the top
+      if (this.fadeTop) {
+        value = getSmoothWeightedAverage(Math.min(1, 3*j/this.gridHeight), 0.5, value)
+      }
       
       // this.context.fillStyle="hsl(0,0%,"+this.grid[i][j]*100+"%)";//grayscale values
       this.context.fillStyle = this.useGradient.get(value).rgb();//gradient of values
@@ -569,7 +574,7 @@ class WallpaperGenerator {
   }
 
   attemptGridRead(i, j) {
-    this.grid.attemptRead(i, j)
+    return this.grid.attemptRead(i, j)
   }
   attemptGridWrite(val, i, j) {
     this.grid.attemptWrite(val, i, j)
@@ -625,11 +630,17 @@ class WallpaperGenerator {
       for (var j = -ruleSize/2; j < ruleSize/2; j++) {
         let dist = 1-(Math.sqrt(i**2+j**2)/ruleSize*2) // current pixel closeness to circle center (1 - coincident, 0 - ruleSize pixels away)
         if (dist < 0) dist = 0 // make sure not to invert colors
+        let oldValue = gridInParent.attemptRead(i, j)
+        if (isNaN(oldValue)) continue // out of bounds
         let newValue = lerp(
           smootherStep(dist),
-          gridInParent.attemptRead(i, j),
-          map(gridInParent.attemptRead(i, j), min, max, 0, 1)
+          oldValue,
+          map(oldValue, min, max, 0, 1)
         )
+        if (isNaN(newValue)) {
+          console.log(map(oldValue, min, max, 0, 1), oldValue, min, max);
+          
+        }
         gridInParent.attemptWrite(newValue, i, j);
       }
     }
@@ -649,10 +660,10 @@ class WallpaperGenerator {
         var curWeight=cutoff(Math.sqrt(i**2+j**2)/ruleSize*2, 0);
         // var curWeight=smootherStep(cutoff(Math.sqrt(i**2+j**2)/ruleSize*2, 0));//less efficient and possibly useless
         var curTotalAdd=(gridInParent.attemptRead(i, j)*2-1)*curWeight;
-        if (!isNaN(curTotalAdd)) {
-          runningTotal+=curTotalAdd;
-          runningWeight+=curWeight;
-        }
+        if (isNaN(curTotalAdd)) continue // out of bounds
+
+        runningTotal+=curTotalAdd;
+        runningWeight+=curWeight;
       }
     }
     var runningAverage=runningTotal/runningWeight;
@@ -710,7 +721,7 @@ class WallpaperGenerator {
   draw() {
     if (!this.paused) {
       // if (loops% frameskip <1) {//animation
-        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.context.clearRect(0, 0, this.width, this.height);
         for (var i = 0; i < this.gridWidth; i++) {
           for (var j = 0; j < this.gridHeight; j++) {
             this.drawPixel(i, j);
@@ -724,20 +735,23 @@ class WallpaperGenerator {
 
   changeSeed(s) {
     this.globSeed=s;
-    restart();
+    this.restart();
     this.draw();
   }
   restart() {
     this.loops=0;
   }
   resize() {
-    height=this.canvas.height
-    restart();
+    this.width = this.canvas.width = this.container.clientWidth
+    this.height = this.canvas.height = this.container.clientHeight
+    this.canvas.style.width = this.width+"px"
+    this.canvas.style.height = this.height+"px"
+    this.restart();
   }
 }
 
-var canvas=document.getElementById("wallpaper-canvas")
-const myWallpaper = new WallpaperGenerator(canvas)
+const wallpaperCanvas=document.getElementById("wallpaper-canvas")
+const myWallpaper = new WallpaperGenerator(wallpaperCanvas, pixSize=5, fadeTop=true)
 
 // canvas.addEventListener("mousemove",function(){
 //   // lastx=event.clientX;
@@ -747,7 +761,7 @@ const myWallpaper = new WallpaperGenerator(canvas)
 //   lasty=(event.clientY+lasty*n)/(n+1);
 // });
 // window.addEventListener("dblclick",function(){location.reload();});
-canvas.addEventListener("click",function(){
+wallpaperCanvas.addEventListener("click",function(){
   for (var allRuleLoops = 0; allRuleLoops < 1; allRuleLoops++) {
     myWallpaper.gridOperations();
   }
@@ -764,7 +778,7 @@ canvas.addEventListener("click",function(){
 //   // if (curKey<58 && curKey>48) {//numbers - pixsize
 //   //   this.pixSize=2**(curKey-49);
 //   //   // this.pixSize=14;
-//   //   this.gridWidth=canvas.width/this.pixSize; this.gridHeight=canvas.height/this.pixSize;
+//   //   this.gridWidth=this.width/this.pixSize; this.gridHeight=this.height/this.pixSize;
 //   //   this.initialiseGrid();
 //   //   this.draw();
 //   // }
