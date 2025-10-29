@@ -7,7 +7,7 @@ if (!document.getElementById('vn-stage')) {
   stage.addEventListener("click", progressText)
   stage.lang = "en" // TODO: how to handle translations?
   document.body.appendChild(stage)
-  
+
   let td = document.createElement('div')
   td.id = 'vn-temp-display'
   stage.appendChild(td)
@@ -27,6 +27,23 @@ const tempDisplay = document.getElementById('vn-temp-display')
 const allContent = document.getElementById('vn-content')
 let lastAddedContent
 let contentDiv = document.getElementById("vn-content").firstElementChild
+
+class Position {
+  constructor(className) {
+    // this.name = name
+    this.className = className
+  }
+}
+var characterPositions = {
+  "c": new Position("pos-center"),
+  "r": new Position("pos-right"),
+  "l": new Position("pos-left"),
+  "r2": new Position("pos-right-2"),
+  "l2": new Position("pos-left-2"),
+  "ootwr": new Position("pos-out-of-the-way-right"),
+}
+characterPositions["r1"] = characterPositions["r"]
+characterPositions["l1"] = characterPositions["l"]
 
 var characters = []
 class Character {
@@ -51,6 +68,8 @@ class Character {
     }
     this.expression = "neutral"
     this.hide()
+    this.position = characterPositions["r"]
+    this.setPosition()
   }
 
   setExpression (newExp) {
@@ -62,10 +81,10 @@ class Character {
     this.show()
   }
 
-  setPosition (newPos) {
-    this.container.classList.remove()
+  setPosition (newPos=this.position) {
+    this.container.classList.remove(this.position.className)
     this.position = newPos
-    this.container.classList.add()
+    this.container.classList.add(this.position.className)
   }
 
   hide () {
@@ -74,7 +93,7 @@ class Character {
   }
   show () {
     this.hidden = false
-    this.container.style.display = "block"
+    this.container.style.removeProperty("display")
   }
 }
 
@@ -107,29 +126,33 @@ function takeNextElement() {
   }
   lastAddedContent = newContent
   // Last line of text
-  
+
   if (classes.contains("vn-end-text")) {
     finished = true
-  }  
+  }
 
   // Look for expressions
-  for (const char of characters) {
+  for (const cl of classes) {
     let action
-    for (const cl of classes) {
+    for (var char of characters) {
       if (cl.startsWith(char.name+"-")) {
         action = cl.slice(char.name.length+1)
         break
       }
     }
-    
+
+    if (!action) {
+      continue
+    }
+
     if (action == "hide") {
       char.hide()
     }
     else if (action.startsWith("pos-")) {
-      position = action.slice(4)
-      char.setPosition(position)
+      let position = action.slice(4)
+      char.setPosition(characterPositions[position])
     }
-    else if (action) {
+    else {
       char.setExpression(action)
     }
   }
@@ -143,7 +166,7 @@ function takeNextElement() {
 function progressText() {
   // Escape from hidden state
   if (textbox.style.display == "none") {
-    textbox.style.display = "initial"
+    textbox.style.removeProperty("display")
     return
   }
 
@@ -173,6 +196,11 @@ document.addEventListener("keydown", function (event) {
   key = key.toLocaleLowerCase()
   switch (key) {
     case "h":
-      textbox.style.display = textbox.style.display == "none" ? "initial" : "none"
+      if (textbox.style.display == "none") {
+        textbox.style.removeProperty("display")
+      }
+      else {
+        textbox.style.display = "none"
+      }
   }
 })
