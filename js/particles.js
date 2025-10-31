@@ -1,7 +1,7 @@
 // Based on https://css-tricks.com/playing-with-particles-using-the-web-animations-api/ by Louis Hoebregts
 
 var predefinedParticles = {
-  theme_disk: function(sizeMult=1, passedColors){
+  theme_disk: function(sizeMult=1, passedColors) {
     const particle = document.createElement('div');
     document.body.appendChild(particle);
     particle.classList.add('particle');
@@ -13,7 +13,7 @@ var predefinedParticles = {
     particle.style.borderRadius = '50%';
     
     // Generate a random theme color
-    particle.style.background = highlights.mix(framing, Math.random()).rgb(); // FIXME: ugly dependency on having palettize script above it
+    particle.style.background = globalPalette.highlights.mix(globalPalette.framing, Math.random()).rgb();
 
     return particle
   },
@@ -38,13 +38,14 @@ var predefinedParticles = {
       // color = passedColors[0].mix(passedColors[1], Math.random());
       color = passedColors[Math.floor(Math.random()*passedColors.length)];
     } else {
-      color = framing.mix(deepFraming, Math.random()); // FIXME: ugly dependency on having palettize script above it
+      color = globalPalette.framing.mix(globalPalette.deepFraming, Math.random()); // FIXME: ugly dependency on having palettize script above it
     }
     particle.style.fill = color.rgb()
     
     return particle
   },
 }
+
 var predefinedMovements = {
   spew: function(particle, x, y, dx, dy, spread) {
     // Generate a random destination within some distance from the mouse

@@ -56,6 +56,12 @@ function Color(r=255, g=0, b=255, a=1) {
 
     // TODO: take into account alpha. I think currently it just removes alpha.
   }
+  this.set=function(newColor) {
+    this.r=newColor.r
+    this.g=newColor.g
+    this.b=newColor.b
+    this.a=newColor.a
+  }
 }
 
 function ColorFromHex(hex) { //from https://stackoverflow.com/a/5624139/10630826 on 26.12.2021

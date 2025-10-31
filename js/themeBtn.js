@@ -73,6 +73,7 @@ else { // set by user
   setTheme(theme)
 }
 
+
 function setTheme(newTheme, storeLocally=false){
   if (newTheme in allThemes) {
     theme = newTheme
@@ -93,8 +94,9 @@ function setTheme(newTheme, storeLocally=false){
     localStorage.setItem("theme", newTheme)
   }
 
-  recomputePalette()
+  globalPalette.recompute()
 }
+
 function switchTheme(storeLocally=false){
   if (theme=="dark") {
     setTheme("light", storeLocally)
@@ -103,5 +105,3 @@ function switchTheme(storeLocally=false){
     setTheme("dark", storeLocally)
   }
 }
-
-recomputePalette()

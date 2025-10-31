@@ -384,22 +384,10 @@ class WallpaperGenerator {
     this.frameskip=1;
     this.keys=[];
 
-    var style = window.getComputedStyle(document.body)
-    var themeColors = {
-      BG: ColorFromString(style.getPropertyValue('--bg-color')),
-      secondaryBG: ColorFromString(style.getPropertyValue('--secondary-bg-color')),
-      HC_BG: ColorFromString(style.getPropertyValue('--hc-bg')),
-      HC_FG: ColorFromString(style.getPropertyValue('--hc-fg')),
-      main: ColorFromString(style.getPropertyValue('--main-color')),
-      highlights: ColorFromString(style.getPropertyValue('--highlights')),
-      framing: ColorFromString(style.getPropertyValue('--framing')),
-      subtler: ColorFromString(style.getPropertyValue('--subtler')),
-      subtleTinted: ColorFromString(style.getPropertyValue('--subtle-tinted')),
-    }
-    gradients["theme"] = new Gradient([themeColors.framing, 0, themeColors.BG, 0.4, themeColors.BG, 0.6, themeColors.highlights, 0.8, themeColors.main, 1]);
-
-    this.useGradient=gradients.theme;
-
+    let wallpaperGradient = new Gradient([globalPalette.framing, 0, globalPalette.BG, 0.4, globalPalette.BG, 0.6, globalPalette.highlights, 0.8, globalPalette['main-color'], 1]);
+    
+    this.useGradient=wallpaperGradient;
+    
     
     this.globSeed=rand(10)+1;
     this.pixSize=pixSize;
