@@ -385,9 +385,12 @@ class WallpaperGenerator {
     this.keys=[];
 
     let wallpaperGradient = new Gradient([globalPalette.framing, 0, globalPalette.BG, 0.4, globalPalette.BG, 0.6, globalPalette.highlights, 0.8, globalPalette['main-color'], 1]);
+    let thisGenerator = this
+    globalPalette.addListener(function () {
+      thisGenerator.draw()
+    })
     
     this.useGradient=wallpaperGradient;
-    
     
     this.globSeed=rand(10)+1;
     this.pixSize=pixSize;

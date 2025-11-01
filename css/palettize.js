@@ -4,19 +4,28 @@ class Palette {
   constructor() {
     this.listeners = []
     // this.recompute()
+    this.sourceColors = {
+      // 'isLightMode': '--is-light-mode',
+      'BG': '--bg-color',
+      'highlights': '--highlights',
+      'lightUp': '--light-up',
+      'framing': '--framing',
+      'deepFraming': '--deep-framing',
+    }
   }
 
   recompute () {
+    let thisPalette = this
+
     // reading properties
     let palette_original_style = window.getComputedStyle(document.body)
     let getColor = (name) => ColorFromHex(palette_original_style.getPropertyValue(name))
+    let setFromName = function (key) {thisPalette.setColor(key, getColor(thisPalette.sourceColors[key]))}
     
     this.isLightMode = palette_original_style.getPropertyValue("--is-light-mode")
-    this.BG = getColor('--bg-color')
-    this.highlights = getColor('--highlights')
-    this.lightUp = getColor('--light-up')
-    this.framing = getColor('--framing')
-    this.deepFraming = getColor('--deep-framing')
+    Object.keys(this.sourceColors).forEach(function(key, index) {
+      setFromName(key)
+    });
     
     // calculating new values
     let newCol = {}
@@ -38,8 +47,6 @@ class Palette {
     
     newCol['subtle-framing'] = this.deepFraming.mix(newCol['hc-fg'], 0.05).mix(this.BG, 0.3)
 
-    let thisPalette = this
-    
     // assigning properties
     Object.keys(newCol).forEach(function(key, index) {
       document.body.style.setProperty('--'+key, newCol[key].rgb())
@@ -54,7 +61,7 @@ class Palette {
   }
 
   addListener (listener) {
-    this.listeners.append(listener)
+    this.listeners.push(listener)
   }
 
   callListeners () {
