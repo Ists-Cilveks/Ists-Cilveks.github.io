@@ -1,26 +1,28 @@
 let header = document.getElementById("main-header")
-// TODO: if no header exists, make one.
-let themeDiv = document.createElement('div')
-themeDiv.className = "theme-select"
-header.appendChild(themeDiv)
-
-let btn = document.createElement('button')
-btn.style.width = "2em"
-insertSVG("/js/theme icons.svg")
-btn.innerHTML = `
-<svg style="width: 100%;" viewbox="0 0 48.697 46.475">
-  <use id="theme-button-use-element" xlink:href="#theme-icon-dark" style="color: var(--main-color);">
-  </use>
-</svg>
-`
-
-btn.className = "basic-btn theme-btn"
-btn.addEventListener("click", function (event) {
-  switchTheme(true)
-  themeIsSystemDefault = false
-  animatePop(event, btn, undefined, 'pop', 6, undefined, undefined, 50, undefined);
-})
-themeDiv.appendChild(btn)
+if (header != null) { // The page has a header
+  // TODO: if no header exists, make one.
+  let themeDiv = document.createElement('div')
+  themeDiv.className = "theme-select"
+  header.appendChild(themeDiv)
+  
+  let btn = document.createElement('button')
+  btn.style.width = "2em"
+  insertSVG("/js/theme icons.svg")
+  btn.innerHTML = `
+  <svg style="width: 100%;" viewbox="0 0 48.697 46.475">
+    <use id="theme-button-use-element" xlink:href="#theme-icon-dark" style="color: var(--main-color);">
+    </use>
+  </svg>
+  `
+  
+  btn.className = "basic-btn theme-btn"
+  btn.addEventListener("click", function (event) {
+    switchTheme(true)
+    themeIsSystemDefault = false
+    animatePop(event, btn, undefined, 'pop', 6, undefined, undefined, 50, undefined);
+  })
+  themeDiv.appendChild(btn)
+}
 
 let theme = localStorage.getItem("theme")
 let themeIsSystemDefault
@@ -68,9 +70,11 @@ function setTheme(newTheme, storeLocally=false){
   }
 
   let use = document.getElementById("theme-button-use-element")
-  use.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', "#"+themeObj["icon-name"]);
-  if (storeLocally) {
-    localStorage.setItem("theme", newTheme)
+  if (use != null) {
+    use.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', "#"+themeObj["icon-name"]);
+    if (storeLocally) {
+      localStorage.setItem("theme", newTheme)
+    }
   }
 
   globalPalette.setFromThemeName(theme)
