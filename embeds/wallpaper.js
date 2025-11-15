@@ -741,8 +741,12 @@ class WallpaperGenerator {
   }
 }
 
+
+let wallpaperFadeTop = document.currentScript.hasAttribute("fade-top")
+
+
 const wallpaperCanvas=document.getElementById("wallpaper-canvas")
-const myWallpaper = new WallpaperGenerator(wallpaperCanvas, pixSize=5, fadeTop=true)
+const myWallpaper = new WallpaperGenerator(wallpaperCanvas, pixSize=5, fadeTop=wallpaperFadeTop)
 
 // canvas.addEventListener("mousemove",function(){
 //   // lastx=event.clientX;
