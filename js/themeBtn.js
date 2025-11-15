@@ -1,24 +1,3 @@
-const allThemes = {
-  "dark": {
-    "icon-name": "theme-icon-dark",
-    "bg-color": "#3a2005",
-    "highlights": "#f20898",
-    "light-up": "#e5ff00",
-    "framing": "#9dff00",
-    "deep-framing": "#00a341",
-    "is-light-mode": "0",
-  },
-  "light": {
-    "icon-name": "theme-icon-light",
-    "bg-color": "#fff5ea",
-    "highlights": "#f20898",
-    "light-up": "#bae900",
-    "framing": "#70d900",
-    "deep-framing": "#00a341",
-    "is-light-mode": "1",
-  },
-}
-
 let header = document.getElementById("main-header")
 // TODO: if no header exists, make one.
 let themeDiv = document.createElement('div')
@@ -94,6 +73,7 @@ function setTheme(newTheme, storeLocally=false){
     localStorage.setItem("theme", newTheme)
   }
 
+  globalPalette.setFromThemeName(theme)
   globalPalette.recompute()
 }
 

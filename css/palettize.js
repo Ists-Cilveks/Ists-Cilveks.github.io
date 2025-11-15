@@ -1,58 +1,85 @@
 // Given the basic colors of a color palette, flesh it out with mixed colors and set the corresponding css properties to those.
 
+const allThemes = {
+  "dark": {
+    "icon-name": "theme-icon-dark",
+    "bg-color": "#3a2005",
+    "highlights": "#f20898",
+    "light-up": "#e5ff00",
+    "framing": "#9dff00",
+    "deep-framing": "#00a341",
+    "is-light-mode": "0",
+  },
+  "light": {
+    "icon-name": "theme-icon-light",
+    "bg-color": "#fff5ea",
+    "highlights": "#f20898",
+    "light-up": "#bae900",
+    "framing": "#70d900",
+    "deep-framing": "#00a341",
+    "is-light-mode": "1",
+  },
+}
+
 class Palette {
   constructor() {
     this.listeners = []
     // this.recompute()
     this.sourceColors = {
-      // 'isLightMode': '--is-light-mode',
-      'BG': '--bg-color',
-      'highlights': '--highlights',
-      'lightUp': '--light-up',
-      'framing': '--framing',
-      'deepFraming': '--deep-framing',
+      // 'is-light-mode': 'isLightMode',
+      'bg-color': 'BG',
+      'highlights': 'highlights',
+      'light-up': 'lightUp',
+      'framing': 'framing',
+      'deep-framing': 'deepFraming',
     }
   }
 
-  recompute () {
+  setFromThemeName (name) {
+    this.setFromTheme(allThemes[name])
+  }
+
+  setFromTheme (theme) {
     let thisPalette = this
 
-    // reading properties
-    let palette_original_style = window.getComputedStyle(document.body)
-    let getColor = (name) => ColorFromHex(palette_original_style.getPropertyValue(name))
-    let setFromName = function (key) {thisPalette.setColor(key, getColor(thisPalette.sourceColors[key]))}
+    let setFromName = function (key) {
+      let newColor = theme[key]
+      thisPalette.setColor(key, ColorFromHex(newColor))
+    }
     
-    this.isLightMode = palette_original_style.getPropertyValue("--is-light-mode")
+    this.isLightMode = theme["is-light-mode"]
     Object.keys(this.sourceColors).forEach(function(key, index) {
       setFromName(key)
     });
-    
+  }
+
+  recompute () {
     // calculating new values
     let newCol = {}
-    
-    newCol['hc-bg'] = this.isLightMode=="1" ? colors.white.copy() : colors.black.copy()
-    newCol['hc-fg'] = this.isLightMode=="1" ? colors.black.copy() : colors.white.copy()
-    newCol['secondary-bg-color'] = this.BG.mix(this.deepFraming, 0.2)
-    newCol['secondary-bg-lowered'] = newCol['secondary-bg-color'].mix(colors.black, 0.2).mix(this.BG, 0.4)
-    // newCol['subtle-framing'] = deepFraming.mix(newCol['hc-fg'], 0.4).mix(BG, 0.5)
-    newCol['main-color'] = newCol['hc-fg'].mix(this.highlights, 0.15)
-    // newCol['title'] = newCol['hc-fg'].mix(this.highlights, 0.75) // mneh, doesn't look good
-    newCol['title'] = newCol['main-color']
-    newCol['subtle-hc-fg'] = newCol['hc-fg'].mix(this.BG, 0.3)
-    newCol['subtler'] = newCol['subtle-hc-fg'].mix(this.highlights, 0.2)
-    newCol['subtle-light'] = newCol['subtle-hc-fg'].mix(this.lightUp, 0.4)
-    newCol['subtle-lowered'] = newCol['subtler'].mix(this.BG, 0.3)
-    newCol['subtle-glow'] = newCol['subtler'].mix(this.framing, 0.5) // TODO: won't work if framing is not a light and bright color
-    newCol['subtle-tinted'] = newCol['subtle-hc-fg'].mix(this.highlights, 0.7)
-    
-    newCol['subtle-framing'] = this.deepFraming.mix(newCol['hc-fg'], 0.05).mix(this.BG, 0.3)
+    let thisPalette = this
 
-    // assigning properties
-    Object.keys(newCol).forEach(function(key, index) {
-      document.body.style.setProperty('--'+key, newCol[key].rgb())
-      thisPalette.setColor(key, newCol[key])
-    });
+    let setColor = function (name, value) {
+      thisPalette.setColor(name, value)
+      document.body.style.setProperty('--'+name, value.rgb())
+    }
     
+    setColor('hc-bg', this.isLightMode=="1" ? colors.white : colors.black)
+    setColor('hc-fg', this.isLightMode=="1" ? colors.black : colors.white)
+    setColor('secondary-bg-color', this.BG.mix(this.deepFraming, 0.2))
+    setColor('secondary-bg-lowered', this['secondary-bg-color'].mix(colors.black, 0.2).mix(this.BG, 0.4))
+    // set('subtle-framing', deepFraming.mix(this['hc-fg'], 0.4).mix(BG, 0.5))
+    setColor('main-color', this['hc-fg'].mix(this.highlights, 0.15))
+    // set('title', this['hc-fg'].mix(this.highlights, 0.75)) // mneh, doesn't look good
+    setColor('title', this['main-color'])
+    setColor('subtle-hc-fg', this['hc-fg'].mix(this.BG, 0.3))
+    setColor('subtler', this['subtle-hc-fg'].mix(this.highlights, 0.2))
+    setColor('subtle-light', this['subtle-hc-fg'].mix(this.lightUp, 0.4))
+    setColor('subtle-lowered', this['subtler'].mix(this.BG, 0.3))
+    setColor('subtle-glow', this['subtler'].mix(this.framing, 0.5)) // TODO: won't work if framing is not a light and bright color
+    setColor('subtle-tinted', this['subtle-hc-fg'].mix(this.highlights, 0.7))
+    
+    setColor('subtle-framing', this.deepFraming.mix(this['hc-fg'], 0.05).mix(this.BG, 0.3))
+
     this.isDarkMode = this.isLightMode=="1" ? "0" : "1"
     document.body.style.setProperty('--is-dark-mode', this.isDarkMode)
     this["is-dark-mode"] = this.isDarkMode
@@ -61,6 +88,7 @@ class Palette {
   }
 
   addListener (listener) {
+    "Add a function that will get called whenever this palette changes"
     this.listeners.push(listener)
   }
 
@@ -76,7 +104,11 @@ class Palette {
       this[key].set(newColor)
     }
     else {
-      this[key] = newColor
+      this[key] = newColor.copy()
+      if (key in this.sourceColors) {
+        let shorthandKey = this.sourceColors[key]
+        this[shorthandKey] = this[key]
+      }
     }
   }
 }
