@@ -52,57 +52,6 @@ function arrayContains(arr, val) {
 }
 
 
-function Vec2(x=0, y=0) {
-  this.x=x;
-  this.y=y;
-  this.copy=function() {
-    return new Vec2(this.x, this.y);
-  }
-  this.add=function(v1, v2) {// FIXME: doesn't always work with both values
-    if (v2) {
-      return new Vec2(this.x+v1, this.y+v2);
-    }
-    return new Vec2(this.x+v1.x, this.y+v1.y);
-  }
-  this.sub=function(v) {
-    return new Vec2(this.x-v.x, this.y-v.y);
-  }
-  this.mult=function(n) {
-    return new Vec2(this.x*n, this.y*n);
-  }
-  this.div=function(n) {
-    return new Vec2(this.x/n, this.y/n);
-  }
-  this.dot=function(v) {
-    return v.x*this.x + v.y*this.y;
-  }
-  this.iHatLanding=function(v) {
-    return new Vec2(v.x*this.x-v.y*this.y, v.x*this.y+v.y*this.x);
-  }
-  this.len=function() {
-    return Math.sqrt(this.x**2+this.y**2);
-  }
-  this.dist=function(v) {
-    return Math.sqrt((this.x-v.x)**2+(this.y-v.y)**2);
-  }
-  this.sqDist=function(v) {
-    return (this.x-v.x)**2+(this.y-v.y)**2;
-  }
-  this.unit=function() {
-    var len=Math.sqrt(this.x**2+this.y**2);
-    return new Vec2(this.x/len, this.y/len);
-  }
-  this.dir=function() {//angle to x axis in radians
-    return Math.atan2(this.y, this.x);
-  }
-  this.taxi=function() {//taxicab distance length
-    return this.x+this.y;
-  }
-  this.screen=function() {//coordinates for drawing
-    return new Vec2(this.x*this.height, this.y*this.height);
-  }
-}
-
 function smootherStep(x) {
   return x * x * x * (x * (x * 6 - 15) + 10);
 }
@@ -237,14 +186,12 @@ class PhyllotaxisRule {
           // for (var leaf = 0; leaf < this.sectors; leaf++) {
           // for (var leaf = -10; leaf < 10; leaf++) {
           for (var rot=0; rot < this.rotationTrig.length; rot++) {
-            var curPos=new Vec2(
-              // this.x+Math.cos(curAng+this.angle*leaf)*(Math.sqrt(curLen**2+this.leafDist*leaf)),
-              // this.y+Math.sin(curAng+this.angle*leaf)*(Math.sqrt(curLen**2+this.leafDist*leaf))
-              // this.x+Math.cos(curAng+this.angle*(rot-10))*(Math.sqrt(curLen**2+this.leafDist*(rot-10))),
-              // this.y+Math.sin(curAng+this.angle*(rot-10))*(Math.sqrt(curLen**2+this.leafDist*(rot-10)))
-              this.x+(i*this.rotationTrig[rot][0]-j*this.rotationTrig[rot][1])*(Math.sqrt(curLen**2+this.leafDist*(rot-10)))/curLen,
-              this.y+(i*this.rotationTrig[rot][1]+j*this.rotationTrig[rot][0])*(Math.sqrt(curLen**2+this.leafDist*(rot-10)))/curLen
-            )
+            // var curx = this.x+Math.cos(curAng+this.angle*leaf)*(Math.sqrt(curLen**2+this.leafDist*leaf))
+            // var cury = this.y+Math.sin(curAng+this.angle*leaf)*(Math.sqrt(curLen**2+this.leafDist*leaf))
+            // var curx = this.x+Math.cos(curAng+this.angle*(rot-10))*(Math.sqrt(curLen**2+this.leafDist*(rot-10)))
+            // var cury = this.y+Math.sin(curAng+this.angle*(rot-10))*(Math.sqrt(curLen**2+this.leafDist*(rot-10)))
+            var curx = this.x+(i*this.rotationTrig[rot][0]-j*this.rotationTrig[rot][1])*(Math.sqrt(curLen**2+this.leafDist*(rot-10)))/curLen
+            var cury = this.y+(i*this.rotationTrig[rot][1]+j*this.rotationTrig[rot][0])*(Math.sqrt(curLen**2+this.leafDist*(rot-10)))/curLen
             var minDistToEdge=gridInParent.minDistToEdge(i, j);
 
             if (minDistToEdge<0) continue // position is outside the screen, weight = 0
@@ -255,7 +202,7 @@ class PhyllotaxisRule {
             else {//not close to the edge, weight = 1
               var curWeight=1;
             }
-            var curTotalAdd=this.generator.attemptGridRead(curPos.x, curPos.y)*curWeight;// TODO: in case of 0 weight skip
+            var curTotalAdd=this.generator.attemptGridRead(curx, cury)*curWeight;// TODO: in case of 0 weight skip
             if (isNaN(curTotalAdd)) continue // out of bounds
 
             runningTotal+=curTotalAdd;
@@ -317,7 +264,8 @@ class RotationRule {
           //   ) {
           var runningTotal=0; var runningWeight=0;
           for (var sec = 0; sec < this.sectors; sec++) {
-            // var curPos=new Vec2(this.x+Math.cos(curAng+TAU*sec/this.sectors)*curLen, this.y+Math.sin(curAng+TAU*sec/this.sectors)*curLen)
+            // var curx = this.x+Math.cos(curAng+TAU*sec/this.sectors)*curLen
+            // var cury = this.y+Math.sin(curAng+TAU*sec/this.sectors)*curLen)
             let rotI = i*this.rotationTrig[sec][0]-j*this.rotationTrig[sec][1]
             let rotJ = i*this.rotationTrig[sec][1]+j*this.rotationTrig[sec][0]
 
@@ -403,7 +351,6 @@ class WallpaperGenerator {
     var numRandomRules=3;
     if (false) {//random rules
       // for (var i = 0; i < 20; i++) {//make vertical mirror rules
-      //   // this.rules.push(new Vec2(rand(generator.gridWidth), rand(generator.gridHeight)))
       //   this.rules.push({
       //     x: rand(generator.gridWidth),
       //     y: rand(generator.gridHeight),
@@ -425,7 +372,6 @@ class WallpaperGenerator {
       // }
 
       // for (var i = 0; i < 10; i++) {//make bright spot rules
-      //   // this.rules.push(new Vec2(rand(generator.gridWidth), rand(generator.gridHeight)))
       //   this.rules.push({
       //     x: rand(generator.gridWidth),
       //     y: rand(generator.gridHeight),
@@ -485,10 +431,10 @@ class WallpaperGenerator {
       // var units=50/pixSize;
       var units=140/pixSize;
       for (var i = 0; i < this.rules.length; i++) {//go through positions of all rules and make them push away from eachother
-        newPositions[i]=new Vec2(this.rules[i].x, this.rules[i].y);
+        newPositions[i] = [this.rules[i].x, this.rules[i].y];
         for (var j = 0; j < this.rules.length; j++) {
           if (i!=j) {
-            var offset=new Vec2(this.rules[i].x-this.rules[j].x, this.rules[i].y-this.rules[j].y);
+            var offset = [this.rules[i].x-this.rules[j].x, this.rules[i].y-this.rules[j].y];
             // if (offset.len()<60/pixSize) {
             //   delArr.push(i);
             // }
@@ -535,11 +481,6 @@ class WallpaperGenerator {
     }
     
     this.draw();
-  }
-
-  quickVec2TopLeftSquare(p, width=4, color=this.colors.yellow) {
-    this.context.fillStyle=color.rgb() || color;
-    this.context.fillRect(p.x, p.y, width, width);
   }
 
   drawPixel(i, j) {
