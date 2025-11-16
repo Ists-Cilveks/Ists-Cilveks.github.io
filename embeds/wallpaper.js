@@ -199,13 +199,10 @@ class AveragingRule {
   }
 }
 
-class PhyllotaxisRule {
+class PhyllotaxisRule extends AveragingRule {
   constructor(generator, x, y, angle, ruleSize, leafDist) {
-    this.generator = generator
-    this.x = x
-    this.y = y
+    super(generator, x, y, ruleSize)
     this.angle = angle
-    this.ruleSize = ruleSize
     this.leafDist = leafDist
 
     this.minI=Math.max(-this.ruleSize/2, -this.x);
@@ -218,74 +215,44 @@ class PhyllotaxisRule {
     }
   }
 
-  enforce () {
-    var newGrid=[];//optimise this too
-    for (var i = 0; i < this.ruleSize; i++) {
-      newGrid[i]=[]
-      for (var j = 0; j < this.ruleSize; j++) {
-        newGrid[i][j]=undefined;
+  getAverageFor (i, j, gridInParent) {
+    // var curAng=Math.atan2(j, i);
+    var curLen=Math.sqrt(i**2+j**2);
+
+    var runningTotal=0; var runningWeight=0;
+    // for (var leaf = 0; leaf < this.sectors; leaf++) {
+    // for (var leaf = -10; leaf < 10; leaf++) {
+    for (var rot=0; rot < this.rotationTrig.length; rot++) {
+      // var curx = this.x+Math.cos(curAng+this.angle*leaf)*(Math.sqrt(curLen**2+this.leafDist*leaf))
+      // var cury = this.y+Math.sin(curAng+this.angle*leaf)*(Math.sqrt(curLen**2+this.leafDist*leaf))
+      // var curx = this.x+Math.cos(curAng+this.angle*(rot-10))*(Math.sqrt(curLen**2+this.leafDist*(rot-10)))
+      // var cury = this.y+Math.sin(curAng+this.angle*(rot-10))*(Math.sqrt(curLen**2+this.leafDist*(rot-10)))
+      var curx = this.x+(i*this.rotationTrig[rot][0]-j*this.rotationTrig[rot][1])*(Math.sqrt(curLen**2+this.leafDist*(rot-10)))/curLen
+      var cury = this.y+(i*this.rotationTrig[rot][1]+j*this.rotationTrig[rot][0])*(Math.sqrt(curLen**2+this.leafDist*(rot-10)))/curLen
+      var minDistToEdge=gridInParent.minDistToEdge(i, j);
+
+      if (minDistToEdge<0) continue // position is outside the screen, weight = 0
+      
+      if (minDistToEdge<40/pixSize) { // current position is close to the edge of the screen, weight < 1
+        var curWeight=smootherStep(minDistToEdge/(40/pixSize));
       }
-    }
-
-    // for (var i = -this.ruleSize/2; i < this.ruleSize/2; i++) {
-    //   for (var j = -this.ruleSize/2; j < this.ruleSize/2; j++) {
-    for (var i = this.minI; i < this.maxI; i++) {
-      for (var j = this.minJ; j < this.maxJ; j++) {
-        // TODO: check if in screen bounds (?)
-        // if (i**2+j**2<=(this.ruleSize/2)**2 && this.x+i>=0 && this.x+i<this.generator.gridWidth+1 && this.y+j>=0 && this.y+j<this.generator.gridHeight+1) {
-        if (i**2+j**2<=(this.ruleSize/2)**2) {
-          // var curAng=Math.atan2(j, i)+PI;
-          var curAng=Math.atan2(j, i);
-          var curLen=Math.sqrt(i**2+j**2);
-          // if ((this.phase+TAU/this.sectors<=TAU)?//only do averaging for one sector
-          //   (curAng>this.phase && curAng<=this.phase+TAU/this.sectors):
-          //   (curAng>this.phase || curAng<=this.phase+TAU/this.sectors-TAU)
-          //   ) {
-
-          var runningTotal=0; var runningWeight=0;
-          // for (var leaf = 0; leaf < this.sectors; leaf++) {
-          // for (var leaf = -10; leaf < 10; leaf++) {
-          for (var rot=0; rot < this.rotationTrig.length; rot++) {
-            // var curx = this.x+Math.cos(curAng+this.angle*leaf)*(Math.sqrt(curLen**2+this.leafDist*leaf))
-            // var cury = this.y+Math.sin(curAng+this.angle*leaf)*(Math.sqrt(curLen**2+this.leafDist*leaf))
-            // var curx = this.x+Math.cos(curAng+this.angle*(rot-10))*(Math.sqrt(curLen**2+this.leafDist*(rot-10)))
-            // var cury = this.y+Math.sin(curAng+this.angle*(rot-10))*(Math.sqrt(curLen**2+this.leafDist*(rot-10)))
-            var curx = this.x+(i*this.rotationTrig[rot][0]-j*this.rotationTrig[rot][1])*(Math.sqrt(curLen**2+this.leafDist*(rot-10)))/curLen
-            var cury = this.y+(i*this.rotationTrig[rot][1]+j*this.rotationTrig[rot][0])*(Math.sqrt(curLen**2+this.leafDist*(rot-10)))/curLen
-            var minDistToEdge=gridInParent.minDistToEdge(i, j);
-
-            if (minDistToEdge<0) continue // position is outside the screen, weight = 0
-            
-            if (minDistToEdge<40/pixSize) { // current position is close to the edge of the screen, weight < 1
-              var curWeight=smootherStep(minDistToEdge/(40/pixSize));
-            }
-            else {//not close to the edge, weight = 1
-              var curWeight=1;
-            }
-            var curTotalAdd=this.generator.attemptGridRead(curx, cury)*curWeight;// TODO: in case of 0 weight skip
-            if (isNaN(curTotalAdd)) continue // out of bounds
-
-            runningTotal+=curTotalAdd;
-            runningWeight+=curWeight;
-          }
-          var runningAverage=runningTotal/runningWeight;
-          // this.generator.attemptGridWrite(lerp(smootherStep(curLen/this.ruleSize*2), runningAverage, this.generator.attemptGridRead(this.x+i, this.y+j)), this.x+i, this.y+j, newGrid)
-          // this.generator.attemptGridWrite(runningAverage, this.x+i, this.y+j, newGrid)
-          this.generator.attemptGridWrite(lerp(smootherStep(curLen/this.ruleSize*2), runningAverage, this.generator.attemptGridRead(this.x+i, this.y+j)), i+this.ruleSize/2, j+this.ruleSize/2, newGrid)
-          // this.generator.attemptGridWrite(runningAverage, i+this.ruleSize/2, j+this.ruleSize/2, newGrid)
-        }
+      else {//not close to the edge, weight = 1
+        var curWeight=1;
       }
+      var curTotalAdd=this.generator.attemptGridRead(curx, cury)*curWeight;// TODO: in case of 0 weight skip
+      if (isNaN(curTotalAdd)) continue // out of bounds
+
+      runningTotal+=curTotalAdd;
+      runningWeight+=curWeight;
     }
-    // grid=newGrid;
-    // for (var i = -this.ruleSize/2; i < this.ruleSize/2; i++) {//add found values in newGrid to grid
-    //   for (var j = -this.ruleSize/2; j < this.ruleSize/2; j++) {
-    for (var i = this.minI; i < this.maxI; i++) {
-      for (var j = this.minJ; j < this.maxJ; j++) {
-        this.attemptGridWrite(this.attemptGridRead(i+this.ruleSize/2, j+this.ruleSize/2, newGrid), this.x+i, this.y+j)
-        // this.drawPixel(this.x+i, this.y+j);// NOTE: definitely don't do this, apparently (multiple unnecessary draws slow down calculations significantly)
-      }
+    if (runningWeight==0) return [0, 0]
+    let averageValue=runningTotal/runningWeight;
+    let weight = smootherStep(curLen/this.ruleSize*2)
+
+    return {
+      "average": averageValue,
+      "weight": weight,
     }
-    // console.table(newGrid);
   }
 }
 
@@ -479,12 +446,12 @@ class WallpaperGenerator {
     if (true) {//custom placed rules
       // this.addPhyllotaxisRule(0.5, 0.5, 2200)
       // this.addPhyllotaxisRule(0.7, 0.2, 2100)
-      // this.addPhyllotaxisRule(0.3, 0.7, 1600)
+      this.addPhyllotaxisRule(0.3, 0.7, 600)
       // this.addPhyllotaxisRule(0.1, 0.7, 1700)
       // this.addPhyllotaxisRule(0.7, 0.65, 1700)
 
-      this.addRotationRule(0.4, 0.72, 7, 1750)
-      this.addRotationRule(0.62, 0.4, 5, 2100)
+      // this.addRotationRule(0.4, 0.72, 7, 1750)
+      this.addRotationRule(0.62, 0.4, 5, 4100)
 
       // this.addRotationRule(0.1, 0.7, 3, 1700)
       // this.addRotationRule(0.9, 0.65, 3, 1700)
