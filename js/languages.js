@@ -20,15 +20,14 @@ if (languagesString == null) {
   var languages = languagesString.split(',')
 }
 
-if (languages.length > 1) {// Add the language selection
+let languageHeader = document.getElementById("main-header")
+if (languageHeader && languages.length > 1) {// Add the language selection
   // Make sure the leaf particles are available
   insertSVG("/img/monstera.svg")
   
-  let header = document.getElementById("main-header")
-  // TODO: if no header exists, make one.
   let languageDiv = document.createElement('div')
   languageDiv.className = "language-select"
-  header.appendChild(languageDiv)
+  languageHeader.appendChild(languageDiv)
   
   for (let l = 0; l < languages.length; l++) {
     const lang = languages[l];
