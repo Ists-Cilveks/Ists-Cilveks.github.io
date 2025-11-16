@@ -139,6 +139,66 @@ class Grid {
 }
 
 
+class AveragingRule {
+  "A kind of rule that applies some symmetry, averaging between the values in a circular region."
+
+  constructor(generator, x, y, ruleSize) {
+    this.generator = generator
+    this.x = x
+    this.y = y
+    this.ruleSize = ruleSize
+  }
+
+  getWeight (i, j, grid) {
+    var minDistToEdge=grid.minDistToEdge(i, j);
+
+    if (minDistToEdge<=0) return 0 // position is outside the screen, this point can't contribute anything
+    
+    let curWeight=1;
+    if (minDistToEdge<40/this.generator.pixSize) {// position is close to the edge of the screen, weight < 1
+      curWeight=smootherStep(minDistToEdge/(40/this.generator.pixSize));
+    }
+
+    return curWeight
+  }
+
+  enforce () {
+    let gridInParent = new OffsetGrid(this.generator.grid, this.x, this.y)
+    let newGrid = new OffsetGrid(
+      new Grid(this.ruleSize, this.ruleSize),
+      this.ruleSize/2,
+      this.ruleSize/2,
+    )
+
+    for (var i = -this.ruleSize/2; i < this.ruleSize/2; i++) {
+      for (var j = -this.ruleSize/2; j < this.ruleSize/2; j++) {
+        // TODO: also check if in screen bounds? (Not wanted if we do torus-like boundary looping though)
+        if (i**2+j**2>=(this.ruleSize/2)**2) continue
+        
+        let averagingResults = this.getAverageFor(i, j, gridInParent)
+
+        let oldValue = gridInParent.attemptRead(i, j)
+        if (isNaN(oldValue)) continue // (i, j) was out of bounds
+        
+        // this.generator.attemptGridWrite(0.8, i+this.ruleSize/2, j+this.ruleSize/2, newGrid)
+        let newValue = lerp(averagingResults.weight, averagingResults.average, oldValue)
+        newGrid.attemptWrite(newValue, i, j)
+        // this.generator.attemptGridWrite(lerp(smootherStep(curLen/this.ruleSize*2), runningAverage, this.generator.attemptGridRead(this.x+i, this.y+j)), i+this.ruleSize/2, j+this.ruleSize/2, newGrid)
+        // gridInParent.attemptWrite(0.8, i, j)
+        // this.generator.attemptGridWrite(runningAverage, i+this.ruleSize/2, j+this.ruleSize/2, newGrid)
+      }
+    }
+    // grid=newGrid;
+    for (var i = -this.ruleSize/2; i < this.ruleSize/2; i++) {//add found values in newGrid to grid
+      for (var j = -this.ruleSize/2; j < this.ruleSize/2; j++) {
+        let newValue = newGrid.attemptRead(i, j)
+        gridInParent.attemptWrite(newValue, i, j)
+        // drawPixel(this.x+i, this.y+j);// NOTE: definitely don't do this, apparently (multiple unnecessary draws slow down calculations significantly)
+      }
+    }
+  }
+}
+
 class PhyllotaxisRule {
   constructor(generator, x, y, angle, ruleSize, leafDist) {
     this.generator = generator
@@ -229,13 +289,10 @@ class PhyllotaxisRule {
   }
 }
 
-class RotationRule {
+class RotationRule extends AveragingRule {
   constructor(generator, x, y, sectors, ruleSize) {
-    this.generator = generator
-    this.x = x
-    this.y = y
+    super(generator, x, y, ruleSize)
     this.sectors = sectors
-    this.ruleSize = ruleSize
 
     // cos and sin values to quickly rotate points
     this.rotationTrig=[];
@@ -244,76 +301,40 @@ class RotationRule {
     }
   }
 
-  enforce () {
-    let gridInParent = new OffsetGrid(this.generator.grid, this.x, this.y)
-    let newGrid = new OffsetGrid(
-      new Grid(this.ruleSize, this.ruleSize),
-      this.ruleSize/2,
-      this.ruleSize/2,
-    )
+  getAverageFor (i, j, gridInParent) {
+    // var curAng=Math.atan2(j, i);
+    var curLen=Math.sqrt(i**2+j**2);
 
-    for (var i = -this.ruleSize/2; i < this.ruleSize/2; i++) {
-      for (var j = -this.ruleSize/2; j < this.ruleSize/2; j++) {
-        // TODO: check if in screen bounds (?)
-        if (i**2+j**2<=(this.ruleSize/2)**2) {
-          var curAng=Math.atan2(j, i);
-          var curLen=Math.sqrt(i**2+j**2);
-          // if ((this.phase+TAU/this.sectors<=TAU)?//only do averaging for one sector
-          //   (curAng>this.phase && curAng<=this.phase+TAU/this.sectors):
-          //   (curAng>this.phase || curAng<=this.phase+TAU/this.sectors-TAU)
-          //   ) {
-          var runningTotal=0; var runningWeight=0;
-          for (var sec = 0; sec < this.sectors; sec++) {
-            // var curx = this.x+Math.cos(curAng+TAU*sec/this.sectors)*curLen
-            // var cury = this.y+Math.sin(curAng+TAU*sec/this.sectors)*curLen)
-            let rotI = i*this.rotationTrig[sec][0]-j*this.rotationTrig[sec][1]
-            let rotJ = i*this.rotationTrig[sec][1]+j*this.rotationTrig[sec][0]
+    // if ((this.phase+TAU/this.sectors<=TAU)?//only do averaging for one sector
+    //   (curAng>this.phase && curAng<=this.phase+TAU/this.sectors):
+    //   (curAng>this.phase || curAng<=this.phase+TAU/this.sectors-TAU)
+    //   ) {
+    var runningTotal=0; var runningWeight=0;
+    for (var sec = 0; sec < this.sectors; sec++) {
+      // var curx = this.x+Math.cos(curAng+TAU*sec/this.sectors)*curLen)
+      // var cury = this.y+Math.sin(curAng+TAU*sec/this.sectors)*curLen)
+      let rotI = i*this.rotationTrig[sec][0]-j*this.rotationTrig[sec][1]
+      let rotJ = i*this.rotationTrig[sec][1]+j*this.rotationTrig[sec][0]
 
-            var minDistToEdge=gridInParent.minDistToEdge(i, j);
+      let curWeight = this.getWeight(i, j, gridInParent)
+      if (curWeight<=0) continue // position is outside the screen, this point can't contribute anything
 
-            if (minDistToEdge<=0) continue // position is outside the screen, this point can't contribute anything
-            
-            let curWeight=1;
-            if (minDistToEdge<40/this.generator.pixSize) {// position is close to the edge of the screen, weight < 1
-              curWeight=smootherStep(minDistToEdge/(40/this.generator.pixSize));
-            }
-
-            var curTotalAdd=gridInParent.attemptRead(rotI, rotJ)*curWeight;
-            // if (randProb(0.0001)) {
-            //   // console.log(gridInParent.attemptRead(rotI, rotJ), curWeight, rotI, rotJ);
-            //   console.log(rotI, this.ruleSize/2, this.x, "→", rotI-this.ruleSize/2+this.x, rotJ-this.ruleSize/2+this.y, this.generator.attemptGridRead(rotI-this.ruleSize/2+this.x, rotJ-this.ruleSize/2+this.y));
-            // }
-            if (isNaN(curTotalAdd)) continue // out of bounds
-            
-            runningTotal+=curTotalAdd;
-            runningWeight+=curWeight;
-          }
-          // if (randProb(0.1)) console.log(runningTotal, runningWeight, ";", i, j);
-          if (runningWeight==0) continue // didn't find any valid values
-          var averageValue=runningTotal/runningWeight;
-          let weight = smootherStep(curLen/this.ruleSize*2)
-
-          let oldValue = gridInParent.attemptRead(i, j)
-          if (isNaN(oldValue)) continue // (i, j) was out of bounds
-          
-          // this.generator.attemptGridWrite(0.8, i+this.ruleSize/2, j+this.ruleSize/2, newGrid)
-          let newValue = lerp(weight, averageValue, oldValue)
-          newGrid.attemptWrite(newValue, i, j)
-          // this.generator.attemptGridWrite(lerp(smootherStep(curLen/this.ruleSize*2), runningAverage, this.generator.attemptGridRead(this.x+i, this.y+j)), i+this.ruleSize/2, j+this.ruleSize/2, newGrid)
-          // gridInParent.attemptWrite(0.8, i, j)
-          // this.generator.attemptGridWrite(runningAverage, i+this.ruleSize/2, j+this.ruleSize/2, newGrid)
-        }
-      }
+      var curTotalAdd=gridInParent.attemptRead(rotI, rotJ)*curWeight;
+      if (isNaN(curTotalAdd)) continue // out of bounds TODO: isn't this already covered by curWeight<=0 ?
+      
+      runningTotal+=curTotalAdd;
+      runningWeight+=curWeight;
     }
-    // grid=newGrid;
-    for (var i = -this.ruleSize/2; i < this.ruleSize/2; i++) {//add found values in newGrid to grid
-      for (var j = -this.ruleSize/2; j < this.ruleSize/2; j++) {
-        let newValue = newGrid.attemptRead(i, j)
-        gridInParent.attemptWrite(newValue, i, j)
-        // drawPixel(this.x+i, this.y+j);// NOTE: definitely don't do this, apparently (multiple unnecessary draws slow down calculations significantly)
-      }
+
+    if (runningWeight==0) return [0, 0]
+    let averageValue=runningTotal/runningWeight;
+    let weight = smootherStep(curLen/this.ruleSize*2)
+
+
+    return {
+      "average": averageValue,
+      "weight": weight,
     }
-    // console.table(newGrid);
   }
 }
 
