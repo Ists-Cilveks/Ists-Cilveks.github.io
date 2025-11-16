@@ -20,6 +20,27 @@ body {
 	}
 }
 
+.overlay.main-content {
+	position: absolute;
+	top: 0;
+	z-index: 1;
+	padding: 1em;
+	background-color: var(--bg-color);
+	overflow-y: auto;
+}
+@media only screen and (orientation: portrait){
+	.overlay.main-content {
+		max-height: 60vh;
+	}
+}
+@media only screen and (orientation: landscape){
+	.overlay.main-content {
+		right: 0;
+		bottom: 0;
+		max-width: 50vw;
+	}
+}
+
 a {
 	color: var(--subtle-tinted);
 }
@@ -150,6 +171,20 @@ txt-pop {
 	position: absolute;
 	left: 0;
 	top: 0;
+	z-index: 10;
+}
+
+.hover-info-btn {
+	position: relative;
+	left: 1em;
+	top: 1em;
+	background-color: var(--bg-color);
+	padding: 0.3em;
+}
+:not(:hover)>.hover-info-btn:not(:focus) {
+	/* TODO: this is pretty messy, but seems to do exactly what I want */
+	/* TODO: :not(:hover, :focus)>.hover-info-btn:not(:focus) doesn't work. I kinda also want it to show the info btn whenever the parent is focused */
+	z-index: -999;
 }
 
 .gallery-container {
@@ -205,6 +240,7 @@ svg {
   top: 0;
   pointer-events: none;
   opacity: 0;
+	z-index: 100;
 }
 
 .landscape-row {

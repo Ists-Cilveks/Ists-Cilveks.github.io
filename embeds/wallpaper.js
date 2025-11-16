@@ -310,7 +310,7 @@ class WallpaperGenerator {
   constructor(passedCanvas, pixSize=5, fadeTop=false) {
     this.canvas = passedCanvas
     this.container = this.canvas.parentElement
-    this.resize();
+    this.resize(false);
     
     this.context = this.canvas.getContext("2d")
     this.fadeTop = fadeTop
@@ -661,12 +661,20 @@ class WallpaperGenerator {
   restart() {
     this.loops=0;
   }
-  resize() {
+  resize(draw=true) {
     this.width = this.canvas.width = this.container.clientWidth
     this.height = this.canvas.height = this.container.clientHeight
     this.canvas.style.width = this.width+"px"
     this.canvas.style.height = this.height+"px"
-    this.restart();
+    this.restart()
+    if (draw) this.draw()
+  }
+
+  interactBasic() {
+    for (var allRuleLoops = 0; allRuleLoops < 1; allRuleLoops++) {
+      myWallpaper.gridOperations();
+    }
+    myWallpaper.draw();
   }
 }
 
@@ -685,41 +693,14 @@ const myWallpaper = new WallpaperGenerator(wallpaperCanvas, pixSize=5, fadeTop=w
 //   lasty=(event.clientY+lasty*n)/(n+1);
 // });
 // window.addEventListener("dblclick",function(){location.reload();});
-wallpaperCanvas.addEventListener("click",function(){
-  for (var allRuleLoops = 0; allRuleLoops < 1; allRuleLoops++) {
-    myWallpaper.gridOperations();
-  }
-  myWallpaper.draw();
+wallpaperCanvas.addEventListener("click", function() {
+  myWallpaper.interactBasic()
 });
-// window.addEventListener("keyup",function(){
-//   var curKey=event.keyCode;
-//   keys[curKey]=false;
-//   // console.log(keys);
-// });
-// window.addEventListener("keydown",function(){
-//   var curKey=event.keyCode;
-//   keys[curKey]=true;
-//   // if (curKey<58 && curKey>48) {//numbers - pixsize
-//   //   this.pixSize=2**(curKey-49);
-//   //   // this.pixSize=14;
-//   //   this.gridWidth=this.width/this.pixSize; this.gridHeight=this.height/this.pixSize;
-//   //   this.initialiseGrid();
-//   //   this.draw();
-//   // }
-//   // console.log(keys);
-//   // console.log(curKey);
-//   switch (curKey) {
-//     case 32://space - pause
-//       this.paused=!this.paused;
-//       console.log(this.paused?"Paused":"Unthis.paused");
-//       this.draw();
-//       break;
-//     case 68://d - draw
-//       this.draw();
-//       break;
-//     // case 37://left
-//     //   move.left();
-//     //   break;
-//   }
-// });
-// window.addEventListener("resize",function(){resize();})
+wallpaperCanvas.addEventListener("keydown",function(event){
+  switch (event.key) {
+    case " ":
+      myWallpaper.interactBasic()
+      break;
+  }
+});
+window.addEventListener("resize",function(){myWallpaper.resize();})

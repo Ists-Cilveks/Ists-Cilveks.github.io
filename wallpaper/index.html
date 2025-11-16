@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Wallpaper generator</title>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link href="/css/style.css" rel="stylesheet">
+	</head>
+	<body style="width: 100vw; height: 100vh;">
+		<script src="/js/Color.js"></script>
+		<script src="/css/palettize.js"></script>
+		<script src="/js/particles.js"></script>
+		<script src="/js/themeBtn.js"></script>
+		<script src="/js/SVGRequests.js"></script>
+
+		<div class="overlay main-content">
+			<a class="basic-btn home-btn" href="/" lang="en">home</a>
+			<a class="basic-btn home-btn" href="/index.html?l=lv" lang="lv">uz sākumu</a>
+			<a class="basic-btn home-btn ll" href="/index.html?l=tok" style="font-size: 250%;" lang="tok">lipu-open</a>
+
+			<header id="main-header">
+				<h1 lang="en">Wallpaper generator</h1>
+				<h1 lang="lv">Tapešu algoritms</h1>
+				<h1 lang="tok">sitelen musi</h1>
+			</header>
+			<script src="/js/languages.js" my-languges="en,lv,tok"></script>
+			
+			<p lang="en">This is a way I came up with to make pretty repeating patterns. The principle is to take some noise (perlin noise or random blotches of color), and apply rules (like rotational symmetry) that essentially place semitransparent copies of the image on top of itself at different rotations or sizes or positions, and increase contrast (make light regions lighter and dark regions darker). You repeat these steps a bunch to reinforce the symmetry, sorta letting the pattern figure out what works best. You can get some really cool images, and see how the symmetries reinforce eachother or conflict.</p>
+			<p lang="lv">Es izdomāju veidu kā radīt tapetēm līdzīgus rakstus. Galvenā doma ir ņemt nejaušus rakstus (Perlina troksni un nejaušus traipus) un tiem piešķirt simetriju (ņemt vidējo no vairākiem punktiem, apmēram kā likt vairākas puscaurspīdīgas attēla kopijas vienu otrai virsū, lai dabūtu jaunu attēlu), un tad palielināt kontrastu (tumšās vietas vēl patumšināt, gaišās — paspilgtināt). Šie soļi ļauj rakstam pašam atrast, kā labāk nodrošināt simetriju. Starp simetrijas centriem var redzēt dažus spilgtus punktus, kuros simetrijas sevišķi labi sakrīt.</p>
+			<p lang="tok">mi lukin e len lon sinpin tomo. sitelen li lon ona li musi lukin tawa mi la mi wile pali e sitelen ni kepeken ilo. mi pali e nasin ni:</p>
+			<ul lang="tok">
+				<li>o pana e jaki tawa lipu.</li>
+				<li>o mute e lipu. lipu sama mute li lon. o tawa sike e lipu, o pana e lipu wan tawa sewi pi lipu ante. ni la jaki wan li lon sewi pi jaki ante. o wan e lipu ale. ni la jaki wan li kama sike pi jaki mute. ni la lipu sin li jo e sike mute.</li>
+				<li>o wawa e kule. sina wan e lipu pi kule wawa la kule li wan li kama wawa ala li kama jaki. o wawa e ona sama ni: ijo walo o kama walo mute. ijo pimeja o kama pimeja mute.</li>
+			</ul>
+			<p lang="tok">o pali e ni ale lon tenpo mute. tenpo ale la jaki sin li kama, li kama sike, la sike li kama pona tawa lukin.
+			</p>
+			<p>TODO: make this more interactive</p>
+		</div>
+
+		<canvas id="wallpaper-canvas" style="position: absolute; top: 0; cursor: pointer;" tabindex="0">
+		</canvas>
+		<script src="/embeds/wallpaper.js"></script>
+	</body>
+</html>
