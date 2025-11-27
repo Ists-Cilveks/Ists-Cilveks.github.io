@@ -565,14 +565,14 @@ class WallpaperGenerator {
       }
     }
   }
-  randomDefectInMonochromaticPlace() {
-    var x=rand(this.gridWidth);
-    var y=rand(this.gridHeight);
+  randomDefectInMonochromaticPlace(givenX, givenY) { // TODO: refactor to have separate function for custom defects and just random defects
+    var x=givenX||rand(this.gridWidth);
+    var y=givenY||rand(this.gridHeight);
     var ruleSize=lerp(Math.random()**2, 20, 80)/this.pixSize;
     // var ruleSize=70;
     // var ruleSize=20;
 
-    let gridInParent = new OffsetGrid(this.grid, x-ruleSize/2, y-ruleSize/2)
+    let gridInParent = new OffsetGrid(this.grid, x, y)
 
     var runningTotal=0; var runningWeight=0;
     for (var i = -ruleSize/2; i < ruleSize/2; i++) {//find current values in search area
@@ -670,11 +670,12 @@ class WallpaperGenerator {
     if (draw) this.draw()
   }
 
-  interactBasic() {
+  interactBasic(x, y) {
+    this.randomDefectInMonochromaticPlace(x/this.pixSize, y/this.pixSize)
     for (var allRuleLoops = 0; allRuleLoops < 1; allRuleLoops++) {
-      myWallpaper.gridOperations();
+      this.gridOperations();
     }
-    myWallpaper.draw();
+    this.draw();
   }
 }
 
@@ -693,8 +694,8 @@ const myWallpaper = new WallpaperGenerator(wallpaperCanvas, pixSize=5, fadeTop=w
 //   lasty=(event.clientY+lasty*n)/(n+1);
 // });
 // window.addEventListener("dblclick",function(){location.reload();});
-wallpaperCanvas.addEventListener("click", function() {
-  myWallpaper.interactBasic()
+wallpaperCanvas.addEventListener("click", function(event) {
+  myWallpaper.interactBasic(event.clientX, event.clientY)
 });
 wallpaperCanvas.addEventListener("keydown",function(event){
   switch (event.key) {
