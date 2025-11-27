@@ -41,5 +41,24 @@
 		<canvas id="wallpaper-canvas" style="position: absolute; top: 0; cursor: pointer;" tabindex="0">
 		</canvas>
 		<script src="/embeds/wallpaper.js"></script>
+		<script>
+			var overlayIsHidden = false
+
+			function toggleOverlay(params) {
+				let overlayElements = document.getElementsByClassName("overlay")
+				for (const el of overlayElements) {
+					el.style.display = overlayIsHidden ? "" : "none"
+				}
+				overlayIsHidden = !overlayIsHidden
+			}
+
+			document.addEventListener("keydown", function (event) {
+				switch (event.key) {
+					case "h":
+						toggleOverlay()
+						break
+				}
+			})
+		</script>
 	</body>
 </html>
