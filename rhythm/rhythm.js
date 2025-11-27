@@ -220,7 +220,7 @@ var recentRealeases = []
 var currentlyHeldNotes = []
 var noteData
 
-fetch('/embeds/tlpog.json')
+fetch('rhythm/tlpog.json')
 	.then((response) => response.json())
 	.then(function(json){
 		noteData=json
