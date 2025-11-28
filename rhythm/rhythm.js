@@ -13,27 +13,13 @@ var canvas=document.getElementById("rhythm-canvas");
 	var missPeriod=200;
 	const magicOffset=0;
 
-var style_in_rhythmJS = window.getComputedStyle(document.body)
-var getCSSColor = (name) => ColorFromString(style_in_rhythmJS.getPropertyValue(name))
-var themeColors = {
-	BG: getCSSColor('--bg-color'),
-	secondaryBG: getCSSColor('--secondary-bg-color'),
-	HC_BG: getCSSColor('--hc-bg'),
-	HC_FG: getCSSColor('--hc-fg'),
-	main: getCSSColor('--main-color'),
-	highlights: getCSSColor('--highlights'),
-	framing: getCSSColor('--framing'),
-	subtler: getCSSColor('--subtler'),
-	subtleTinted: getCSSColor('--subtle-tinted'),
-	lightUp: getCSSColor('--light-up'),
-	deepFraming: getCSSColor('--deep-framing'),
-}
 var noteColors = {
-	onBeat: themeColors.highlights,
-	offBeat: themeColors.framing.mix(themeColors.deepFraming),
-	quarter: themeColors.lightUp.mix(themeColors.deepFraming, 0.2),
-	other: themeColors.main.mix(themeColors.BG, 0.3),
+	onBeat: globalPalette.highlights,
+	offBeat: globalPalette.framing.mix(globalPalette.deepFraming),
+	quarter: globalPalette.lightUp.mix(globalPalette.deepFraming, 0.2),
+	other: globalPalette["main-color"].mix(globalPalette.BG, 0.3),
 }
+globalPalette.addListener(function () {window.requestAnimationFrame(draw)})
 
 resize();
 
@@ -113,7 +99,7 @@ function drawNote(note) {
 	const offset = t - note.t
 	const lane = note.Lane
 	const color = noteColors[note.positionName]
-	drawArrow(offset, lane, color.rgb(), themeColors.HC_BG.rgb(), 0.1)
+	drawArrow(offset, lane, color.rgb(), globalPalette["hc-bg"].rgb(), 0.1)
 }
 function drawNoteDrag(note) {
 	const startOffset = t - note.t
@@ -121,15 +107,15 @@ function drawNoteDrag(note) {
 	const lane = note.Lane
 	let bgColor
 	if (note.isBeingHeld) {
-		bgColor = noteColors[note.positionName].mix(themeColors.HC_BG, 0.4)
+		bgColor = noteColors[note.positionName].mix(globalPalette["hc-bg"], 0.4)
 	} else {
 		bgColor = noteColors[note.positionName]
 		bgColor.a = 0.2
 	}
-	drawDrag(startOffset, endOffset, lane, bgColor.rgba(), themeColors.HC_BG.rgba(), 0.01)
+	drawDrag(startOffset, endOffset, lane, bgColor.rgba(), globalPalette["hc-bg"].rgba(), 0.01)
 }
 function drawReceptor(lane, lineWidth=0.03) {
-	drawArrow(0, lane, null, themeColors.main.rgb(), lineWidth)
+	drawArrow(0, lane, null, globalPalette["main-color"].rgb(), lineWidth)
 }
 function drawGhostNote(lane, missedBy) {
 	// Draws a faint note at the position where it was hit. Helps to see if you're early or late
@@ -265,8 +251,10 @@ function syncToAudio(curTime) {
 var secondarySyncDone = false; // FIXME: dumb fix
 
 function draw(curTime) {
-	t = curTime-startTime + magicOffset
-
+	if (!paused) {
+		t = curTime-startTime + magicOffset
+	}
+	
 	if (secondarySyncDone) {
 
 		context.clearRect(0, 0, canvas.width, canvas.height);
@@ -277,7 +265,7 @@ function draw(curTime) {
 			const note = noteData.HitObjects[i]
 			const isLong = "EndTime" in note
 			const disappearTime = isLong ? note.EndTime : note.t // What time determines when a note is offscreen? (either the time of a normal note or the end time of a held note)
-			if (t > disappearTime+missPeriod) { // Remove missed notes
+			if (!paused && t > disappearTime+missPeriod) { // Remove missed notes
 				noteData.HitObjects.splice(i, 1)
 				i--
 				continue
@@ -303,7 +291,7 @@ function draw(curTime) {
 			const hit = recentHits[i]
 			// const timeSinceHit = curTime - hit.time
 			const timeSinceHit = performance.now() - hit.time
-			if (timeSinceHit > 500) { // no longer recent
+			if (!paused && timeSinceHit > 500) { // no longer recent
 				recentHits.splice(i, 1)
 				i--
 				continue
