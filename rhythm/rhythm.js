@@ -251,21 +251,15 @@ var audio = document.getElementById("rhythm-track")
 audio.volume = 0.3;
 audio.addEventListener("play", function(){
 	paused=false;
-	requestAnimationFrame(startPlaying);
-	// console.log("Unpaused")
+	syncToAudio(performance.now())
+	draw()
 })
 audio.addEventListener("pause", function(){
 	paused=true;
-	// console.log("Paused")
 })
 
 function syncToAudio(curTime) {
 	startTime=curTime-audio.currentTime*1000
-}
-
-function startPlaying(curTime) {
-	syncToAudio(curTime)
-	draw(curTime);
 }
 
 var secondarySyncDone = false; // FIXME: dumb fix
@@ -273,12 +267,7 @@ var secondarySyncDone = false; // FIXME: dumb fix
 function draw(curTime) {
 	t = curTime-startTime + magicOffset
 
-	if (t>500 && !secondarySyncDone) {
-		secondarySyncDone = true
-		syncToAudio(performance.now())
-	}
-
-	if (!paused) {
+	if (secondarySyncDone) {
 
 		context.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -343,7 +332,15 @@ function draw(curTime) {
 			// if (t > note.t) {} // TODO: visual effect from missing a note
 			drawNote(note)
 		}
+	}
 
+	// Do secondary sync
+	if (t>500 && !secondarySyncDone) {
+		secondarySyncDone = true
+		syncToAudio(performance.now())
+	}
+
+	if (!paused) {
 		requestAnimationFrame(draw);
 	}
 }
@@ -351,12 +348,23 @@ function draw(curTime) {
 function resize() {
 	width=canvas.width=rhythmContainer.clientWidth
 	height=canvas.height=rhythmContainer.clientHeight
-	draw()
+	if (secondarySyncDone) {draw()}
 }
 if (!paused) {
 	audio.play();
 }
 resize()
+
+function startRhythmGame() {
+	document.getElementById('info-before-rhythm-game').style.display = 'none'
+	audio.play()
+	rhythmContainer.focus()
+}
+function stopRhythmGame() {
+	audio.pause()
+}
+
+rhythmPlayButton.addEventListener("click", startRhythmGame)
 
 // canvas.addEventListener("mousemove",function(){
 //   // lastx=event.clientX;
@@ -372,29 +380,30 @@ canvas.addEventListener("mousedown",function(event){
 		notePressed(lane, event.timeStamp)
 	}
 });
-window.addEventListener("keyup",function(event){
+rhythmContainer.addEventListener("keyup",function(event){
 	var curKey=event.key;
 	keys[curKey]=false;
 	// console.log(keys);
 	switch (curKey) {
-		case "a"://a
+		case "a":
+		case "ArrowLeft":
 			noteReleased(1, event.timeStamp)
 			break;
-		case "s"://s
+		case "s":
+		case "ArrowDown":
 			noteReleased(2, event.timeStamp)
 			break;
-		case "k"://k
+		case "k":
+		case "ArrowUp":
 			noteReleased(3, event.timeStamp)
 			break;
-		case "l"://l
+		case "l":
+		case "ArrowRight":
 			noteReleased(4, event.timeStamp)
 			break;
-		// case 37://left
-		//   move.left();
-		//   break;
 	}
 });
-window.addEventListener("keydown",function(event){
+rhythmContainer.addEventListener("keydown",function(event){
 	var curKey=event.key;
 	if (event.repeat) { // Don't interpret held down keys as being rapidly mashed
 		return
@@ -412,30 +421,28 @@ window.addEventListener("keydown",function(event){
 	switch (curKey) {
 		case " "://space - pause
 			if (paused) {
-				audio.play()
+				startRhythmGame()
 			}
 			else {
-				audio.pause()
+				stopRhythmGame()
 			}
 			break;
-		// case 68://d - draw
-		// 	draw();
-		// 	break;
-		case "a"://a
+		case "a":
+		case "ArrowLeft":
 			notePressed(1, event.timeStamp)
 			break;
-		case "s"://s
+		case "s":
+		case "ArrowDown":
 			notePressed(2, event.timeStamp)
 			break;
-		case "k"://k
+		case "k":
+		case "ArrowUp":
 			notePressed(3, event.timeStamp)
 			break;
-		case "l"://l
+		case "l":
+		case "ArrowRight":
 			notePressed(4, event.timeStamp)
 			break;
-		// case 37://left
-		//   move.left();
-		//   break;
 	}
 });
 window.addEventListener("resize",function(){resize();})
