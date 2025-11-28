@@ -53,6 +53,9 @@
 			}
 
 			document.addEventListener("keydown", function (event) {
+				if (event.repeat) { // Don't interpret held down keys as being rapidly mashed
+					return
+				}
 				switch (event.key) {
 					case "h":
 						toggleOverlay()
