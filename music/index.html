@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Music</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="https://unpkg.com/tone"></script>
+  </head>
+  <body class="main-content">
+    <script src="/js/Color.js"></script>
+    <script src="/css/palettize.js"></script>
+    <script src="/js/particles.js"></script>
+    <script src="/js/SVGRequests.js"></script>
+    
+    <a class="basic-btn home-btn" href="/" lang="en">home</a>
+    <a class="basic-btn home-btn" href="/index.html?l=lv" lang="lv">uz sākumu</a>
+    <a class="basic-btn home-btn ll" href="/index.html?l=tok" style="font-size: 250%;" lang="tok">lipu-open</a>
+    
+    <header id="main-header">
+      <h1 lang="en">Music tests</h1>
+    </header>
+		<script src="/js/themeBtn.js"></script>
+    <script src="/js/languages.js" my-languges="en"></script>
+    
+    <script>
+      var isPlaying = false
+      var barlength = Tone.Time("1n")
+      Tone.getTransport().timeSignature = [4, 4]
+      Tone.getTransport().bpm.value = 80
+
+      var channel = new Tone.Channel(volume=-8).toDestination()
+      const bassSynthData = {
+        "volume": 0,
+        "detune": 0,
+        // "portamento": 0.05,
+        "portamento": 0,
+        "envelope": {
+          "attack": 0.05,
+          "attackCurve": "exponential",
+          "decay": 0.2,
+          "decayCurve": "linear",
+          "release": 0.3,
+          "releaseCurve": "linear",
+          "sustain": 0.6
+        },
+        "oscillator": {
+          "partialCount": 0,
+          "partials": [],
+          "phase": 0,
+          "type": "amtriangle",
+          "harmonicity": 0.2,
+          "modulationType": "sine"
+        }
+      }
+      const arpSynthData = {
+        "volume": -4,
+        "detune": 0,
+        "portamento": 0,
+        "envelope": {
+          "attack": 0.05,
+          "attackCurve": "exponential",
+          "decay": 0.2,
+          "decayCurve": "linear",
+          "release": 0.3,
+          "releaseCurve": "linear",
+          "sustain": 0.6
+        },
+        "oscillator": {
+          "partialCount": 0,
+          "partials": [],
+          "phase": 0,
+          "type": "amtriangle",
+          "harmonicity": 0,
+          "modulationType": "sine"
+        }
+      }
+      const bassSynth = new Tone.Synth(bassSynthData)
+      bassSynth.toDestination()
+      // const distortion = new Tone.Distortion(0.2);
+      // bassSynth.chain(distortion, channel)
+      // const lowpass = new Tone.Filter(1500);
+      // bassSynth.chain(lowpass, Tone.Destination)
+      const melodySynth = new Tone.Synth(arpSynthData).connect(channel)
+      let seqFunc = (synth) => {
+        return (time, note) => {
+          if (note == "~") return
+          if (note == ".") {
+            synth.triggerRelease(time)
+            return
+          }
+          synth.triggerAttack(note, time);
+        }
+      }
+
+      const bassline = new Tone.Sequence(seqFunc(bassSynth), [
+          ["C3","~",".","D3","~","~",".","."],
+          ["F3","~",".","G3","~","A3","G3","F3"],
+          ["D3","~",".","F3","~",["~","."],"F3","~"],
+          ["G3","~","C4","A3","~","G3","F3","G3"],
+        ], barlength).start(0)
+
+        // const melody = new Tone.Sequence(seqFunc(melodySynth), [["F4","~","~","G4"],["E4",["F4","."]]], barlength/2).start(0)
+        const arpeggio = new Tone.Sequence(seqFunc(melodySynth), [
+          [
+            "E5","F5","G5","E5","F5","G5",
+            "E5","G5","A5","E5","G5","A5","E5","G5","A5","G5",
+          ],
+          [
+            "E5","G5","A5","E5","G5","A5",
+            "F5","G5","C6","F5","G5","C6","F5","G5","C6","G5",
+          ],
+        ], barlength).start(0)
+        
+        // new Tone.ToneEvent([bassline, melody])
+      
+      function playAudio() {
+        isPlaying = true
+        Tone.Transport.start();
+			}
+      function pauseAudio() {
+        isPlaying = false
+        bassSynth.triggerRelease("+0.1")
+        melodySynth.triggerRelease("+0.1")
+        Tone.Transport.stop();
+      }
+    </script>
+    
+    <button class="basic-btn" onclick="isPlaying ? pauseAudio() : playAudio()">Play/Pause</button>
+  </body>
+</html>
