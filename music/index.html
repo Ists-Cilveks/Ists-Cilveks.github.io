@@ -92,27 +92,32 @@
           synth.triggerAttack(note, time);
         }
       }
+      function toneFunc(time, events) {
+        for (const event of events) {
+          event.start(time)
+        }
+      }
 
       const bassline = new Tone.Sequence(seqFunc(bassSynth), [
-          ["C3","~",".","D3","~","~",".","."],
-          ["F3","~",".","G3","~","A3","G3","F3"],
-          ["D3","~",".","F3","~",["~","."],"F3","~"],
-          ["G3","~","C4","A3","~","G3","F3","G3"],
-        ], barlength).start(0)
+        ["C3","~",".","D3","~","~",".","."],
+        ["F3","~",".","G3","~","A3","G3","F3"],
+        ["D3","~",".","F3","~",["~","."],"F3","~"],
+        ["G3","~","C4","A3","~","G3","F3","G3"],
+      ], barlength)
 
-        // const melody = new Tone.Sequence(seqFunc(melodySynth), [["F4","~","~","G4"],["E4",["F4","."]]], barlength/2).start(0)
-        const arpeggio = new Tone.Sequence(seqFunc(melodySynth), [
-          [
-            "E5","F5","G5","E5","F5","G5",
-            "E5","G5","A5","E5","G5","A5","E5","G5","A5","G5",
-          ],
-          [
-            "E5","G5","A5","E5","G5","A5",
-            "F5","G5","C6","F5","G5","C6","F5","G5","C6","G5",
-          ],
-        ], barlength).start(0)
-        
-        // new Tone.ToneEvent([bassline, melody])
+      // const melody = new Tone.Sequence(seqFunc(melodySynth), [["F4","~","~","G4"],["E4",["F4","."]]], barlength/2).start(0)
+      const arpeggio = new Tone.Sequence(seqFunc(melodySynth), [
+        [
+          "E5","F5","G5","E5","F5","G5",
+          "E5","G5","A5","E5","G5","A5","E5","G5","A5","G5",
+        ],
+        [
+          "E5","G5","A5","E5","G5","A5",
+          "F5","G5","C6","F5","G5","C6","F5","G5","C6","G5",
+        ],
+      ], barlength)
+      
+      new Tone.ToneEvent(toneFunc, [bassline, arpeggio]).start(0)
       
       function playAudio() {
         isPlaying = true
