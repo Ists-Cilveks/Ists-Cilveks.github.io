@@ -187,13 +187,18 @@ txt-pop {
 	z-index: -999;
 }
 
-.gallery-container {
+.gallery-container, .gallery-container2 {
+	margin-top: 0.8em;
+	margin-bottom: 0.8em;
 	display: grid;
 	grid-template-columns: 1fr 1fr 1fr;
 	gap: 2em;
 }
+.gallery-container2 {
+	grid-template-columns: 1fr 1fr;
+}
 @media only screen and (orientation: portrait){
-	.gallery-container {
+	.gallery-container, .gallery-container2 {
 		grid-template-columns: 1fr;
 	}
 }
@@ -290,4 +295,16 @@ kbd:not(.font-unset) {
 	font-family: monospace;
 	font-size: 1.3em;
   font-weight: 600;
+}
+
+.hover-underline {
+	text-decoration: dashed underline;
+}
+
+.my-image {
+	display: block;
+	max-width: 100%;
+	margin: 0.8em;
+	margin-left: auto;
+	margin-right: auto;
 }
