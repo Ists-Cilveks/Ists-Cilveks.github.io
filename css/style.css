@@ -316,3 +316,7 @@ kbd:not(.font-unset) {
 .spoiler * { /* Prevents links from being a different color. They're still clickable and hoverable though so eh, doesn't really work. TODO i guess */
 	color: var(--main-color) !important;
 }
+
+details {
+	margin-left: 1em;
+}
