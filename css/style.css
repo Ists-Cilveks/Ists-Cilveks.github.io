@@ -320,3 +320,15 @@ kbd:not(.font-unset) {
 details {
 	margin-left: 1em;
 }
+
+.container-8831 {
+	display: flex;
+	justify-content: center;
+	gap: 0.5em;
+}
+.container-8831 > * {
+	height: 62px;
+}
+.btn-8831 {
+	image-rendering: pixelated;
+}
