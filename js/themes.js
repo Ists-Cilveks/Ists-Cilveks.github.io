@@ -1,8 +1,8 @@
 // Sets the page theme from localstorage or defaults to dark mode.
-// Adds a theme switch button to 'main-header' unless the no-btn attribute is used.
+// Adds a theme switch button to 'main-header' unless the data-no-btn attribute is used.
 
 let header = document.getElementById("main-header")
-if (header != null && !document.currentScript.hasAttribute("no-btn")) { // The page has a header
+if (header != null && !document.currentScript.hasAttribute("data-no-btn")) { // The page has a header
   // TODO: if no header exists, make one.
   let themeDiv = document.createElement('div')
   themeDiv.className = "theme-select"
