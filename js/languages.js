@@ -1,5 +1,5 @@
 // Add <style> that hides elements of languges other than the one selected (in the URL) and add buttons that let the user change languages
-// Use in a <script> tag with an attribute: my-languges="en,lv"
+// Use in a <script> tag with an attribute: data-page-languages="en,lv"
 
 /* <style> insertion based on https://stackoverflow.com/a/524721/10630826 */
 let head = document.head || document.getElementsByTagName('head')[0]
@@ -13,7 +13,7 @@ let languageColors = {
   "tok": [new Color(230, 220, 20), new Color(10, 30, 180)],
 }
 
-let languagesString = document.currentScript.getAttribute("my-languges")
+let languagesString = document.currentScript.getAttribute("data-page-languages")
 if (languagesString == null) {
   var languages = []
 } else {
