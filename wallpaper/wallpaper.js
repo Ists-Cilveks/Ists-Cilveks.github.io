@@ -680,7 +680,7 @@ class WallpaperGenerator {
 }
 
 
-let wallpaperFadeTop = document.currentScript.hasAttribute("fade-top")
+let wallpaperFadeTop = document.currentScript.hasAttribute("data-fade-top")
 
 
 const wallpaperCanvas=document.getElementById("wallpaper-canvas")
