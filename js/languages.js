@@ -12,6 +12,11 @@ let languageColors = {
   "lv": [new Color(100, 0, 0), colors.white],
   "tok": [new Color(230, 220, 20), new Color(10, 30, 180)],
 }
+let languageNamesAlt = {
+  "en": "English",
+  "lv": "Latvian",
+  "tok": "toki pona"
+}
 
 let languagesString = document.currentScript.getAttribute("data-page-languages")
 if (languagesString == null) {
@@ -34,6 +39,7 @@ if (languageHeader && languages.length > 1) {// Add the language selection
     let btn = document.createElement('button')
     btn.innerText = lang.toUpperCase()
     btn.className = "basic-btn language-btn"
+    btn.setAttribute("aria-label", languageNamesAlt[lang])
     let colors = languageColors[lang]
     btn.addEventListener("click", function (event) {
       setLanguage(lang)

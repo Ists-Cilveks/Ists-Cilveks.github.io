@@ -12,7 +12,8 @@ if (header != null && !document.currentScript.hasAttribute("data-no-btn")) { // 
   btn.style.width = "2em"
   insertSVG("/js/theme icons.svg")
   btn.innerHTML = `
-  <svg style="width: 100%;" viewbox="0 0 48.697 46.475">
+  <svg style="width: 100%;" viewbox="0 0 48.697 46.475" role="img" aria-label="Switch theme">
+    <title>Switch theme</title>
     <use id="theme-button-use-element" xlink:href="#theme-icon-dark" style="color: var(--main-color);">
     </use>
   </svg>
