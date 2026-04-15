@@ -24,8 +24,16 @@
     <script src="/js/languages.js" my-languges="en"></script>
     
     <script>
+      const phi = (1+5**(1/2))/2
+      const theta = phi**2
+      const ona = phi**3
+      const onaphi = phi**4
+      const onathey = phi**5
+      const epsi = phi**6
+
       var isPlaying = false
       var barlength = Tone.Time("1n")
+      var beat = barlength/ona
       Tone.getTransport().timeSignature = [4, 4]
       Tone.getTransport().bpm.value = 80
 
@@ -98,26 +106,64 @@
         }
       }
 
-      const bassline = new Tone.Sequence(seqFunc(bassSynth), [
-        ["C3","~",".","D3","~","~",".","."],
-        ["F3","~",".","G3","~","A3","G3","F3"],
-        ["D3","~",".","F3","~",["~","."],"F3","~"],
-        ["G3","~","C4","A3","~","G3","F3","G3"],
-      ], barlength)
+      // const bassline = new Tone.Sequence(seqFunc(bassSynth), [
+      //   ["C3","~",".","D3","~","~",".","."],
+      //   ["F3","~",".","G3","~","A3","G3","F3"],
+      //   ["D3","~",".","F3","~",["~","."],"F3","~"],
+      //   ["G3","~","C4","A3","~","G3","F3","G3"],
+      // ], barlength)
 
-      // const melody = new Tone.Sequence(seqFunc(melodySynth), [["F4","~","~","G4"],["E4",["F4","."]]], barlength/2).start(0)
-      const arpeggio = new Tone.Sequence(seqFunc(melodySynth), [
-        [
-          "E5","F5","G5","E5","F5","G5",
-          "E5","G5","A5","E5","G5","A5","E5","G5","A5","G5",
-        ],
-        [
-          "E5","G5","A5","E5","G5","A5",
-          "F5","G5","C6","F5","G5","C6","F5","G5","C6","G5",
-        ],
-      ], barlength)
+      let lastFibWord = [true]
+      let fibWord = [true, false]
+      for (let i = 0; i < 10; i++) {
+        let newFibWord = fibWord.concat(lastFibWord)
+        lastFibWord = fibWord
+        fibWord = newFibWord
+      }
+      let beatTimes = [0]
+      let newBeatTime = 0
+      let basslineValues = []
+      let bassCounterSmall = 0
+      let bassCounterBig = 0
+      for (let i = 0; i < fibWord.length; i++) {
+        let bassLength = fibWord[bassCounterBig] ? 5 : 3
+        if (bassCounterSmall > bassLength) {
+          bassCounterBig++
+          bassCounterSmall = 0
+        }
+        let bassNote = fibWord[bassCounterBig] ? ["A3","B3","C4","D4","C4"][bassCounterSmall] : ["G3","A3","~"][bassCounterSmall]
+        basslineValues.push([newBeatTime, bassNote])
+        bassCounterSmall++
+        
+        beatTimes.push(newBeatTime)
+        const is_long = fibWord[i]
+        let l = beat
+        if (!is_long) { l/=phi }
+        newBeatTime += l
+      }
+
+      const bassline = new Tone.Part(seqFunc(bassSynth), basslineValues)
+      // const bassline = new Tone.Part(((time, note) => {
+      //   // the notes given as the second element in the array
+      //   // will be passed in as the second argument
+      //   bassSynth.triggerAttackRelease(note, "8n", time);
+      // }), [[0, "C2"], ["0:2", "C3"], ["0:3:2", "G2"]])
       
-      new Tone.ToneEvent(toneFunc, [bassline, arpeggio]).start(0)
+
+      // // const melody = new Tone.Sequence(seqFunc(melodySynth), [["F4","~","~","G4"],["E4",["F4","."]]], barlength/2).start(0)
+      // const arpeggio = new Tone.Sequence(seqFunc(melodySynth), [
+      //   [
+      //     "E5","F5","G5","E5","F5","G5",
+      //     "E5","G5","A5","E5","G5","A5","E5","G5","A5","G5",
+      //   ],
+      //   [
+      //     "E5","G5","A5","E5","G5","A5",
+      //     "F5","G5","C6","F5","G5","C6","F5","G5","C6","G5",
+      //   ],
+      // ], barlength)
+      
+      // new Tone.ToneEvent(toneFunc, [bassline, arpeggio]).start(0)
+      new Tone.ToneEvent(toneFunc, [bassline]).start(0)
       
       function playAudio() {
         isPlaying = true
