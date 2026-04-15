@@ -23,7 +23,12 @@
 		<script src="/js/themeBtn.js"></script>
     <script src="/js/languages.js" my-languges="en"></script>
     
+    <canvas id="music-canvas" height="100" width="400"></canvas><br>
+
     <script>
+      const canvas = document.getElementById("music-canvas")
+      const context = canvas.getContext("2d")
+
       const phi = (1+5**(1/2))/2
       const theta = phi**2
       const ona = phi**3
@@ -34,12 +39,12 @@
       var isPlaying = false
       var barlength = Tone.Time("1n")
       var beat = barlength/ona
-      Tone.getTransport().timeSignature = [4, 4]
-      Tone.getTransport().bpm.value = 80
+      Tone.Transport.timeSignature = [4, 4]
+      Tone.Transport.bpm.value = 80
 
       var channel = new Tone.Channel(volume=-8).toDestination()
       const bassSynthData = {
-        "volume": 0,
+        "volume": -100,
         "detune": 0,
         // "portamento": 0.05,
         "portamento": 0,
@@ -57,7 +62,7 @@
           "partials": [],
           "phase": 0,
           "type": "amtriangle",
-          "harmonicity": 0.2,
+          "harmonicity": 2,
           "modulationType": "sine"
         }
       }
@@ -100,6 +105,17 @@
           synth.triggerAttack(note, time);
         }
       }
+      const hatSampler = new Tone.Player("samples/closed-hat1.wav").toDestination();
+      const drumSampler = new Tone.Sampler({
+        urls: {
+          A1: 'clap1.wav',
+          A2: 'closed-hat1.wav',
+          A3: 'snare1.wav',
+          A4: 'kick1.wav',
+        },
+        baseUrl: 'samples/',
+        release: 1
+      }).toDestination()
       function toneFunc(time, events) {
         for (const event of events) {
           event.start(time)
@@ -115,7 +131,7 @@
 
       let lastFibWord = [true]
       let fibWord = [true, false]
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 11; i++) {
         let newFibWord = fibWord.concat(lastFibWord)
         lastFibWord = fibWord
         fibWord = newFibWord
@@ -125,15 +141,30 @@
       let basslineValues = []
       let bassCounterSmall = 0
       let bassCounterBig = 0
+      let drumValues = []
+      let drumCounterSmall = 0
+      let drumCounterBig = 0
+      let hatValues = []
       for (let i = 0; i < fibWord.length; i++) {
         let bassLength = fibWord[bassCounterBig] ? 5 : 3
-        if (bassCounterSmall > bassLength) {
+        if (bassCounterSmall >= bassLength) {
           bassCounterBig++
           bassCounterSmall = 0
         }
         let bassNote = fibWord[bassCounterBig] ? ["A3","B3","C4","D4","C4"][bassCounterSmall] : ["G3","A3","~"][bassCounterSmall]
         basslineValues.push([newBeatTime, bassNote])
         bassCounterSmall++
+
+        let drumLength = fibWord[drumCounterBig] ? 13 : 8
+        if (drumCounterSmall >= drumLength) {
+          drumCounterBig++
+          drumCounterSmall = 0
+        }
+        let drumNote = fibWord[drumCounterBig] ? ["A4", ".", ".", "A3", ".", "A4", ".", ".", "A4", ".", "A3", ".", "."][drumCounterSmall] : ["A1", ".", ".", "A1", "A4", "A1", "A1", "A1"][drumCounterSmall]
+        drumValues.push([newBeatTime/theta, drumNote])
+        drumCounterSmall++
+
+        hatValues.push([newBeatTime/phi, "A2"])
         
         beatTimes.push(newBeatTime)
         const is_long = fibWord[i]
@@ -141,8 +172,11 @@
         if (!is_long) { l/=phi }
         newBeatTime += l
       }
+      basslineValues.push([newBeatTime, "."])
 
       const bassline = new Tone.Part(seqFunc(bassSynth), basslineValues)
+      const drums = new Tone.Part(seqFunc(drumSampler), drumValues)
+      const hats = new Tone.Part(function(time) {hatSampler.start(time)}, hatValues)
       // const bassline = new Tone.Part(((time, note) => {
       //   // the notes given as the second element in the array
       //   // will be passed in as the second argument
@@ -163,11 +197,52 @@
       // ], barlength)
       
       // new Tone.ToneEvent(toneFunc, [bassline, arpeggio]).start(0)
-      new Tone.ToneEvent(toneFunc, [bassline]).start(0)
+      new Tone.ToneEvent(toneFunc, [bassline, drums, hats]).start(0)
       
+      function time_to_x(t) { return 50+t*50 }
+      function draw() {
+        context.clearRect(0,0,canvas.width,canvas.height)
+        context.fillStyle = "white"
+        context.fillRect(time_to_x(0), 0, 3, 100)
+        context.fillStyle = "green"
+        const now = Tone.Transport.seconds-1 // FIXME: what's this magic constant?
+        for (let i = 0; i < basslineValues.length-1; i++) {
+          const pair = basslineValues[i];
+          const nextPair = basslineValues[i+1];
+
+          let time = pair[0] - now
+          let note = pair[1]
+          let endTime = nextPair[0] - now
+          let noteIndex = {"G3": -1, "A3": 0, "B3": 1, "C4": 2, "D4": 3}[note]
+          
+          context.fillRect(time_to_x(time), 50-10*noteIndex, time_to_x(endTime)-time_to_x(time), 10)
+        }
+        context.fillStyle = "gray"
+        for (let i = 0; i < drumValues.length; i++) {
+          const pair = drumValues[i];
+          
+          let time = pair[0] - now
+          let note = pair[1]
+          let noteIndex = {"A1": -1, "A2": 0, "A3": 1, "A4": 2, "A5": 3}[note]
+          
+          context.fillRect(time_to_x(time), 70-10*noteIndex, 3, 10)
+        }
+        context.fillStyle = "white"
+        for (let i = 0; i < hatValues.length; i++) {
+          const pair = hatValues[i];
+          let time = pair[0] - now
+          context.fillRect(time_to_x(time), 95, 2, 3)
+        }
+        
+        if (isPlaying) {
+          window.requestAnimationFrame(draw)
+        }
+      }
+
       function playAudio() {
         isPlaying = true
         Tone.Transport.start();
+        draw()
 			}
       function pauseAudio() {
         isPlaying = false
