@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="/css/style.css" rel="stylesheet">
-    <script src="https://unpkg.com/tone"></script>
     <style>
       .container {
         overflow-x: scroll;
@@ -169,84 +168,6 @@
       const canvas = document.getElementById("music-canvas")
       const context = canvas.getContext("2d")
 
-      const phi = (1+5**(1/2))/2
-      const theta = phi**2
-      const ona = phi**3
-      const onaphi = phi**4
-      const onathey = phi**5
-      const epsi = phi**6
-
-      var isPlaying = false
-      var barlength = Tone.Time("1n")
-      var beatLength = barlength/ona
-      Tone.Transport.timeSignature = [4, 4]
-      Tone.Transport.bpm.value = 80
-
-      var channel = new Tone.Channel(volume=-8).toDestination()
-      const bassSynthData = {
-        "volume": -100,
-        "detune": 0,
-        // "portamento": 0.05,
-        "portamento": 0,
-        "envelope": {
-          "attack": 0.05,
-          "attackCurve": "exponential",
-          "decay": 0.2,
-          "decayCurve": "linear",
-          "release": 0.3,
-          "releaseCurve": "linear",
-          "sustain": 0.6
-        },
-        "oscillator": {
-          "partialCount": 0,
-          "partials": [],
-          "phase": 0,
-          "type": "amtriangle",
-          "harmonicity": 2,
-          "modulationType": "sine"
-        }
-      }
-      const arpSynthData = {
-        "volume": -4,
-        "detune": 0,
-        "portamento": 0,
-        "envelope": {
-          "attack": 0.05,
-          "attackCurve": "exponential",
-          "decay": 0.2,
-          "decayCurve": "linear",
-          "release": 0.3,
-          "releaseCurve": "linear",
-          "sustain": 0.6
-        },
-        "oscillator": {
-          "partialCount": 0,
-          "partials": [],
-          "phase": 0,
-          "type": "amtriangle",
-          "harmonicity": 0,
-          "modulationType": "sine"
-        }
-      }
-      const bassSynth = new Tone.Synth(bassSynthData)
-      bassSynth.toDestination()
-      // const distortion = new Tone.Distortion(0.2);
-      // bassSynth.chain(distortion, channel)
-      // const lowpass = new Tone.Filter(1500);
-      // bassSynth.chain(lowpass, Tone.Destination)
-      const melodySynth = new Tone.Synth(arpSynthData).connect(channel)
-      let seqFunc = (synth) => {
-        return (time, note) => {
-          if (note == "~") return
-          if (note == ".") {
-            synth.triggerRelease(time)
-            return
-          }
-          synth.triggerAttack(note, time);
-        }
-      }
-
-      // Synth from https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Simple_synth
       const audioContext = new AudioContext();
       const oscList = [];
       let mainGainNode = null;
@@ -256,6 +177,96 @@
       let customWaveform = null;
       let sineTerms = null;
       let cosineTerms = null;
+
+      const phi = (1+5**(1/2))/2
+      const theta = phi**2
+      const ona = phi**3
+      const onaphi = phi**4
+      const onathey = phi**5
+      const epsi = phi**6
+
+      var isPlaying = false
+      var barlength = 2.6
+      var beatLength = barlength/ona
+
+      // Sample loading from https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Advanced_techniques
+      async function getFile(audioContext, filepath) {
+        const response = await fetch(filepath);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        return audioBuffer;
+      }
+
+      async function setupSample(sampleName) {
+        const filePath = sampleName;
+        const sample = await getFile(audioContext, filePath);
+        return sample;
+      }
+
+      // setupSample("samples/clap1.wav").then((sample) => {
+      //   // loadingEl.style.display = "none";
+      //   playSample(audioContext, sample, 0)
+      // });
+
+      let tempo = 60.0;
+      let currentNote = 0; // The note we are currently playing
+      let nextNoteTime = 0.0; // when the next note is due.
+      function nextNote() {
+        const secondsPerBeat = 60.0 / tempo;
+
+        nextNoteTime += secondsPerBeat; // Add beat length to last beat time
+
+        // Advance the beat number, wrap to zero when reaching 4
+        currentNote = (currentNote + 1) % 4;
+      }
+
+      // Create a queue for the notes that are to be played, with the current time that we want them to play:
+      const notesInQueue = [];
+      let dtmf;
+
+      function scheduleNote(beatNumber, time) {
+        // // Push the note into the queue, even if we're not playing.
+        // notesInQueue.push({ note: beatNumber, time: time });
+
+        // if (pads[0].querySelectorAll("input")[beatNumber].checked) {
+        //   playSweep(time);
+        // }
+        // if (pads[1].querySelectorAll("input")[beatNumber].checked) {
+        //   playPulse(time);
+        // }
+        // if (pads[2].querySelectorAll("input")[beatNumber].checked) {
+        //   playNoise(time);
+        // }
+        // if (pads[3].querySelectorAll("input")[beatNumber].checked) {
+        //   playSample(audioContext, dtmf, time);
+        // }
+      }
+
+      let timerID;
+      const scheduleAheadTime = 0.1; // How far ahead to schedule audio (sec)
+      const lookahead = 25.0; // How frequently to call scheduling function (in milliseconds)
+      function scheduler() {
+        // While there are notes that will need to play before the next interval,
+        // schedule them and advance the pointer.
+        while (nextNoteTime < audioContext.currentTime + scheduleAheadTime) {
+          // scheduleNote(currentNote, nextNoteTime);
+          nextNote();
+        }
+        timerID = setTimeout(scheduler, lookahead);
+      }
+
+      let playbackRate = 1;
+      function playSample(audioContext, audioBuffer, time) {
+        const sampleSource = new AudioBufferSourceNode(audioContext, {
+          buffer: audioBuffer,
+          playbackRate: playbackRate,
+        });
+        sampleSource.connect(mainGainNode);
+        sampleSource.start(time);
+        return sampleSource;
+      }
+      
+      // Synth from https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Simple_synth
       function createNoteTable() {
         const noteFreq = [
           { A: 27.5, "A#": 29.13523509488062, B: 30.867706328507754 },
@@ -445,7 +456,7 @@
 
       class SampleTrack {
         constructor(sampleName, longString, shortString, longBeatLength=1/theta, artist=new TimelineArtist()) {
-          this.sampler = new Tone.Player("samples/"+sampleName+".wav").toDestination()
+          this.sampler = setupSample("samples/"+sampleName+".wav")
           this.shortString = shortString
           this.longString = longString
           this.time = 0
@@ -463,14 +474,15 @@
             if (symbol != ".") {
               partValues.push([this.time, symbol])
               this.storedValues.push([this.time, symbol])
+              let time = this.time
+              this.sampler.then((sample) => {
+                playSample(audioContext, sample, time)
+              })
             }
             let beatLength = barlength * this.longBeatLength
             if (!fibWord[beat]) { beatLength/=phi }
             this.time += beatLength
           }
-          let sampler = this.sampler
-          const part = new Tone.Part(function(time) {sampler.start(time)}, partValues)
-          new Tone.ToneEvent(toneFunc, [part]).start(0)
           this.partIndex++
         }
         addUntilTime(time) {
@@ -500,18 +512,7 @@
         }
       }
       
-      function toneFunc(time, events) {
-        for (const event of events) {
-          event.start(time)
-        }
-      }
 
-      // const bassline = new Tone.Sequence(seqFunc(bassSynth), [
-      //   ["C3","~",".","D3","~","~",".","."],
-      //   ["F3","~",".","G3","~","A3","G3","F3"],
-      //   ["D3","~",".","F3","~",["~","."],"F3","~"],
-      //   ["G3","~","C4","A3","~","G3","F3","G3"],
-      // ], barlength)
 
       let lastFibWord = [true]
       let fibWord = [true, false]
@@ -543,21 +544,16 @@
       }
       basslineValues.push([newBeatTime, "."])
 
-      const bassline = new Tone.Part(seqFunc(bassSynth), basslineValues)
-
       for (const name in samplers) {
         samplers[name].addUntilTime(30)
       }
-
-      // new Tone.ToneEvent(toneFunc, [bassline, arpeggio]).start(0)
-      new Tone.ToneEvent(toneFunc, [bassline]).start(0)
       
       function time_to_x(t) { return 50+t*50 }
       function draw() {
         context.clearRect(0, 0, canvas.width, canvas.height)
         context.fillStyle = "white"
         context.fillRect(time_to_x(0), 0, 3, 100)
-        const now = Tone.Transport.seconds-1 // FIXME: what's this magic constant?
+        const now = audioContext.currentTime
 
         // context.fillStyle = "green"
         // for (let i = 0; i < basslineValues.length-1; i++) {
@@ -581,19 +577,27 @@
         }
       }
 
-      draw()
+      requestAnimationFrame(draw);
 
       function playAudio() {
         isPlaying = true
-        Tone.Transport.start();
-        draw()
+
+        // Check if context is in suspended state (autoplay policy)
+        if (audioContext.state === "suspended") {
+          audioContext.resume();
+        }
+
+        currentNote = 0;
+        nextNoteTime = audioContext.currentTime;
+        scheduler(); // kick off scheduling
+        requestAnimationFrame(draw); // start the drawing loop.
 			}
       function pauseAudio() {
         isPlaying = false
-        bassSynth.triggerRelease("+0.1")
-        melodySynth.triggerRelease("+0.1")
-        Tone.Transport.stop();
+        audioContext.suspend()
+        window.clearTimeout(timerID);
       }
+      pauseAudio()
     </script>
     
     <button class="basic-btn" onclick="isPlaying ? pauseAudio() : playAudio()">Play/Pause</button>
