@@ -184,10 +184,41 @@
       const onaphi = phi**4
       const onathey = phi**5
       const epsi = phi**6
-
+      
       var isPlaying = false
-      var barlength = 2.6
-      var beatLength = barlength/ona
+      var barLength = 2.6
+      var beatLength = barLength/ona
+
+      let lastFibWord = [true]
+      let fibWord = [true, false]
+      for (let i = 0; i < 15; i++) {
+        let newFibWord = fibWord.concat(lastFibWord)
+        lastFibWord = fibWord
+        fibWord = newFibWord
+      }
+      let beatTimes = [0]
+      let newBeatTime = 0
+      let basslineValues = []
+      let bassCounterSmall = 0
+      let bassCounterBig = 0
+      for (let i = 0; i < fibWord.length; i++) {
+        let bassLength = fibWord[bassCounterBig] ? 5 : 3
+        if (bassCounterSmall >= bassLength) {
+          bassCounterBig++
+          bassCounterSmall = 0
+        }
+        let bassNote = fibWord[bassCounterBig] ? ["A3","B3","C4","D4","C4"][bassCounterSmall] : ["G3","A3","~"][bassCounterSmall]
+        basslineValues.push([newBeatTime, bassNote])
+        bassCounterSmall++
+        
+        const is_long = fibWord[i]
+        
+        let l = beatLength
+        if (!is_long) { l/=phi }
+        newBeatTime += l
+        beatTimes.push(newBeatTime)
+      }
+      basslineValues.push([newBeatTime, "."])
 
       // Sample loading from https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Advanced_techniques
       async function getFile(audioContext, filepath) {
@@ -261,7 +292,7 @@
           buffer: audioBuffer,
           playbackRate: playbackRate,
         });
-        sampleSource.connect(mainGainNode);
+        sampleSource.connect(audioContext.destination);
         sampleSource.start(time);
         return sampleSource;
       }
@@ -298,9 +329,8 @@
         noteFreq.push({ C: 4186.009044809578 });
         return noteFreq;
       }
+      const noteFreq = createNoteTable();
       function setup() {
-        const noteFreq = createNoteTable();
-
         volumeControl.addEventListener("change", changeVolume);
 
         mainGainNode = audioContext.createGain();
@@ -335,6 +365,81 @@
 
         for (let i = 0; i < 9; i++) {
           oscList[i] = {};
+        }
+      }
+
+      function levelToDuration(level) {
+        return beatLength * phi**level
+      }
+      function getNextLong(level = 4, endTime = audioContext.currentTime) {
+        let t = 0
+        for (const letter of fibWord) {
+          if (endTime <= t) break
+          t += levelToDuration(level)
+        }
+        return t
+      }
+
+      class MyPlayer {
+        constructor(level = 4) {
+          this.level = level
+          this.duration = levelToDuration(this.level)
+        }
+
+        playAtNextLong() {
+          let t = getNextLong(this.level)
+          this.play(t)
+        }
+      }
+
+      // class MySound {
+      //   constructor() {
+          
+      //   }
+      // }
+
+      class MySection extends MyPlayer {
+        constructor(pattern, level = 4, soundType = "sawtooth") {
+          super(level)
+          this.pattern = pattern
+          this.type = soundType
+        }
+
+        play(time) {
+          console.log(this.duration, );
+          
+          const unit = this.duration / beatTimes[this.pattern.length]
+          let current = 0
+          let beat = 1
+          let next = current + unit * beatTimes[1]
+          for (const note of this.pattern) {
+            if (note == ".") {}
+            else {
+              let freq = noteFreq[note[1]][note[0]]
+              this.playFreq(freq, time+current, time+next)
+            }
+            beat++
+            current = next
+            next = unit * beatTimes[beat]
+          }
+        }
+
+        playFreq(freq, time, endTime, node = mainGainNode) {
+          const osc = audioContext.createOscillator();
+          osc.connect(node);
+
+          const type = this.type;
+
+          if (type === "custom") {
+            osc.setPeriodicWave(customWaveform);
+          } else {
+            osc.type = type;
+          }
+
+          osc.frequency.value = freq;
+
+          osc.start(time);
+          osc.stop(endTime);
         }
       }
 
@@ -403,7 +508,7 @@
         mainGainNode.gain.value = volumeControl.value;
       }
       const synthKeys = document.querySelectorAll(".key");
-      // prettier-ignore
+
       const keyCodes = [
         "Space",
         "ShiftLeft", "KeyZ", "KeyX", "KeyC", "KeyV", "KeyB", "KeyN", "KeyM", "Comma", "Period", "Slash", "ShiftRight",
@@ -479,7 +584,7 @@
                 playSample(audioContext, sample, time)
               })
             }
-            let beatLength = barlength * this.longBeatLength
+            let beatLength = barLength * this.longBeatLength
             if (!fibWord[beat]) { beatLength/=phi }
             this.time += beatLength
           }
@@ -496,57 +601,17 @@
       }
 
       const samplers = {
-        'hat': new SampleTrack("closed-hat1", "#.", "#", 1/onathey, new TimelineArtist("white")),
-        'clap': new SampleTrack("clap1", ".............", "#..#.###", 1/onathey, new TimelineArtist("#da4", 30, 7)),
+        'hat': new SampleTrack("closed-hat1", "#.", "#", 1/epsi, new TimelineArtist("white")),
+        'clap': new SampleTrack("clap1", "#............", "#..#.###", 1/onathey, new TimelineArtist("#da4", 30, 7)),
         'snare': new SampleTrack("snare1", "..#...#.", "..#..", 1/onaphi),
         'kick': new SampleTrack("kick1", "#.", ".", 1/onaphi),
       }
-      let sampleSeqFunc = (synth) => {
-        return (time, note) => {
-          if (note == "~") return
-          if (note == ".") {
-            synth.triggerRelease(time)
-            return
-          }
-          synth.triggerAttack(note, time);
-        }
-      }
-      
-
-
-      let lastFibWord = [true]
-      let fibWord = [true, false]
-      for (let i = 0; i < 11; i++) {
-        let newFibWord = fibWord.concat(lastFibWord)
-        lastFibWord = fibWord
-        fibWord = newFibWord
-      }
-      let beatTimes = [0]
-      let newBeatTime = 0
-      let basslineValues = []
-      let bassCounterSmall = 0
-      let bassCounterBig = 0
-      for (let i = 0; i < fibWord.length; i++) {
-        let bassLength = fibWord[bassCounterBig] ? 5 : 3
-        if (bassCounterSmall >= bassLength) {
-          bassCounterBig++
-          bassCounterSmall = 0
-        }
-        let bassNote = fibWord[bassCounterBig] ? ["A3","B3","C4","D4","C4"][bassCounterSmall] : ["G3","A3","~"][bassCounterSmall]
-        basslineValues.push([newBeatTime, bassNote])
-        bassCounterSmall++
-        
-        beatTimes.push(newBeatTime)
-        const is_long = fibWord[i]
-        let l = beatLength
-        if (!is_long) { l/=phi }
-        newBeatTime += l
-      }
-      basslineValues.push([newBeatTime, "."])
 
       for (const name in samplers) {
-        samplers[name].addUntilTime(30)
+        samplers[name].addUntilTime(300)
       }
+      const seccc = new MySection(["C4", "E4", "G4", "F4", "E4"], 3)
+      seccc.playAtNextLong()
       
       function time_to_x(t) { return 50+t*50 }
       function draw() {
