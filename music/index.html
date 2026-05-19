@@ -371,11 +371,13 @@
       function levelToDuration(level) {
         return beatLength * phi**level
       }
-      function getNextLong(level = 4, endTime = audioContext.currentTime) {
+      function getNextLong(level = 4, from = audioContext.currentTime) {
         let t = 0
         for (const letter of fibWord) {
-          if (endTime <= t) break
-          t += levelToDuration(level)
+          if (from <= t) break
+          d = levelToDuration(level)
+          if (!letter) d/=phi
+          t += d
         }
         return t
       }
@@ -386,42 +388,64 @@
           this.duration = levelToDuration(this.level)
         }
 
-        playAtNextLong() {
-          let t = getNextLong(this.level)
+        playAtNextLong(from = undefined) {
+          let t = getNextLong(this.level, from)
           this.play(t)
         }
       }
 
-      // class MySound {
-      //   constructor() {
-          
+      // class MySequence extends MyPlayer {
+      //   constructor(seq, level = 4) {
+      //     super(level)
+      //     this.seq = seq
+      //   }
+
+      //   play(time) {
+
       //   }
       // }
 
-      class MySection extends MyPlayer {
+      class MyMelody extends MyPlayer {
         constructor(pattern, level = 4, soundType = "sawtooth") {
           super(level)
           this.pattern = pattern
           this.type = soundType
         }
-
+        
         play(time) {
-          console.log(this.duration, );
-          
+          this.endTime = time + this.duration
           const unit = this.duration / beatTimes[this.pattern.length]
           let current = 0
-          let beat = 1
-          let next = current + unit * beatTimes[1]
-          for (const note of this.pattern) {
-            if (note == ".") {}
-            else {
-              let freq = noteFreq[note[1]][note[0]]
-              this.playFreq(freq, time+current, time+next)
+          let beat = 0
+          let lastNotes = []
+
+          function stopLastNotes() {
+            for (const osc of lastNotes) {
+              osc.stop(time + current)
             }
-            beat++
-            current = next
-            next = unit * beatTimes[beat]
           }
+
+          for (const note of this.pattern) {
+            beat++
+            let next = unit * beatTimes[beat]
+            if (note == "~") { // Keep playing
+
+            }
+            else {
+              stopLastNotes()
+
+              if (note == ".") {
+                
+              }
+              else {
+                let freq = noteFreq[note[1]][note[0]]
+                // lastNotes = this.playFreq(freq, time+current, time+next)
+                lastNotes = this.playFreq(freq, time+current, undefined)
+              }
+            }
+            current = next
+          }
+          stopLastNotes()
         }
 
         playFreq(freq, time, endTime, node = mainGainNode) {
@@ -439,7 +463,10 @@
           osc.frequency.value = freq;
 
           osc.start(time);
-          osc.stop(endTime);
+          if (endTime != undefined) {
+            osc.stop(endTime);
+          }
+          return [osc]
         }
       }
 
@@ -610,8 +637,27 @@
       for (const name in samplers) {
         samplers[name].addUntilTime(300)
       }
-      const seccc = new MySection(["C4", "E4", "G4", "F4", "E4"], 3)
-      seccc.playAtNextLong()
+      const m1  = new MyMelody(["C4", "E4", "G4", "F4", "E4"], 3)
+      const m2  = new MyMelody(["C4", "G4", "E4"], 2)
+      const m22 = new MyMelody(["E4", "G4", "~"], 2)
+      const m3  = new MyMelody(["C4", "D4", "G4"], 3)
+      const m4  = new MyMelody(["F4", "E4", "D4"], 2)
+      function pause(level) {
+        return new MyMelody(["."], level)
+      }
+
+      function playSequenceAtNextLong(players) {
+        time = audioContext.currentTime
+        for (const player of players) {
+          console.log(time);
+          
+          // time = getNextLong(player.level, time)
+          player.playAtNextLong(time)
+          time = time + player.duration - 0.05 // TODO: may break i guess
+        }
+      }
+      
+      playSequenceAtNextLong([m1, m2, m1, m3, m22, m1, m4])
       
       function time_to_x(t) { return 50+t*50 }
       function draw() {
