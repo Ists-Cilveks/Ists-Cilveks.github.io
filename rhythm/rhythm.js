@@ -206,7 +206,8 @@ var recentRealeases = []
 var currentlyHeldNotes = []
 var noteData
 
-fetch('rhythm/tlpog.json')
+function fetchJSONChart(path) {
+	fetch(path)
 	.then((response) => response.json())
 	.then(function(json){
 		noteData=json
@@ -232,23 +233,32 @@ fetch('rhythm/tlpog.json')
 		}
 		rhythmPlayButton.removeAttribute("disabled")
 	});
+}
+
+const dataPath = canvas.getAttribute("data-chart")
+if (dataPath != null) {fetchJSONChart(dataPath)}
+
 
 var audio = document.getElementById("rhythm-track")
-audio.volume = 0.3;
-audio.addEventListener("play", function(){
-	paused=false;
-	syncToAudio(performance.now())
-	draw()
-})
-audio.addEventListener("pause", function(){
-	paused=true;
-})
+var secondarySyncDone = true; // FIXME: dumb fix
+if (audio != null) {
+	secondarySyncDone = false
+	audio.volume = 0.3;
+	audio.addEventListener("play", function(){
+		paused=false;
+		syncToAudio(performance.now())
+		draw()
+	})
+	audio.addEventListener("pause", function(){
+		paused=true;
+	})
+}
 
 function syncToAudio(curTime) {
 	startTime=curTime-audio.currentTime*1000
 }
 
-var secondarySyncDone = false; // FIXME: dumb fix
+
 
 function draw(curTime) {
 	if (!paused) {
