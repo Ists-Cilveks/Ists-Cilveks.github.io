@@ -74,7 +74,7 @@
 				
 			<div class="landscape-column" style="position: relative; height: 80vh;">
 				<div id="rhythm-container" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;" tabindex="0">
-					<canvas id="rhythm-canvas" data-chart="rhythm/tlpog.json" data-audio="rhythm/tlpog.mp3">
+					<canvas id="rhythm-canvas">
 					</canvas>
 				</div>
 				<div id="info-before-rhythm-game" style="position: absolute; text-align: center;">
@@ -119,7 +119,7 @@
 		<source src="/rhythm/tlpog.mp3" type="audio/mpeg">
 		Your browser does not support the audio element.
 	</audio>
-	<script src="/rhythm/rhythm.js"></script>
+	<script src="/rhythm/rhythm.js" data-chart="rhythm/tlpog.json"></script>
 
 	<div id="wallpaper-container" style="width: 100%; height: 30vh;">
 		<canvas id="wallpaper-canvas" style="position: absolute; cursor: pointer;" tabindex="0">
