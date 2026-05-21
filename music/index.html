@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Music</title>
+    <title>Golden music</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="/css/style.css" rel="stylesheet">
@@ -126,7 +126,7 @@
     <a class="basic-btn home-btn ll" href="/index.html?l=tok" style="font-size: 250%;" lang="tok">lipu-open</a>
     
     <header id="main-header">
-      <h1 lang="en">Music tests</h1>
+      <h1 lang="en">Golden ratio music tests</h1>
     </header>
 		<script src="/js/themeBtn.js"></script>
     <script src="/js/languages.js" my-languges="en"></script>
@@ -164,11 +164,16 @@
       </div>
     </div>
 
-    <button class="basic-btn" onclick="isPlaying ? pauseAudio() : playAudio()">Play/Pause</button>
+    <button style="font-size: 120%;" class="basic-btn" onclick="isPlaying ? pauseAudio() : playAudio()">Play/Pause</button>
+    <p>(The keyboard doesn't work while the beat isn't playing. Also it'll end eventually, and then you have to refresh the page.)</p>
     <h2 lang="en">Recording:</h2>
     <p lang="en">This element will store the audio after you press pause. You can then save it as a file by right clicking.</p>
     <audio id="audio-recording" controls></audio>
-
+    
+    <h2 lang="en">What?</h2>
+    <p lang="en">This is an experiment of <a href="https://www.youtube.com/watch?v=pM-e_csNupM">pulse morphing</a> with a ratio of φ. The music is made of long and short beats according to the <a href="https://en.wikipedia.org/wiki/Fibonacci_word">Fibonacci word</a>: <span style="font-family: monospace;">long short long, long short, long short long. long short long, long short. etc.</span></p>
+    <p>TODO: Add rhythm game. I want to learn to feel this rhythm better.</p>
+    
     <script>
       const canvas = document.getElementById("music-canvas")
       const context = canvas.getContext("2d")
