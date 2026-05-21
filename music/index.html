@@ -211,7 +211,7 @@
       const epsi = phi**6
       
       var isPlaying = false
-      var barLength = 2.6
+      var barLength = 3.2
       var beatLength = barLength/ona
 
       let lastFibWord = [true]
@@ -671,32 +671,50 @@
       const m22 = new MyMelody(["E4", "G4", "~"], 2)
       const m3  = new MyMelody(["C4", "D4", "G4"], 3)
       const m4  = new MyMelody(["F4", "E4", "D4"], 2)
-      const mm1 = new MyMelody(["C3", "~", "G3", "F3", "~", "E3", "F3", "~"], 3)
+      const mm1 = new MyMelody(["C4", "~", "G4", "F4", "~", "E4", "F4", "~"], 3, "custom")
       // "C4 "
       const mm2 = new MyMelody([
-        // "E3", "~", "F3", "~", "G3", "F3", "~", "E3",
-        // "~", "~", "D3", "~", "E3",
-        // "D3", "~", "C3", "~", "~", "~", "~", "~"]
-        "E3", "~", "~", "F3", "~", "~", "~", "~",
-        "G3", "F3", "~", "E3", "~", "~", "~", "~", "~", "~", "D3", "~", "~",
-        "~", "~", "E3", "D3", "~", "C3", "~", "~", "~", "~", "~", "~", "~"
-      ], 4)
-      const mm3 = new MyMelody(["E3", "D3", "~", "~", "~"], 2)
+        // "E4", "~", "F4", "~", "G4", "F4", "~", "E4",
+        // "~", "~", "D4", "~", "E4",
+        // "D4", "~", "C4", "~", "~", "~", "~", "~"]
+        "E4", "~", "~", "F4", "~", "~", "~", "~",
+        "G4", "F4", "~", "E4", "~", "~", "~", "~", "~", "~", "D4", "~", "~",
+        "~", "~", "E4", "D4", "~", "C4", "~", "~", "~", "~", "~", "~", "~"
+      ], 4, "custom")
+      const mm3 = new MyMelody(["E4", "D4", "~", "~", "~"], 2, "custom")
+      const arp1 = new MyMelody(["D2", "G2", "A2", "D2", "G2", "A2", "G2", "A2"], 2, "sawtooth")
+      const arp2 = new MyMelody(["C3", "B2", "A2", "G2", "A2"], 1, "sawtooth")
+      const over1 = new MyMelody([""])
       function pause(level) {
         return new MyMelody(["."], level)
       }
 
-      function playSequenceAtNextLong(players) {
-        time = audioContext.currentTime
+      function playSequenceAtNextLong(players, startTime = audioContext.currentTime) {
+        time = startTime
         for (const player of players) {
           // time = getNextLong(player.level, time)
           player.playAtNextLong(time)
-          time = time + player.duration - 0.05 // TODO: may break i guess
+          time = player.endTime - 0.05 // TODO: may break i guess
         }
+      }
+      function playRepeatedPair(long, short, n, skips) {
+        // TODO: only works when starting at time 0
+        let order = []
+        let i = 0
+        for (; i < skips; i++) {
+          if (fibWord[i]) order.push(pause(long.level))
+          else order.push(pause(short.level))
+        }
+        for (; i < n+skips; i++) {
+          if (fibWord[i]) order.push(long)
+          else order.push(short)
+        }
+        playSequenceAtNextLong(order)
       }
       
       // playSequenceAtNextLong([m1, m2, m1, m3, m22, m1, m4])
       playSequenceAtNextLong([mm1, mm3, mm1, mm2, pause(5), mm1, mm3, mm1, mm2])
+      playRepeatedPair(arp1, arp2, 200, 7)
       
       function time_to_x(t) { return 50+t*50 }
       function draw() {
