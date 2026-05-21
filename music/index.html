@@ -9,7 +9,7 @@
       .container {
         overflow-x: scroll;
         overflow-y: hidden;
-        width: 660px;
+        width: 100%;
         height: 110px;
         white-space: nowrap;
         margin: 10px;
@@ -164,13 +164,38 @@
       </div>
     </div>
 
+    <button class="basic-btn" onclick="isPlaying ? pauseAudio() : playAudio()">Play/Pause</button>
+    <h2 lang="en">Recording:</h2>
+    <p lang="en">This element will store the audio after you press pause. You can then save it as a file by right clicking.</p>
+    <audio id="audio-recording" controls></audio>
+
     <script>
       const canvas = document.getElementById("music-canvas")
       const context = canvas.getContext("2d")
 
       const audioContext = new AudioContext();
+
+      // // recording example from https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createMediaStreamDestination
+      let isRecording = false
+      let makeRecording = true
+      const chunks = [];
+      // const audioContext = new AudioContext();
+      const osc = audioContext.createOscillator();
+      const recordingDestination = audioContext.createMediaStreamDestination();
+      const mediaRecorder = new MediaRecorder(recordingDestination.stream);
+      mediaRecorder.ondataavailable = (evt) => {
+        // Push each chunk (blobs) in an array
+        chunks.push(evt.data);
+      };
+      mediaRecorder.onstop = (evt) => {
+        // Make blob out of our blobs, and open it.
+        const blob = new Blob(chunks, { type: "audio/ogg; codecs=opus" });
+        document.getElementById("audio-recording").src = URL.createObjectURL(blob);
+      };
+
       const oscList = [];
       let mainGainNode = null;
+      let synthGainNode = null;
       const keyboard = document.querySelector(".keyboard");
       const wavePicker = document.querySelector("select[name='waveform']");
       const volumeControl = document.querySelector("input[name='volume']");
@@ -292,7 +317,7 @@
           buffer: audioBuffer,
           playbackRate: playbackRate,
         });
-        sampleSource.connect(audioContext.destination);
+        sampleSource.connect(mainGainNode);
         sampleSource.start(time);
         return sampleSource;
       }
@@ -331,12 +356,16 @@
       }
       const noteFreq = createNoteTable();
       function setup() {
-        volumeControl.addEventListener("change", changeVolume);
-
+        
         mainGainNode = audioContext.createGain();
+        synthGainNode = audioContext.createGain();
         mainGainNode.connect(audioContext.destination);
-        mainGainNode.gain.value = volumeControl.value;
-
+        synthGainNode.connect(mainGainNode)
+        mainGainNode.connect(recordingDestination)
+        
+        volumeControl.addEventListener("change", changeVolume);
+        changeVolume()
+        
         // Create the keys; skip any that are sharp or flat; for
         // our purposes we don't need them. Each octave is inserted
         // into a <div> of class "octave".
@@ -448,7 +477,7 @@
           stopLastNotes()
         }
 
-        playFreq(freq, time, endTime, node = mainGainNode) {
+        playFreq(freq, time, endTime, node = synthGainNode) {
           const osc = audioContext.createOscillator();
           osc.connect(node);
 
@@ -492,7 +521,7 @@
       }
       function playTone(freq) {
         const osc = audioContext.createOscillator();
-        osc.connect(mainGainNode);
+        osc.connect(synthGainNode);
 
         const type = wavePicker.options[wavePicker.selectedIndex].value;
 
@@ -532,7 +561,7 @@
         }
       }
       function changeVolume(event) {
-        mainGainNode.gain.value = volumeControl.value;
+        synthGainNode.gain.value = volumeControl.value;
       }
       const synthKeys = document.querySelectorAll(".key");
 
@@ -702,6 +731,10 @@
 
       function playAudio() {
         isPlaying = true
+        if (makeRecording) {
+          isRecording = true
+          mediaRecorder.start()
+        }
 
         // Check if context is in suspended state (autoplay policy)
         if (audioContext.state === "suspended") {
@@ -715,12 +748,17 @@
 			}
       function pauseAudio() {
         isPlaying = false
+        if (isRecording) {
+          mediaRecorder.requestData();
+          mediaRecorder.stop();
+          isRecording = false
+        }
         audioContext.suspend()
         window.clearTimeout(timerID);
       }
       pauseAudio()
     </script>
     
-    <button class="basic-btn" onclick="isPlaying ? pauseAudio() : playAudio()">Play/Pause</button>
+    
   </body>
 </html>
