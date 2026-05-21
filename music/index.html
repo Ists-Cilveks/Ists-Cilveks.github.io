@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Golden music</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+      .container {
+        overflow-x: scroll;
+        overflow-y: hidden;
+        width: 100%;
+        height: 110px;
+        white-space: nowrap;
+        margin: 10px;
+      }
+
+      .keyboard {
+        width: auto;
+        padding: 0;
+        margin: 0;
+      }
+
+      .key {
+        cursor: pointer;
+        font:
+          16px "Open Sans",
+          "Lucida Grande",
+          "Arial",
+          sans-serif;
+        border: 1px solid black;
+        border-radius: 5px;
+        width: 20px;
+        height: 80px;
+        text-align: center;
+        box-shadow: 2px 2px darkgray;
+        display: inline-block;
+        position: relative;
+        margin-right: 3px;
+        user-select: none;
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+      }
+
+      .key div {
+        position: absolute;
+        bottom: 0;
+        text-align: center;
+        width: 100%;
+        pointer-events: none;
+      }
+
+      .key div sub {
+        font-size: 10px;
+        pointer-events: none;
+      }
+
+      .key:hover {
+        background-color: #eeeeff;
+      }
+
+      .key:active,
+      .active {
+        background-color: black;
+        color: white;
+      }
+
+      .octave {
+        display: inline-block;
+        padding-right: 6px;
+      }
+
+      .settingsBar {
+        padding-top: 8px;
+        font:
+          14px "Open Sans",
+          "Lucida Grande",
+          "Arial",
+          sans-serif;
+        position: relative;
+        vertical-align: middle;
+        width: 100%;
+        height: 30px;
+      }
+
+      .left {
+        width: 50%;
+        position: absolute;
+        left: 0;
+        display: table-cell;
+        vertical-align: middle;
+      }
+
+      .left span,
+      .left input {
+        vertical-align: middle;
+      }
+
+      .right {
+        width: 50%;
+        position: absolute;
+        right: 0;
+        display: table-cell;
+        vertical-align: middle;
+      }
+
+      .right span {
+        vertical-align: middle;
+      }
+
+      .right input {
+        vertical-align: baseline;
+      }
+
+    </style>
+  </head>
+  <body class="main-content">
+    <script src="/js/Color.js"></script>
+    <script src="/css/palettize.js"></script>
+    <script src="/js/particles.js"></script>
+    <script src="/js/SVGRequests.js"></script>
+    
+    <a class="basic-btn home-btn" href="/" lang="en">home</a>
+    <a class="basic-btn home-btn" href="/index.html?l=lv" lang="lv">uz sākumu</a>
+    <a class="basic-btn home-btn ll" href="/index.html?l=tok" style="font-size: 250%;" lang="tok">lipu-open</a>
+    
+    <header id="main-header">
+      <h1 lang="en">Golden ratio music tests</h1>
+    </header>
+		<script src="/js/themeBtn.js"></script>
+    <script src="/js/languages.js" my-languges="en"></script>
+    
+    <canvas id="music-canvas" height="100" width="600"></canvas><br>
+
+    <div class="container">
+      <div class="keyboard"></div>
+    </div>
+    <div class="settingsBar">
+      <div class="left">
+        <span>Volume: </span>
+        <input
+          type="range"
+          min="0.0"
+          max="1.0"
+          step="0.01"
+          value="0.5"
+          list="volumes"
+          name="volume" />
+        <datalist id="volumes">
+          <option value="0.0" label="Mute"></option>
+          <option value="1.0" label="100%"></option>
+        </datalist>
+      </div>
+      <div class="right">
+        <span>Current waveform: </span>
+        <select name="waveform">
+          <option value="sine">Sine</option>
+          <option value="square" selected>Square</option>
+          <option value="sawtooth">Sawtooth</option>
+          <option value="triangle">Triangle</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+    </div>
+
+    <button style="font-size: 120%;" class="basic-btn" onclick="isPlaying ? pauseAudio() : playAudio()">Play/Pause</button>
+    <p>(The keyboard doesn't work while the beat isn't playing. Also it'll end eventually, and then you have to refresh the page.)</p>
+    <h2 lang="en">Recording:</h2>
+    <p lang="en">This element will store the audio after you press pause. You can then save it as a file by right clicking.</p>
+    <audio id="audio-recording" controls></audio>
+    
+    <h2 lang="en">What?</h2>
+    <p lang="en">This is an experiment of <a href="https://www.youtube.com/watch?v=pM-e_csNupM">pulse morphing</a> with a ratio of φ. The music is made of long and short beats according to the <a href="https://en.wikipedia.org/wiki/Fibonacci_word">Fibonacci word</a>: <span style="font-family: monospace;">long short long, long short, long short long. long short long, long short. etc.</span></p>
+    <p>TODO: Add rhythm game. I want to learn to feel this rhythm better.</p>
+    
+    <script>
+      const canvas = document.getElementById("music-canvas")
+      const context = canvas.getContext("2d")
+
+      const audioContext = new AudioContext();
+
+      // // recording example from https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createMediaStreamDestination
+      let isRecording = false
+      let makeRecording = true
+      const chunks = [];
+      // const audioContext = new AudioContext();
+      const osc = audioContext.createOscillator();
+      const recordingDestination = audioContext.createMediaStreamDestination();
+      const mediaRecorder = new MediaRecorder(recordingDestination.stream);
+      mediaRecorder.ondataavailable = (evt) => {
+        // Push each chunk (blobs) in an array
+        chunks.push(evt.data);
+      };
+      mediaRecorder.onstop = (evt) => {
+        // Make blob out of our blobs, and open it.
+        const blob = new Blob(chunks, { type: "audio/ogg; codecs=opus" });
+        document.getElementById("audio-recording").src = URL.createObjectURL(blob);
+      };
+
+      const oscList = [];
+      let mainGainNode = null;
+      let synthGainNode = null;
+      const keyboard = document.querySelector(".keyboard");
+      const wavePicker = document.querySelector("select[name='waveform']");
+      const volumeControl = document.querySelector("input[name='volume']");
+      let customWaveform = null;
+      let sineTerms = null;
+      let cosineTerms = null;
+
+      const phi = (1+5**(1/2))/2
+      const theta = phi**2
+      const ona = phi**3
+      const onaphi = phi**4
+      const onathey = phi**5
+      const epsi = phi**6
+      
+      var isPlaying = false
+      var barLength = 3.2
+      var beatLength = barLength/ona
+
+      let lastFibWord = [true]
+      let fibWord = [true, false]
+      for (let i = 0; i < 15; i++) {
+        let newFibWord = fibWord.concat(lastFibWord)
+        lastFibWord = fibWord
+        fibWord = newFibWord
+      }
+      let beatTimes = [0]
+      let newBeatTime = 0
+      let basslineValues = []
+      let bassCounterSmall = 0
+      let bassCounterBig = 0
+      for (let i = 0; i < fibWord.length; i++) {
+        let bassLength = fibWord[bassCounterBig] ? 5 : 3
+        if (bassCounterSmall >= bassLength) {
+          bassCounterBig++
+          bassCounterSmall = 0
+        }
+        let bassNote = fibWord[bassCounterBig] ? ["A3","B3","C4","D4","C4"][bassCounterSmall] : ["G3","A3","~"][bassCounterSmall]
+        basslineValues.push([newBeatTime, bassNote])
+        bassCounterSmall++
+        
+        const is_long = fibWord[i]
+        
+        let l = beatLength
+        if (!is_long) { l/=phi }
+        newBeatTime += l
+        beatTimes.push(newBeatTime)
+      }
+      basslineValues.push([newBeatTime, "."])
+
+      // Sample loading from https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Advanced_techniques
+      async function getFile(audioContext, filepath) {
+        const response = await fetch(filepath);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        return audioBuffer;
+      }
+
+      async function setupSample(sampleName) {
+        const filePath = sampleName;
+        const sample = await getFile(audioContext, filePath);
+        return sample;
+      }
+
+      // setupSample("samples/clap1.wav").then((sample) => {
+      //   // loadingEl.style.display = "none";
+      //   playSample(audioContext, sample, 0)
+      // });
+
+      let tempo = 60.0;
+      let currentNote = 0; // The note we are currently playing
+      let nextNoteTime = 0.0; // when the next note is due.
+      function nextNote() {
+        const secondsPerBeat = 60.0 / tempo;
+
+        nextNoteTime += secondsPerBeat; // Add beat length to last beat time
+
+        // Advance the beat number, wrap to zero when reaching 4
+        currentNote = (currentNote + 1) % 4;
+      }
+
+      // Create a queue for the notes that are to be played, with the current time that we want them to play:
+      const notesInQueue = [];
+      let dtmf;
+
+      function scheduleNote(beatNumber, time) {
+        // // Push the note into the queue, even if we're not playing.
+        // notesInQueue.push({ note: beatNumber, time: time });
+
+        // if (pads[0].querySelectorAll("input")[beatNumber].checked) {
+        //   playSweep(time);
+        // }
+        // if (pads[1].querySelectorAll("input")[beatNumber].checked) {
+        //   playPulse(time);
+        // }
+        // if (pads[2].querySelectorAll("input")[beatNumber].checked) {
+        //   playNoise(time);
+        // }
+        // if (pads[3].querySelectorAll("input")[beatNumber].checked) {
+        //   playSample(audioContext, dtmf, time);
+        // }
+      }
+
+      let timerID;
+      const scheduleAheadTime = 0.1; // How far ahead to schedule audio (sec)
+      const lookahead = 25.0; // How frequently to call scheduling function (in milliseconds)
+      function scheduler() {
+        // While there are notes that will need to play before the next interval,
+        // schedule them and advance the pointer.
+        while (nextNoteTime < audioContext.currentTime + scheduleAheadTime) {
+          // scheduleNote(currentNote, nextNoteTime);
+          nextNote();
+        }
+        timerID = setTimeout(scheduler, lookahead);
+      }
+
+      let playbackRate = 1;
+      function playSample(audioContext, audioBuffer, time) {
+        const sampleSource = new AudioBufferSourceNode(audioContext, {
+          buffer: audioBuffer,
+          playbackRate: playbackRate,
+        });
+        sampleSource.connect(mainGainNode);
+        sampleSource.start(time);
+        return sampleSource;
+      }
+      
+      // Synth from https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Simple_synth
+      function createNoteTable() {
+        const noteFreq = [
+          { A: 27.5, "A#": 29.13523509488062, B: 30.867706328507754 },
+          {
+            C: 32.70319566257483,
+            "C#": 34.64782887210901,
+            D: 36.70809598967595,
+            "D#": 38.89087296526011,
+            E: 41.20344461410874,
+            F: 43.65352892912549,
+            "F#": 46.2493028389543,
+            G: 48.99942949771866,
+            "G#": 51.91308719749314,
+            A: 55,
+            "A#": 58.27047018976124,
+            B: 61.73541265701551,
+          },
+        ];
+        for (let octave = 2; octave <= 7; octave++) {
+          noteFreq.push(
+            Object.fromEntries(
+              Object.entries(noteFreq[octave - 1]).map(([key, freq]) => [
+                key,
+                freq * 2,
+              ]),
+            ),
+          );
+        }
+        noteFreq.push({ C: 4186.009044809578 });
+        return noteFreq;
+      }
+      const noteFreq = createNoteTable();
+      function setup() {
+        
+        mainGainNode = audioContext.createGain();
+        synthGainNode = audioContext.createGain();
+        mainGainNode.connect(audioContext.destination);
+        synthGainNode.connect(mainGainNode)
+        mainGainNode.connect(recordingDestination)
+        
+        volumeControl.addEventListener("change", changeVolume);
+        changeVolume()
+        
+        // Create the keys; skip any that are sharp or flat; for
+        // our purposes we don't need them. Each octave is inserted
+        // into a <div> of class "octave".
+
+        noteFreq.forEach((keys, idx) => {
+          const keyList = Object.entries(keys);
+          const octaveElem = document.createElement("div");
+          octaveElem.className = "octave";
+
+          keyList.forEach((key) => {
+            if (key[0].length === 1) {
+              octaveElem.appendChild(createKey(key[0], idx, key[1]));
+            }
+          });
+
+          keyboard.appendChild(octaveElem);
+        });
+
+        document
+          .querySelector("div[data-note='B'][data-octave='5']")
+          .scrollIntoView(false);
+
+        sineTerms = new Float32Array([0, 0, 1, 0, 1]);
+        cosineTerms = new Float32Array(sineTerms.length);
+        customWaveform = audioContext.createPeriodicWave(cosineTerms, sineTerms);
+
+        for (let i = 0; i < 9; i++) {
+          oscList[i] = {};
+        }
+      }
+
+      function levelToDuration(level) {
+        return beatLength * phi**level
+      }
+      function getNextLong(level = 4, from = audioContext.currentTime) {
+        let t = 0
+        for (const letter of fibWord) {
+          if (from <= t) break
+          d = levelToDuration(level)
+          if (!letter) d/=phi
+          t += d
+        }
+        return t
+      }
+
+      class MyPlayer {
+        constructor(level = 4) {
+          this.level = level
+          this.duration = levelToDuration(this.level)
+        }
+
+        playAtNextLong(from = undefined) {
+          let t = getNextLong(this.level, from)
+          this.play(t)
+        }
+      }
+
+      // class MySequence extends MyPlayer {
+      //   constructor(seq, level = 4) {
+      //     super(level)
+      //     this.seq = seq
+      //   }
+
+      //   play(time) {
+
+      //   }
+      // }
+
+      class MyMelody extends MyPlayer {
+        constructor(pattern, level = 4, soundType = "sawtooth") {
+          super(level)
+          this.pattern = pattern
+          this.type = soundType
+        }
+        
+        play(time) {
+          this.endTime = time + this.duration
+          const unit = this.duration / beatTimes[this.pattern.length]
+          let current = 0
+          let beat = 0
+          let lastNotes = []
+
+          function stopLastNotes() {
+            for (const osc of lastNotes) {
+              osc.stop(time + current)
+            }
+          }
+
+          for (const note of this.pattern) {
+            beat++
+            let next = unit * beatTimes[beat]
+            if (note == "~") { // Keep playing
+
+            }
+            else {
+              stopLastNotes()
+
+              if (note == ".") {
+                
+              }
+              else {
+                let freq = noteFreq[note[1]][note[0]]
+                // lastNotes = this.playFreq(freq, time+current, time+next)
+                lastNotes = this.playFreq(freq, time+current, undefined)
+              }
+            }
+            current = next
+          }
+          stopLastNotes()
+        }
+
+        playFreq(freq, time, endTime, node = synthGainNode) {
+          const osc = audioContext.createOscillator();
+          osc.connect(node);
+
+          const type = this.type;
+
+          if (type === "custom") {
+            osc.setPeriodicWave(customWaveform);
+          } else {
+            osc.type = type;
+          }
+
+          osc.frequency.value = freq;
+
+          osc.start(time);
+          if (endTime != undefined) {
+            osc.stop(endTime);
+          }
+          return [osc]
+        }
+      }
+
+      setup();
+      function createKey(note, octave, freq) {
+        const keyElement = document.createElement("div");
+        const labelElement = document.createElement("div");
+
+        keyElement.className = "key";
+        keyElement.dataset["octave"] = octave;
+        keyElement.dataset["note"] = note;
+        keyElement.dataset["frequency"] = freq;
+        labelElement.appendChild(document.createTextNode(note));
+        labelElement.appendChild(document.createElement("sub")).textContent = octave;
+        keyElement.appendChild(labelElement);
+
+        keyElement.addEventListener("mousedown", notePressed);
+        keyElement.addEventListener("mouseup", noteReleased);
+        keyElement.addEventListener("mouseover", notePressed);
+        keyElement.addEventListener("mouseleave", noteReleased);
+
+        return keyElement;
+      }
+      function playTone(freq) {
+        const osc = audioContext.createOscillator();
+        osc.connect(synthGainNode);
+
+        const type = wavePicker.options[wavePicker.selectedIndex].value;
+
+        if (type === "custom") {
+          osc.setPeriodicWave(customWaveform);
+        } else {
+          osc.type = type;
+        }
+
+        osc.frequency.value = freq;
+        osc.start();
+
+        return osc;
+      }
+      function notePressed(event) {
+        if (event.buttons & 1) {
+          const dataset = event.target.dataset;
+
+          if (!dataset["pressed"] && dataset["octave"]) {
+            const octave = Number(dataset["octave"]);
+            oscList[octave][dataset["note"]] = playTone(dataset["frequency"]);
+            dataset["pressed"] = "yes";
+          }
+        }
+      }
+      function noteReleased(event) {
+        const dataset = event.target.dataset;
+
+        if (dataset && dataset["pressed"]) {
+          const octave = Number(dataset["octave"]);
+
+          if (oscList[octave] && oscList[octave][dataset["note"]]) {
+            oscList[octave][dataset["note"]].stop();
+            delete oscList[octave][dataset["note"]];
+            delete dataset["pressed"];
+          }
+        }
+      }
+      function changeVolume(event) {
+        synthGainNode.gain.value = volumeControl.value;
+      }
+      const synthKeys = document.querySelectorAll(".key");
+
+      const keyCodes = [
+        "Space",
+        "ShiftLeft", "KeyZ", "KeyX", "KeyC", "KeyV", "KeyB", "KeyN", "KeyM", "Comma", "Period", "Slash", "ShiftRight",
+        "KeyA", "KeyS", "KeyD", "KeyF", "KeyG", "KeyH", "KeyJ", "KeyK", "KeyL", "Semicolon", "Quote", "Enter",
+        "Tab", "KeyQ", "KeyW", "KeyE", "KeyR", "KeyT", "KeyY", "KeyU", "KeyI", "KeyO", "KeyP", "BracketLeft", "BracketRight",
+        "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7", "Digit8", "Digit9", "Digit0", "Minus", "Equal", "Backspace",
+        "Escape",
+      ];
+      function keyNote(event) {
+        const elKey = synthKeys[keyCodes.indexOf(event.code)];
+        if (elKey) {
+          if (event.type === "keydown") {
+            elKey.tabIndex = -1;
+            elKey.focus();
+            elKey.classList.add("active");
+            notePressed({ buttons: 1, target: elKey });
+          } else {
+            elKey.classList.remove("active");
+            noteReleased({ buttons: 1, target: elKey });
+          }
+          event.preventDefault();
+        }
+      }
+      addEventListener("keydown", keyNote);
+      addEventListener("keyup", keyNote);
+
+
+
+      maxUsedTimelineY = 0
+      class TimelineArtist {
+        constructor(color="gray", y, height=3) {
+          this.color = color
+          if (y != undefined) { this.y = y }
+          else {
+            maxUsedTimelineY += 7
+            this.y = maxUsedTimelineY
+          }
+          this.height = height
+        }
+
+        draw(values, now) {
+          context.fillStyle = this.color
+          for (let i = 0; i < values.length; i++) {
+            const pair = values[i];
+            let time = pair[0] - now
+            context.fillRect(time_to_x(time), this.y, 2, this.height)
+          }
+        }
+      }
+
+      class SampleTrack {
+        constructor(sampleName, longString, shortString, longBeatLength=1/theta, artist=new TimelineArtist()) {
+          this.sampler = setupSample("samples/"+sampleName+".wav")
+          this.shortString = shortString
+          this.longString = longString
+          this.time = 0
+          this.partIndex = 0
+          this.longBeatLength = longBeatLength
+          this.storedValues = []
+          this.artist = artist
+        }
+
+        addNextPart() {
+          const string = fibWord[this.partIndex] ? this.longString : this.shortString
+          let partValues = []
+          for (let beat = 0; beat < string.length; beat++) {
+            let symbol = string[beat]
+            if (symbol != ".") {
+              partValues.push([this.time, symbol])
+              this.storedValues.push([this.time, symbol])
+              let time = this.time
+              this.sampler.then((sample) => {
+                playSample(audioContext, sample, time)
+              })
+            }
+            let beatLength = barLength * this.longBeatLength
+            if (!fibWord[beat]) { beatLength/=phi }
+            this.time += beatLength
+          }
+          this.partIndex++
+        }
+        addUntilTime(time) {
+          while (this.time < time) {
+            this.addNextPart()
+          }
+        }
+        draw(now) {
+          this.artist.draw(this.storedValues, now)
+        }
+      }
+
+      const samplers = {
+        'hat': new SampleTrack("closed-hat1", "#.", "#", 1/epsi, new TimelineArtist("white")),
+        'clap': new SampleTrack("clap1", "#............", "#..#.###", 1/onathey, new TimelineArtist("#da4", 30, 7)),
+        'snare': new SampleTrack("snare1", "..#...#.", "..#..", 1/onaphi),
+        'kick': new SampleTrack("kick1", "#.", ".", 1/onaphi),
+      }
+
+      for (const name in samplers) {
+        samplers[name].addUntilTime(300)
+      }
+      const m1  = new MyMelody(["C4", "E4", "G4", "F4", "E4"], 3)
+      const m2  = new MyMelody(["C4", "G4", "E4"], 2)
+      const m22 = new MyMelody(["E4", "G4", "~"], 2)
+      const m3  = new MyMelody(["C4", "D4", "G4"], 3)
+      const m4  = new MyMelody(["F4", "E4", "D4"], 2)
+      const mm1 = new MyMelody(["C4", "~", "G4", "F4", "~", "E4", "F4", "~"], 3, "custom")
+      // "C4 "
+      const mm2 = new MyMelody([
+        // "E4", "~", "F4", "~", "G4", "F4", "~", "E4",
+        // "~", "~", "D4", "~", "E4",
+        // "D4", "~", "C4", "~", "~", "~", "~", "~"]
+        "E4", "~", "~", "F4", "~", "~", "~", "~",
+        "G4", "F4", "~", "E4", "~", "~", "~", "~", "~", "~", "D4", "~", "~",
+        "~", "~", "E4", "D4", "~", "C4", "~", "~", "~", "~", "~", "~", "~"
+      ], 4, "custom")
+      const mm3 = new MyMelody(["E4", "D4", "~", "~", "~"], 2, "custom")
+      const arp1 = new MyMelody(["D2", "G2", "A2", "D2", "G2", "A2", "G2", "A2"], 2, "sawtooth")
+      const arp2 = new MyMelody(["C3", "B2", "A2", "G2", "A2"], 1, "sawtooth")
+      const over1 = new MyMelody([""])
+      function pause(level) {
+        return new MyMelody(["."], level)
+      }
+
+      function playSequenceAtNextLong(players, startTime = audioContext.currentTime) {
+        time = startTime
+        for (const player of players) {
+          // time = getNextLong(player.level, time)
+          player.playAtNextLong(time)
+          time = player.endTime - 0.05 // TODO: may break i guess
+        }
+      }
+      function playRepeatedPair(long, short, n, skips) {
+        // TODO: only works when starting at time 0
+        let order = []
+        let i = 0
+        for (; i < skips; i++) {
+          if (fibWord[i]) order.push(pause(long.level))
+          else order.push(pause(short.level))
+        }
+        for (; i < n+skips; i++) {
+          if (fibWord[i]) order.push(long)
+          else order.push(short)
+        }
+        playSequenceAtNextLong(order)
+      }
+      
+      // playSequenceAtNextLong([m1, m2, m1, m3, m22, m1, m4])
+      playSequenceAtNextLong([mm1, mm3, mm1, mm2, pause(5), mm1, mm3, mm1, mm2])
+      playRepeatedPair(arp1, arp2, 200, 7)
+      
+      function time_to_x(t) { return 50+t*50 }
+      function draw() {
+        context.clearRect(0, 0, canvas.width, canvas.height)
+        context.fillStyle = "white"
+        context.fillRect(time_to_x(0), 0, 3, 100)
+        const now = audioContext.currentTime
+
+        // context.fillStyle = "green"
+        // for (let i = 0; i < basslineValues.length-1; i++) {
+        //   const pair = basslineValues[i];
+        //   const nextPair = basslineValues[i+1];
+
+        //   let time = pair[0] - now
+        //   let note = pair[1]
+        //   let endTime = nextPair[0] - now
+        //   let noteIndex = {"G3": -1, "A3": 0, "B3": 1, "C4": 2, "D4": 3}[note]
+          
+        //   context.fillRect(time_to_x(time), 50-10*noteIndex, time_to_x(endTime)-time_to_x(time), 10)
+        // }
+
+        for (const name in samplers) {
+          samplers[name].draw(now)
+        }
+        
+        if (isPlaying) {
+          window.requestAnimationFrame(draw)
+        }
+      }
+
+      requestAnimationFrame(draw);
+
+      function playAudio() {
+        isPlaying = true
+        if (makeRecording) {
+          isRecording = true
+          mediaRecorder.start()
+        }
+
+        // Check if context is in suspended state (autoplay policy)
+        if (audioContext.state === "suspended") {
+          audioContext.resume();
+        }
+
+        currentNote = 0;
+        nextNoteTime = audioContext.currentTime;
+        scheduler(); // kick off scheduling
+        requestAnimationFrame(draw); // start the drawing loop.
+			}
+      function pauseAudio() {
+        isPlaying = false
+        if (isRecording) {
+          mediaRecorder.requestData();
+          mediaRecorder.stop();
+          isRecording = false
+        }
+        audioContext.suspend()
+        window.clearTimeout(timerID);
+      }
+      pauseAudio()
+    </script>
+    
+    
+  </body>
+</html>
