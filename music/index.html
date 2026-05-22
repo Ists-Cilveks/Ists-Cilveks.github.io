@@ -171,7 +171,7 @@
     <audio id="audio-recording" controls></audio>
     
     <h2 lang="en">What?</h2>
-    <p lang="en">This is an experiment of <a href="https://www.youtube.com/watch?v=pM-e_csNupM">pulse morphing</a> with a ratio of φ. The music is made of long and short beats according to the <a href="https://en.wikipedia.org/wiki/Fibonacci_word">Fibonacci word</a>: <span style="font-family: monospace;">long short long, long short, long short long. long short long, long short. etc.</span></p>
+    <p lang="en">This is an experiment of <a href="https://www.youtube.com/watch?v=pM-e_csNupM">key patterns</a> with a ratio of φ. The music is made of long and short beats according to the <a href="https://en.wikipedia.org/wiki/Fibonacci_word">Fibonacci word</a>: <span style="font-family: monospace;">long short long, long short, long short long. long short long, long short. etc.</span> You can then think of the music as having long and short measures that follow that same pattern.</p>
     <p>TODO: Add rhythm game. I want to learn to feel this rhythm better.</p>
     
     <script>
@@ -766,7 +766,7 @@
 
         currentNote = 0;
         nextNoteTime = audioContext.currentTime;
-        scheduler(); // kick off scheduling
+        // scheduler(); // kick off scheduling
         requestAnimationFrame(draw); // start the drawing loop.
 			}
       function pauseAudio() {
