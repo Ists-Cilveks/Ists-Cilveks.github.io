@@ -28,7 +28,7 @@ class RhythmGame {
 		this.recentHits = []
 		this.recentRealeases = []
 		this.currentlyHeldNotes = []
-		this.noteData
+		this.noteData = {"TimingPoints": [], "HitObjects": []}
 
 		const dataPath = document.currentScript.getAttribute("data-chart")
 		if (dataPath != null) {this.fetchJSONChart(dataPath)}
@@ -327,33 +327,49 @@ class RhythmGame {
 		// TODO: preferably remove the note once it's finished
 	}
 
+	getNotePositionName(note, timingPoint) {
+		// Try reading from the data
+		let name = note["PositionName"]
+		if (name != undefined) {
+			return name
+		}
+
+		// Otherwise use the timingPoint to determine
+		const beatLength = 60000 / timingPoint.Bpm
+		const position = (((note.t - timingPoint.t) % beatLength + beatLength) % beatLength) / beatLength
+		let tempPosition = Math.abs(position-0.5) // V shaped
+		if (tempPosition > 0.45) {
+			name = "onBeat"
+		} else if (tempPosition < 0.05) {
+			name = "offBeat"
+		}
+		else {
+			tempPosition = Math.abs(tempPosition-0.25) // VV shaped
+			if (tempPosition < 0.05) {
+				name = "quarter"
+			}
+			else {
+				name = "other"
+			}
+		}
+		return name
+	}
+	addNoteData(data) {
+		this.noteData.HitObjects = this.noteData.HitObjects.concat(data.HitObjects)
+		this.noteData.TimingPoints = this.noteData.TimingPoints.concat(data.TimingPoints)
+		for (const note of data.HitObjects) {
+			const timingPoint = data.TimingPoints[0] // FIXME: won't work for charts with multiple timing points
+			note.positionName = this.getNotePositionName(note, timingPoint)
+		}
+		this.playButton.removeAttribute("disabled")
+	}
+
 	fetchJSONChart(path) {
 		const rhythmGame = this
 		fetch(path)
 		.then((response) => response.json())
 		.then(function(json){
-			rhythmGame.noteData=json
-			for (const note of rhythmGame.noteData.HitObjects) {
-				const timingPoint = rhythmGame.noteData.TimingPoints[0] // FIXME: won't work for maps with multiple timing points
-				const beatLength = 60000 / timingPoint.Bpm
-				const position = (((note.t - timingPoint.t) % beatLength + beatLength) % beatLength) / beatLength
-				let tempPosition = Math.abs(position-0.5) // V shaped
-				if (tempPosition > 0.45) {
-					note.positionName = "onBeat"
-				} else if (tempPosition < 0.05) {
-					note.positionName = "offBeat"
-				}
-				else {
-					tempPosition = Math.abs(tempPosition-0.25) // VV shaped
-					if (tempPosition < 0.05) {
-						note.positionName = "quarter"
-					}
-					else {
-						note.positionName = "other"
-					}
-				}
-			}
-			rhythmGame.playButton.removeAttribute("disabled")
+			rhythmGame.addNoteData(json)
 		});
 	}
 
