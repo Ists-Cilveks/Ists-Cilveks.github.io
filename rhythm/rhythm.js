@@ -1,5 +1,6 @@
 class RhythmGame {
 	constructor() {
+		let game = this
 		this.canvas=document.getElementById("rhythm-canvas");
 		this.context=this.canvas.getContext("2d");
 		this.rhythmContainer=document.getElementById("rhythm-container");
@@ -21,7 +22,8 @@ class RhythmGame {
 			quarter: globalPalette.lightUp.mix(globalPalette.deepFraming, 0.2),
 			other: globalPalette["main-color"].mix(globalPalette.BG, 0.3),
 		}
-		globalPalette.addListener(function () {window.requestAnimationFrame(this.draw)})
+		function draw() {game.draw()}
+		globalPalette.addListener(function () {window.requestAnimationFrame(draw)})
 
 		this.resize()
 
@@ -40,7 +42,6 @@ class RhythmGame {
 
 		this.audio = document.getElementById("rhythm-track")
 		this.secondarySyncDone = true; // FIXME: dumb fix
-		let game = this
 		if (this.audio != null) {
 			this.secondarySyncDone = false
 			this.audio.volume = 0.3;
