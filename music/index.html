@@ -176,15 +176,13 @@
       </div>
 
       <div class="landscape-column" style="position: relative; height: 80vh;">
-        <div id="rhythm-container" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;">
+        <div id="rhythm-container" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;" tabindex="0">
           <canvas id="rhythm-canvas">
           </canvas>
         </div>
         <script src="/rhythm/rhythm.js"></script>
       </div>
     </div>
-
-
     
     <h2 lang="en">What?</h2>
     <p lang="en">This is an experiment of <a href="https://www.youtube.com/watch?v=pM-e_csNupM">key patterns</a> with a ratio of φ. The music is made of long and short beats according to the <a href="https://en.wikipedia.org/wiki/Fibonacci_word">Fibonacci word</a>: <span style="font-family: monospace;">long short long, long short, long short long. long short long, long short. etc.</span> You can then think of the music as having long and short measures that follow that same pattern.</p>
@@ -240,6 +238,34 @@
         let newFibWord = fibWord.concat(lastFibWord)
         lastFibWord = fibWord
         fibWord = newFibWord
+      }
+      let fibNums = [1, 2]
+      for (let i = 2; i < 50; i++) {
+        fibNums[i] = fibNums[i-1] + fibNums[i-2];
+      }
+      function getFibonacciRep(n, maxFibNum=15) { // returns the Fibonacci base representation of n
+        let res = []
+        for (let i = maxFibNum; i >= 0; i--) {
+          const fib = fibNums[i];
+          if (n >= fib) {
+            n -= fib
+            res[i] = true
+          }
+          else {
+            res[i] = false
+          }
+        }
+        return res
+      }
+      function getFibonacciLevelOfInt(n, maxLevel=15) {
+        let rep = getFibonacciRep(n, maxLevel)
+        for (let i = 0; i < rep.length; i++) {
+          const bit = rep[i];
+          if (bit) {
+            return i
+          }
+        }
+        return Infinity
       }
       let beatTimes = [0]
       let newBeatTime = 0
@@ -548,6 +574,7 @@
           // }
 
           for (const note of this.pattern) {
+            let level = getFibonacciLevelOfInt(beat)
             beat++
             let next = unit * beatTimes[beat]
             if (note == "~") { // Keep playing
@@ -559,7 +586,7 @@
                 
               }
               else {
-                this.addNote(Number(note), time + current)
+                this.addNote(Number(note), time + current, level)
                 // activeNotes = this.playFreq(freq, time+current, time+next)
                 // activeNotes = this.playFreq(freq, time+current, undefined)
               }
@@ -570,11 +597,17 @@
           this.game.addNoteData(this.data)
         }
 
-        addNote(note, time) {
+        addNote(note, time, level) {
+          let posName
+          if (level >= 2) posName = "onBeat"
+          else if (level >= 0) posName = "offBeat"
+          else if (level >= -2) posName = "quarter"
+          else posName = "other"
           this.data["HitObjects"].push(
             {
               "t": time*1000,
               "Lane": note,
+              "PositionName": posName,
               // "KeySounds": []
             },
           )
