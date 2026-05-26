@@ -131,52 +131,60 @@
 		<script src="/js/themes.js"></script>
     <script src="/js/languages.js" my-languges="en"></script>
     
-    <canvas id="music-canvas" height="100" width="600"></canvas><br>
+    <div class="landscape-row">
+			<div class="landscape-column">
+        <canvas id="music-canvas" height="100" width="400"></canvas><br>
 
-    <div class="container">
-      <div class="keyboard"></div>
-    </div>
-    <div class="settingsBar">
-      <div class="left">
-        <span>Volume: </span>
-        <input
-          type="range"
-          min="0.0"
-          max="1.0"
-          step="0.01"
-          value="0.5"
-          list="volumes"
-          name="volume" />
-        <datalist id="volumes">
-          <option value="0.0" label="Mute"></option>
-          <option value="1.0" label="100%"></option>
-        </datalist>
+        <div class="container" style="max-width: 50vw;">
+          <div class="keyboard"></div>
+        </div>
+        <div class="settingsBar">
+          <div class="left">
+            <span>Volume: </span>
+            <input
+              type="range"
+              min="0.0"
+              max="1.0"
+              step="0.01"
+              value="0.5"
+              list="volumes"
+              name="volume" />
+            <datalist id="volumes">
+              <option value="0.0" label="Mute"></option>
+              <option value="1.0" label="100%"></option>
+            </datalist>
+          </div>
+          <div class="right">
+            <span>Current waveform: </span>
+            <select name="waveform">
+              <option value="sine">Sine</option>
+              <option value="square" selected>Square</option>
+              <option value="sawtooth">Sawtooth</option>
+              <option value="triangle">Triangle</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+        </div>
+        
+        <button style="font-size: 120%;" class="basic-btn" onclick="isPlaying ? pauseAudio() : playAudio()">Play/Pause</button>
+        <p>(The keyboard doesn't work while the beat isn't playing. Also it'll end eventually, and then you have to refresh the page.)</p>
+        
+        <h2 lang="en">Recording:</h2>
+        <p lang="en">This element will store the audio after you press pause. You can then save it as a file by right clicking.</p>
+        <audio id="audio-recording" controls></audio>
+
       </div>
-      <div class="right">
-        <span>Current waveform: </span>
-        <select name="waveform">
-          <option value="sine">Sine</option>
-          <option value="square" selected>Square</option>
-          <option value="sawtooth">Sawtooth</option>
-          <option value="triangle">Triangle</option>
-          <option value="custom">Custom</option>
-        </select>
+
+      <div class="landscape-column" style="position: relative; height: 80vh;">
+        <div id="rhythm-container" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;">
+          <canvas id="rhythm-canvas">
+          </canvas>
+        </div>
+        <script src="/rhythm/rhythm.js"></script>
       </div>
     </div>
 
-    <button style="font-size: 120%;" class="basic-btn" onclick="isPlaying ? pauseAudio() : playAudio()">Play/Pause</button>
-    <p>(The keyboard doesn't work while the beat isn't playing. Also it'll end eventually, and then you have to refresh the page.)</p>
 
-    <div id="rhythm-container" style="width: 100%; height: 60vh;" tabindex="0">
-      <canvas id="rhythm-canvas">
-      </canvas>
-    </div>
-
-    <script src="/rhythm/rhythm.js" data-chart="../rhythm/tlpog.json"></script>
-
-    <h2 lang="en">Recording:</h2>
-    <p lang="en">This element will store the audio after you press pause. You can then save it as a file by right clicking.</p>
-    <audio id="audio-recording" controls></audio>
     
     <h2 lang="en">What?</h2>
     <p lang="en">This is an experiment of <a href="https://www.youtube.com/watch?v=pM-e_csNupM">key patterns</a> with a ratio of φ. The music is made of long and short beats according to the <a href="https://en.wikipedia.org/wiki/Fibonacci_word">Fibonacci word</a>: <span style="font-family: monospace;">long short long, long short, long short long. long short long, long short. etc.</span> You can then think of the music as having long and short measures that follow that same pattern.</p>
