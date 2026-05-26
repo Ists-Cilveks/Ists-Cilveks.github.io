@@ -36,30 +36,30 @@ class RhythmGame {
 		if (dataPath != null) {this.fetchJSONChart(dataPath)}
 
 		if (!this.paused) {
-			this.audio.play();
+			this.audioElement.play();
 		}
 		this.resize() // TODO: why twice? try removing one
 
-		this.audio = document.getElementById("rhythm-track")
+		this.audioElement = document.getElementById("rhythm-track")
 		this.secondarySyncDone = true; // FIXME: dumb fix
-		if (this.audio != null) {
+		if (this.audioElement != null) {
 			this.secondarySyncDone = false
-			this.audio.volume = 0.3;
+			this.audioElement.volume = 0.3;
 			function play(){
 				game.paused=false;
 				game.syncToAudio(performance.now())
 				game.draw()
 			}
-			this.audio.addEventListener("play", play)
+			this.audioElement.addEventListener("play", play)
 			function pause(){
 				game.paused=true;
 			}
-			this.audio.addEventListener("pause", pause)
+			this.audioElement.addEventListener("pause", pause)
 		}
 
 
 		function startRhythmGame() {game.startRhythmGame()}
-		this.playButton.addEventListener("click", startRhythmGame)
+		if (this.playButton) this.playButton.addEventListener("click", startRhythmGame)
 
 		// canvas.addEventListener("mousemove",function(){
 		//   // lastx=event.clientX;
@@ -145,7 +145,33 @@ class RhythmGame {
 		this.rhythmContainer.addEventListener("keydown", keydownEvent);
 		function resize(event) { game.resize() }
 		window.addEventListener("resize", resize)
+
+		this.draw()
 	}
+
+	setAudioContext(ctx) {
+		this.audioContext = ctx
+	}
+
+	playAudio() {
+		if (this.audioElement) this.audioElement.play()
+		// if (this.audioContext) {
+		// 	// Check if context is in suspended state (autoplay policy)
+		// 	if (audioContext.state === "suspended") {
+		// 		audioContext.resume();
+		// 	}
+		// }
+
+		this.paused=false;
+		this.syncToAudio(performance.now())
+		this.draw()
+	}
+	pauseAudio() {
+		if (this.audioElement) this.audioElement.pause()
+		// if (this.audioContext) this.audioContext.pause()
+		this.paused=true;
+	}
+
 
 	pathUnitDownArrow() {
 		let context = this.context
@@ -362,7 +388,7 @@ class RhythmGame {
 			const timingPoint = data.TimingPoints[0] // FIXME: won't work for charts with multiple timing points
 			note.positionName = this.getNotePositionName(note, timingPoint)
 		}
-		this.playButton.removeAttribute("disabled")
+		if (this.playButton) this.playButton.removeAttribute("disabled")
 	}
 
 	fetchJSONChart(path) {
@@ -374,8 +400,12 @@ class RhythmGame {
 		});
 	}
 
+	getCurrentTime() {
+		if (this.audioElement) return this.audioElement.currentTime
+		if (this.audioContext) return this.audioContext.currentTime
+	}
 	syncToAudio(curTime) {
-		this.startTime=curTime-this.audio.currentTime*1000
+		this.startTime=curTime-this.getCurrentTime()*1000
 	}
 
 
@@ -475,14 +505,14 @@ class RhythmGame {
 
 
 	startRhythmGame() {
-		document.getElementById('info-before-rhythm-game').style.display = 'none'
+		if (document.getElementById('info-before-rhythm-game')) document.getElementById('info-before-rhythm-game').style.display = 'none'
 		
-		this.audio.play()
-		this.rhythmContainer.focus()
+		if (this.audioElement) this.audioElement.play()
+		if (this.playButton) this.rhythmContainer.focus() // Only focus if started with a dedicated play button. If there is none, we assume there's other stuff interacting with the audio and so you don't want to snatch focus like that.
 	}
 	stopRhythmGame() {
-		this.audio.pause()
+		if (this.audioElement) this.audioElement.pause()
 	}
 }
 
-game = new RhythmGame()
+rhythmGame = new RhythmGame()

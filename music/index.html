@@ -166,13 +166,20 @@
 
     <button style="font-size: 120%;" class="basic-btn" onclick="isPlaying ? pauseAudio() : playAudio()">Play/Pause</button>
     <p>(The keyboard doesn't work while the beat isn't playing. Also it'll end eventually, and then you have to refresh the page.)</p>
+
+    <div id="rhythm-container" style="width: 100%; height: 60vh;" tabindex="0">
+      <canvas id="rhythm-canvas">
+      </canvas>
+    </div>
+
+    <script src="/rhythm/rhythm.js" data-chart="../rhythm/tlpog.json"></script>
+
     <h2 lang="en">Recording:</h2>
     <p lang="en">This element will store the audio after you press pause. You can then save it as a file by right clicking.</p>
     <audio id="audio-recording" controls></audio>
     
     <h2 lang="en">What?</h2>
     <p lang="en">This is an experiment of <a href="https://www.youtube.com/watch?v=pM-e_csNupM">key patterns</a> with a ratio of φ. The music is made of long and short beats according to the <a href="https://en.wikipedia.org/wiki/Fibonacci_word">Fibonacci word</a>: <span style="font-family: monospace;">long short long, long short, long short long. long short long, long short. etc.</span> You can then think of the music as having long and short measures that follow that same pattern.</p>
-    <p>TODO: Add rhythm game. I want to learn to feel this rhythm better.</p>
     
     <script>
       const canvas = document.getElementById("music-canvas")
@@ -764,6 +771,9 @@
           audioContext.resume();
         }
 
+        rhythmGame.setAudioContext(audioContext)
+        rhythmGame.playAudio()
+
         currentNote = 0;
         nextNoteTime = audioContext.currentTime;
         // scheduler(); // kick off scheduling
@@ -778,6 +788,8 @@
         }
         audioContext.suspend()
         window.clearTimeout(timerID);
+
+        rhythmGame.pauseAudio()
       }
       pauseAudio()
     </script>
