@@ -466,10 +466,10 @@
           const unit = this.duration / beatTimes[this.pattern.length]
           let current = 0
           let beat = 0
-          let lastNotes = []
+          let activeNotes = []
 
-          function stopLastNotes() {
-            for (const osc of lastNotes) {
+          function stopActiveNotes() {
+            for (const osc of activeNotes) {
               osc.stop(time + current)
             }
           }
@@ -481,20 +481,20 @@
 
             }
             else {
-              stopLastNotes()
+              stopActiveNotes()
 
               if (note == ".") {
                 
               }
               else {
                 let freq = noteFreq[note[1]][note[0]]
-                // lastNotes = this.playFreq(freq, time+current, time+next)
-                lastNotes = this.playFreq(freq, time+current, undefined)
+                // activeNotes = this.playFreq(freq, time+current, time+next)
+                activeNotes = this.playFreq(freq, time+current, undefined)
               }
             }
             current = next
           }
-          stopLastNotes()
+          stopActiveNotes()
         }
 
         playFreq(freq, time, endTime, node = synthGainNode) {
@@ -516,6 +516,68 @@
             osc.stop(endTime);
           }
           return [osc]
+        }
+      }
+
+      class MyRhythm extends MyPlayer {
+        constructor(pattern, level = 4, game = rhythmGame) {
+          super(level)
+          this.pattern = pattern
+          this.game = game
+          this.data = {
+            "TimingPoints": [{
+              "t": 0,
+              // "Bpm": 170 // Not really well defined. I guess I could just take the long beat if I ever need to save stuff to a file.
+            }],
+            "HitObjects": [],
+          }
+        }
+        
+        play(time) {
+          this.data["HitObjects"] = []
+          this.endTime = time + this.duration
+          const unit = this.duration / beatTimes[this.pattern.length]
+          let current = 0
+          let beat = 0
+          // let activeNotes = []
+
+          // function stopActiveNotes() {
+          //   for (const osc of activeNotes) {
+          //     osc.stop(time + current)
+          //   }
+          // }
+
+          for (const note of this.pattern) {
+            beat++
+            let next = unit * beatTimes[beat]
+            if (note == "~") { // Keep playing
+
+            }
+            else {
+              // stopActiveNotes()
+              if (note == ".") {
+                
+              }
+              else {
+                this.addNote(Number(note), time + current)
+                // activeNotes = this.playFreq(freq, time+current, time+next)
+                // activeNotes = this.playFreq(freq, time+current, undefined)
+              }
+            }
+            current = next
+          }
+          // stopActiveNotes()
+          this.game.addNoteData(this.data)
+        }
+
+        addNote(note, time) {
+          this.data["HitObjects"].push(
+            {
+              "t": time*1000,
+              "Lane": note,
+              // "KeySounds": []
+            },
+          )
         }
       }
 
@@ -709,6 +771,12 @@
         return new MyMelody(["."], level)
       }
 
+      const arrows11 = new MyRhythm("12312323", 2)
+      const arrows12 = new MyRhythm("43212", 1)
+      const arrows21 = new MyRhythm("1.43.23.", 3)
+      const arrows22 = new MyRhythm("2..3....43.2......1....32.1.......", 4)
+      const arrows23 = new MyRhythm("21...", 2)
+
       function playSequenceAtNextLong(players, startTime = audioContext.currentTime) {
         time = startTime
         for (const player of players) {
@@ -734,7 +802,9 @@
       
       // playSequenceAtNextLong([m1, m2, m1, m3, m22, m1, m4])
       playSequenceAtNextLong([mm1, mm3, mm1, mm2, pause(5), mm1, mm3, mm1, mm2])
+      playSequenceAtNextLong([arrows21, arrows23, arrows21, arrows22])
       playRepeatedPair(arp1, arp2, 200, 7)
+      playRepeatedPair(arrows11, arrows12, 200, 8)
       
       function time_to_x(t) { return 50+t*50 }
       function draw() {
