@@ -243,29 +243,84 @@
       for (let i = 2; i < 50; i++) {
         fibNums[i] = fibNums[i-1] + fibNums[i-2];
       }
-      function getFibonacciRep(n, maxFibNum=15) { // returns the Fibonacci base representation of n
-        let res = []
-        for (let i = maxFibNum; i >= 0; i--) {
-          const fib = fibNums[i];
-          if (n >= fib) {
-            n -= fib
-            res[i] = true
+      class Zeckendorf { // The "Fibonacci base" representation of n
+        rep = []
+        n = 0
+        constructor(n, maxLevel = 15) {
+          if (typeof(n) == "object") { // From array
+            this.rep = n
+            this.n = Zeckendorf.toInt(this.rep)
           }
-          else {
-            res[i] = false
+          else if (typeof(n) == "number") { // From int
+            this.n = n
+            this.rep = Zeckendorf.fromInt(n, maxLevel)
+          }
+          return this
+        }
+
+        static fromInt(n, maxLevel = 15) {
+          let res = []
+          for (let i = maxLevel; i >= 0; i--) {
+            const fib = fibNums[i];
+            if (n >= fib) {
+              n -= fib
+              res[i] = true
+            }
+            else {
+              res[i] = false
+            }
+          }
+          return res
+        }
+        static toInt(arr) {
+          let n = 0
+          for (let i = 0; i < arr.length; i++) {
+            n += arr[i] * fibNums[i]
+          }
+          return n
+        }
+        static getLevel(n) {
+          return new Zeckendorf(n).getLevel()
+        }
+        
+        getLevel() {
+          for (let i = 0; i < this.rep.length; i++) {
+            const bit = this.rep[i];
+            if (bit) {
+              return i
+            }
+          }
+          return Infinity
+        }
+
+        updateN() {
+          this.n = Zeckendorf.toInt(this.rep)
+        }
+
+        increment() {
+          this.n += 1
+          if (this.rep[0]) {
+            this.rep[0] = false
+            this.rep[1] = true
+          }
+          else this.rep[0] = true
+          for (let i = 0; i < this.rep.length-2; i++) {
+            if (this.rep[i] && this.rep[i+1]) {
+              this.rep[i] = false
+              this.rep[i+1] = false
+              this.rep[i+2] = true
+              i++
+            }
+            else {
+              break
+            }
+          }
+          if (this.rep[this.rep.length-2] && this.rep[this.rep.length-1]) {
+            this.rep[this.rep.length-2] = false
+            this.rep[this.rep.length-1] = false
+            this.rep.push(true)
           }
         }
-        return res
-      }
-      function getFibonacciLevelOfInt(n, maxLevel=15) {
-        let rep = getFibonacciRep(n, maxLevel)
-        for (let i = 0; i < rep.length; i++) {
-          const bit = rep[i];
-          if (bit) {
-            return i
-          }
-        }
-        return Infinity
       }
       let beatTimes = [0]
       let newBeatTime = 0
@@ -564,7 +619,7 @@
           this.endTime = time + this.duration
           const unit = this.duration / beatTimes[this.pattern.length]
           let current = 0
-          let beat = 0
+          let beat = new Zeckendorf()
           // let activeNotes = []
 
           // function stopActiveNotes() {
@@ -574,9 +629,9 @@
           // }
 
           for (const note of this.pattern) {
-            let level = getFibonacciLevelOfInt(beat)
-            beat++
-            let next = unit * beatTimes[beat]
+            let level = beat.getLevel()
+            beat.increment()
+            let next = unit * beatTimes[beat.n]
             if (note == "~") { // Keep playing
 
             }
