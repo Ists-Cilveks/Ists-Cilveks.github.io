@@ -232,16 +232,21 @@
       var barLength = 3.2
       var beatLength = barLength/ona
 
-      let lastFibWord = [true]
-      let fibWord = [true, false]
-      for (let i = 0; i < 15; i++) {
-        let newFibWord = fibWord.concat(lastFibWord)
-        lastFibWord = fibWord
-        fibWord = newFibWord
-      }
-      let fibNums = [1, 2]
-      for (let i = 2; i < 50; i++) {
-        fibNums[i] = fibNums[i-1] + fibNums[i-2];
+      const FIB = {}
+      if (true) {
+        let lastFibWord = [true]
+        let fibWord = [true, false]
+        for (let i = 0; i < 15; i++) {
+          let newFibWord = fibWord.concat(lastFibWord)
+          lastFibWord = fibWord
+          fibWord = newFibWord
+        }
+        let fibNums = [1, 2]
+        for (let i = 2; i < 50; i++) {
+          fibNums[i] = fibNums[i-1] + fibNums[i-2];
+        }
+        FIB.word = fibWord
+        FIB.sequence = fibNums
       }
       class Zeckendorf { // The "Fibonacci base" representation of n
         rep = []
@@ -261,7 +266,7 @@
         static fromInt(n, maxLevel = 15) {
           let res = []
           for (let i = maxLevel; i >= 0; i--) {
-            const fib = fibNums[i];
+            const fib = FIB.sequence[i];
             if (n >= fib) {
               n -= fib
               res[i] = true
@@ -275,7 +280,7 @@
         static toInt(arr) {
           let n = 0
           for (let i = 0; i < arr.length; i++) {
-            n += arr[i] * fibNums[i]
+            n += arr[i] * FIB.sequence[i]
           }
           return n
         }
@@ -327,17 +332,17 @@
       let basslineValues = []
       let bassCounterSmall = 0
       let bassCounterBig = 0
-      for (let i = 0; i < fibWord.length; i++) {
-        let bassLength = fibWord[bassCounterBig] ? 5 : 3
+      for (let i = 0; i < FIB.word.length; i++) {
+        let bassLength = FIB.word[bassCounterBig] ? 5 : 3
         if (bassCounterSmall >= bassLength) {
           bassCounterBig++
           bassCounterSmall = 0
         }
-        let bassNote = fibWord[bassCounterBig] ? ["A3","B3","C4","D4","C4"][bassCounterSmall] : ["G3","A3","~"][bassCounterSmall]
+        let bassNote = FIB.word[bassCounterBig] ? ["A3","B3","C4","D4","C4"][bassCounterSmall] : ["G3","A3","~"][bassCounterSmall]
         basslineValues.push([newBeatTime, bassNote])
         bassCounterSmall++
         
-        const is_long = fibWord[i]
+        const is_long = FIB.word[i]
         
         let l = beatLength
         if (!is_long) { l/=phi }
@@ -503,7 +508,7 @@
       }
       function getNextLong(level = 4, from = audioContext.currentTime) {
         let t = 0
-        for (const letter of fibWord) {
+        for (const letter of FIB.word) {
           if (from <= t) break
           d = levelToDuration(level)
           if (!letter) d/=phi
@@ -545,6 +550,10 @@
         play(time) {
           this.endTime = time + this.duration
           const unit = this.duration / beatTimes[this.pattern.length]
+          // console.log(this.duration);          
+          // console.log(beatTimes[this.pattern.length]);          
+          // console.log(this.pattern.length);          
+          // console.log(unit);          
           let current = 0
           let beat = 0
           let activeNotes = []
@@ -798,7 +807,7 @@
         }
 
         addNextPart() {
-          const string = fibWord[this.partIndex] ? this.longString : this.shortString
+          const string = FIB.word[this.partIndex] ? this.longString : this.shortString
           let partValues = []
           for (let beat = 0; beat < string.length; beat++) {
             let symbol = string[beat]
@@ -811,7 +820,7 @@
               })
             }
             let beatLength = barLength * this.longBeatLength
-            if (!fibWord[beat]) { beatLength/=phi }
+            if (!FIB.word[beat]) { beatLength/=phi }
             this.time += beatLength
           }
           this.partIndex++
@@ -882,11 +891,11 @@
         let order = []
         let i = 0
         for (; i < skips; i++) {
-          if (fibWord[i]) order.push(pause(long.level))
+          if (FIB.word[i]) order.push(pause(long.level))
           else order.push(pause(short.level))
         }
         for (; i < n+skips; i++) {
-          if (fibWord[i]) order.push(long)
+          if (FIB.word[i]) order.push(long)
           else order.push(short)
         }
         playSequenceAtNextLong(order)
