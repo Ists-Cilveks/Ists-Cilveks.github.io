@@ -327,6 +327,104 @@
           }
         }
       }
+      class Phinary { // Base phi number, with no consecutive 1s
+        unitIndex = 0 // the index at which rep corresponds to one. must be within the array bounds.
+        rep = [false] // the bits of the phinary representation, least to most significant
+        v = 0
+        constructor(v, unitIndex, precision = 1) {
+          if (typeof(v) == "object") { // From array
+            if (typeof(unitIndex) == "number") this.unitIndex = unitIndex
+            this.rep = v
+            this.updateV()
+          }
+          else if (typeof(v) == "number") { // From number
+            this.v = v
+            this.rep = Phinary.fromNumber(v, precision)
+          }
+          return this
+        }
+
+        static fromBeatNumber(n) {
+          let zeck = new Zeckendorf(n)
+          return new Phinary(zeck.rep)
+        }
+
+        static fromNumber(v, precision = 1) {
+          let res = []
+          let i = Math.ceil(Math.log(v) / Math.log(phi)) - 1
+          // v += precision / 2 // we'll round it down later
+          // while (v > precision || this.unitIndex /*hasn't been reached*/) { // TODO: set precision
+          for (; i >= 0; i--) {
+            const fib = phi ** i;
+            if (v >= fib) {
+              v -= fib
+              res[i] = true
+
+              // can skip bc no two are true in a row. We need to fill res with falses too and to do that we have to check whether it's in bounds or not
+              if (i-1 >= 0) res[i-1] = false
+              i--
+            }
+            else {
+              res[i] = false
+            }
+          }
+          return res
+        }
+        static toNumber(arr, unitIndex) {
+          let v = 0
+          for (let i = 0; i < arr.length; i++) {
+            v += arr[i] * phi ** (i-unitIndex)
+          }
+          return v
+        }
+        static getLevel(v) {
+          return new Phinary(v).getLevel()
+        }
+        
+        getLevel() {
+          for (let i = 0; i < this.rep.length; i++) {
+            const bit = this.rep[i];
+            if (bit) {
+              return i - unitIndex
+            }
+          }
+          return Infinity
+        }
+
+        updateV() {
+          this.v = Phinary.toNumber(this.rep, this.unitIndex)
+        }
+
+        increment() {
+          if (this.rep[0]) {
+            // this.v += 1/phi
+            this.rep[0] = false
+            this.rep[1] = true
+          }
+          else {
+            // this.v += 1
+            this.rep[0] = true
+          }
+          for (let i = 0; i < this.rep.length-2; i++) {
+            if (this.rep[i] && this.rep[i+1]) {
+              this.rep[i] = false
+              this.rep[i+1] = false
+              this.rep[i+2] = true
+              i++
+            }
+            else {
+              break
+            }
+          }
+          if (this.rep[this.rep.length-2] && this.rep[this.rep.length-1]) {
+            this.rep[this.rep.length-2] = false
+            this.rep[this.rep.length-1] = false
+            this.rep.push(true)
+          }
+          this.updateV()
+        }
+      }
+      
       let beatTimes = [0]
       let newBeatTime = 0
       let basslineValues = []
