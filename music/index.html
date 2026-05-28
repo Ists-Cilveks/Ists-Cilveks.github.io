@@ -251,20 +251,21 @@
       class Zeckendorf { // The "Fibonacci base" representation of n
         rep = []
         n = 0
-        constructor(n, maxLevel = 15) {
+        constructor(n) {
           if (typeof(n) == "object") { // From array
             this.rep = n
             this.n = Zeckendorf.toInt(this.rep)
           }
           else if (typeof(n) == "number") { // From int
             this.n = n
-            this.rep = Zeckendorf.fromInt(n, maxLevel)
+            this.rep = Zeckendorf.fromInt(n)
           }
           return this
         }
 
-        static fromInt(n, maxLevel = 15) {
+        static fromInt(n) {
           let res = []
+          let maxLevel = Math.ceil(Math.log(n)/Math.log(phi) + 1)
           for (let i = maxLevel; i >= 0; i--) {
             const fib = FIB.sequence[i];
             if (n >= fib) {
