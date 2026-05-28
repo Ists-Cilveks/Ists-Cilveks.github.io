@@ -166,7 +166,7 @@
           </div>
         </div>
         
-        <button style="font-size: 120%;" class="basic-btn" onclick="isPlaying ? pauseAudio() : playAudio()">Play/Pause</button>
+        <button style="font-size: 120%;" class="basic-btn" onclick="myTimer.isPlaying ? pauseAudio() : playAudio()">Play/Pause</button>
         <p>(The keyboard doesn't work while the beat isn't playing. Also it'll end eventually, and then you have to refresh the page.)</p>
         
         <h2 lang="en">Recording:</h2>
@@ -228,9 +228,9 @@
       const onathey = phi**5
       const epsi = phi**6
       
-      var isPlaying = false
-      var barLength = 3.2
-      var beatLength = barLength/ona
+      // var myTimer.isPlaying = false
+      // var myTimer.barLength = 3.2
+      // var myTimer.beatLength = myTimer.barLength/ona
 
       const FIB = {}
       if (true) {
@@ -345,9 +345,9 @@
           return this
         }
 
-        static fromBeatNumber(n) {
+        static fromBeatNumber(n, level = 0) {
           let zeck = new Zeckendorf(n)
-          return new Phinary(zeck.rep)
+          return new Phinary(zeck.rep, level)
         }
 
         static fromNumber(v, precision = 1) {
@@ -426,29 +426,26 @@
         }
       }
       
-      let beatTimes = [0]
-      let newBeatTime = 0
-      let basslineValues = []
-      let bassCounterSmall = 0
-      let bassCounterBig = 0
-      for (let i = 0; i < FIB.word.length; i++) {
-        let bassLength = FIB.word[bassCounterBig] ? 5 : 3
-        if (bassCounterSmall >= bassLength) {
-          bassCounterBig++
-          bassCounterSmall = 0
+      const myTimer = {
+        isPlaying: false,
+        barLength: 3.2,
+        getBeatTime(n, level = 0) {
+          return Phinary.fromBeatNumber(n, level).v
         }
-        let bassNote = FIB.word[bassCounterBig] ? ["A3","B3","C4","D4","C4"][bassCounterSmall] : ["G3","A3","~"][bassCounterSmall]
-        basslineValues.push([newBeatTime, bassNote])
-        bassCounterSmall++
-        
-        const is_long = FIB.word[i]
-        
-        let l = beatLength
-        if (!is_long) { l/=phi }
-        newBeatTime += l
-        beatTimes.push(newBeatTime)
       }
-      basslineValues.push([newBeatTime, "."])
+      myTimer.beatLength = myTimer.barLength/ona
+      myTimer.getDurationOfLevel = function(level) {return myTimer.beatLength * phi**level}
+      myTimer.getNextLong = function(level = 4, from = audioContext.currentTime) {
+        // TODO: optimize using phinary rep
+        let t = 0
+        for (const letter of FIB.word) {
+          if (from <= t) break
+          d = myTimer.getDurationOfLevel(level)
+          if (!letter) d/=phi
+          t += d
+        }
+        return t
+      }
 
       // Sample loading from https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Advanced_techniques
       async function getFile(audioContext, filepath) {
@@ -481,27 +478,6 @@
       //   currentNote = (currentNote + 1) % 4;
       // }
 
-      // Create a queue for the notes that are to be played, with the current time that we want them to play:
-      const notesInQueue = [];
-      let dtmf;
-
-      function scheduleNote(beatNumber, time) {
-        // // Push the note into the queue, even if we're not playing.
-        // notesInQueue.push({ note: beatNumber, time: time });
-
-        // if (pads[0].querySelectorAll("input")[beatNumber].checked) {
-        //   playSweep(time);
-        // }
-        // if (pads[1].querySelectorAll("input")[beatNumber].checked) {
-        //   playPulse(time);
-        // }
-        // if (pads[2].querySelectorAll("input")[beatNumber].checked) {
-        //   playNoise(time);
-        // }
-        // if (pads[3].querySelectorAll("input")[beatNumber].checked) {
-        //   playSample(audioContext, dtmf, time);
-        // }
-      }
 
       let timerID;
       const scheduleAheadTime = 0.1; // How far ahead to schedule audio (sec)
@@ -602,28 +578,14 @@
         }
       }
 
-      function levelToDuration(level) {
-        return beatLength * phi**level
-      }
-      function getNextLong(level = 4, from = audioContext.currentTime) {
-        let t = 0
-        for (const letter of FIB.word) {
-          if (from <= t) break
-          d = levelToDuration(level)
-          if (!letter) d/=phi
-          t += d
-        }
-        return t
-      }
-
       class MyPlayer {
         constructor(level = 4) {
           this.level = level
-          this.duration = levelToDuration(this.level)
+          this.duration = myTimer.getDurationOfLevel(this.level)
         }
 
         playAtNextLong(from = undefined) {
-          let t = getNextLong(this.level, from)
+          let t = myTimer.getNextLong(this.level, from)
           this.play(t)
         }
       }
@@ -648,9 +610,9 @@
         
         play(time) {
           this.endTime = time + this.duration
-          const unit = this.duration / beatTimes[this.pattern.length]
+          const unit = this.duration / myTimer.getBeatTime(this.pattern.length)
           // console.log(this.duration);          
-          // console.log(beatTimes[this.pattern.length]);          
+          // console.log(myTimer.getBeatTime([this.pattern.length]);          
           // console.log(this.pattern.length);          
           // console.log(unit);          
           let current = 0
@@ -665,7 +627,7 @@
 
           for (const note of this.pattern) {
             beat++
-            let next = unit * beatTimes[beat]
+            let next = unit * myTimer.getBeatTime(beat)
             if (note == "~") { // Keep playing
 
             }
@@ -725,7 +687,7 @@
         play(time) {
           this.data["HitObjects"] = []
           this.endTime = time + this.duration
-          const unit = this.duration / beatTimes[this.pattern.length]
+          const unit = this.duration / myTimer.getBeatTime(this.pattern.length)
           let current = 0
           let beat = new Zeckendorf()
           // let activeNotes = []
@@ -739,7 +701,7 @@
           for (const note of this.pattern) {
             let level = beat.getLevel()
             beat.increment()
-            let next = unit * beatTimes[beat.n]
+            let next = unit * myTimer.getBeatTime(beat.n)
             if (note == "~") { // Keep playing
 
             }
@@ -918,7 +880,7 @@
                 playSample(audioContext, sample, time)
               })
             }
-            let beatLength = barLength * this.longBeatLength
+            let beatLength = myTimer.barLength * this.longBeatLength
             if (!FIB.word[beat]) { beatLength/=phi }
             this.time += beatLength
           }
@@ -980,7 +942,7 @@
       function playSequenceAtNextLong(players, startTime = audioContext.currentTime) {
         time = startTime
         for (const player of players) {
-          // time = getNextLong(player.level, time)
+          // time = myTimer.getNextLong(player.level, time)
           player.playAtNextLong(time)
           time = player.endTime - 0.05 // TODO: may break i guess
         }
@@ -1030,7 +992,7 @@
           samplers[name].draw(now)
         }
         
-        if (isPlaying) {
+        if (myTimer.isPlaying) {
           window.requestAnimationFrame(draw)
         }
       }
@@ -1038,7 +1000,7 @@
       requestAnimationFrame(draw);
 
       function playAudio() {
-        isPlaying = true
+        myTimer.isPlaying = true
         if (makeRecording) {
           isRecording = true
           mediaRecorder.start()
@@ -1058,7 +1020,7 @@
         requestAnimationFrame(draw); // start the drawing loop.
 			}
       function pauseAudio() {
-        isPlaying = false
+        myTimer.isPlaying = false
         if (isRecording) {
           mediaRecorder.requestData();
           mediaRecorder.stop();
