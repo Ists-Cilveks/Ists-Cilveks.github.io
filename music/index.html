@@ -353,6 +353,7 @@
         static fromNumber(v, precision = 1) {
           let res = []
           let i = Math.ceil(Math.log(v) / Math.log(phi)) - 1
+          if (i < 0) i = 0
           // v += precision / 2 // we'll round it down later
           // while (v > precision || this.unitIndex /*hasn't been reached*/) { // TODO: set precision
           for (; i >= 0; i--) {
@@ -397,16 +398,20 @@
         }
 
         increment() {
-          if (this.rep[0]) {
+          this.incrementDigit(-this.unitIndex)
+        }
+        incrementDigit(d) {
+          let s = d + this.unitIndex
+          if (this.rep[s]) {
             // this.v += 1/phi
-            this.rep[0] = false
-            this.rep[1] = true
+            this.rep[s] = false
+            this.rep[s+1] = true
           }
           else {
             // this.v += 1
-            this.rep[0] = true
+            this.rep[s] = true
           }
-          for (let i = 0; i < this.rep.length-2; i++) {
+          for (let i = s; i < this.rep.length-2; i++) {
             if (this.rep[i] && this.rep[i+1]) {
               this.rep[i] = false
               this.rep[i+1] = false
@@ -424,6 +429,28 @@
           }
           this.updateV()
         }
+
+        copy() {
+          return new Phinary(this.v, this.unitIndex)
+        }
+
+        getNextAtLevel(level) {
+          if (this.unitIndex+level < 0) return this.copy() // asking for higher precision than this number has, so this is already valid // cop-out, but I probably won't need this anyway
+          let res = this.copy()
+          let hasIncreased = false
+          for (let i = 0; i < this.unitIndex+level; i++) {
+            if (res.rep[i]) {
+              res.rep[i] = false
+              hasIncreased = true
+            }
+            if (res.rep[i] == undefined) {
+              res.rep[i] = false
+            }
+          }
+          if (hasIncreased) res.incrementDigit(this.unitIndex+level)
+          res.updateV()
+          return res
+        }
       }
       
       const myTimer = {
@@ -436,15 +463,7 @@
       myTimer.beatLength = myTimer.barLength/ona
       myTimer.getDurationOfLevel = function(level) {return myTimer.beatLength * phi**level}
       myTimer.getNextLong = function(level = 4, from = audioContext.currentTime) {
-        // TODO: optimize using phinary rep
-        let t = 0
-        for (const letter of FIB.word) {
-          if (from <= t) break
-          d = myTimer.getDurationOfLevel(level)
-          if (!letter) d/=phi
-          t += d
-        }
-        return t
+        return new Phinary(from/myTimer.beatLength).getNextAtLevel(level+1).v*myTimer.beatLength
       }
 
       // Sample loading from https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Advanced_techniques
@@ -942,7 +961,6 @@
       function playSequenceAtNextLong(players, startTime = audioContext.currentTime) {
         time = startTime
         for (const player of players) {
-          // time = myTimer.getNextLong(player.level, time)
           player.playAtNextLong(time)
           time = player.endTime - 0.05 // TODO: may break i guess
         }
