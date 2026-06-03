@@ -191,27 +191,17 @@
       const canvas = document.getElementById("music-canvas")
       const context = canvas.getContext("2d")
 
-      const audioContext = new AudioContext();
+      let audioContext
 
       // // recording example from https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createMediaStreamDestination
       let isRecording = false
       let makeRecording = true
       const chunks = [];
-      // const audioContext = new AudioContext();
-      const osc = audioContext.createOscillator();
-      const recordingDestination = audioContext.createMediaStreamDestination();
-      const mediaRecorder = new MediaRecorder(recordingDestination.stream);
-      mediaRecorder.ondataavailable = (evt) => {
-        // Push each chunk (blobs) in an array
-        chunks.push(evt.data);
-      };
-      mediaRecorder.onstop = (evt) => {
-        // Make blob out of our blobs, and open it.
-        const blob = new Blob(chunks, { type: "audio/ogg; codecs=opus" });
-        document.getElementById("audio-recording").src = URL.createObjectURL(blob);
-      };
+      let recordingDestination
+      let mediaRecorder
+      
 
-      const oscList = [];
+      const oscList = []; // keyboard oscillators
       let mainGainNode = null;
       let synthGainNode = null;
       const keyboard = document.querySelector(".keyboard");
@@ -521,6 +511,8 @@
         sampleSource.start(time);
         return sampleSource;
       }
+
+      let samplers
       
       // Synth from https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Simple_synth
       function createNoteTable() {
@@ -556,7 +548,19 @@
       }
       const noteFreq = createNoteTable();
       function setup() {
-        
+        audioContext = new AudioContext();
+        recordingDestination = audioContext.createMediaStreamDestination();
+        mediaRecorder = new MediaRecorder(recordingDestination.stream);
+        mediaRecorder.ondataavailable = (evt) => {
+          // Push each chunk (blobs) in an array
+          chunks.push(evt.data);
+        };
+        mediaRecorder.onstop = (evt) => {
+          // Make blob out of our blobs, and open it.
+          const blob = new Blob(chunks, { type: "audio/ogg; codecs=opus" });
+          document.getElementById("audio-recording").src = URL.createObjectURL(blob);
+        };
+
         mainGainNode = audioContext.createGain();
         synthGainNode = audioContext.createGain();
         mainGainNode.connect(audioContext.destination);
@@ -594,6 +598,17 @@
 
         for (let i = 0; i < 9; i++) {
           oscList[i] = {};
+        }
+
+        samplers = {
+          'hat': new SampleTrack("closed-hat1", "#.", "#", 1/epsi, new TimelineArtist("white")),
+          'clap': new SampleTrack("clap1", "#............", "#..#.###", 1/onathey, new TimelineArtist("#da4", 30, 7)),
+          'snare': new SampleTrack("snare1", "..#...#.", "..#..", 1/onaphi),
+          'kick': new SampleTrack("kick1", "#.", ".", 1/onaphi),
+        }
+
+        for (const name in samplers) {
+          samplers[name].addUntilTime(300)
         }
       }
 
@@ -758,7 +773,7 @@
         }
       }
 
-      setup();
+      
       function createKey(note, octave, freq) {
         const keyElement = document.createElement("div");
         const labelElement = document.createElement("div");
@@ -915,16 +930,6 @@
         }
       }
 
-      const samplers = {
-        'hat': new SampleTrack("closed-hat1", "#.", "#", 1/epsi, new TimelineArtist("white")),
-        'clap': new SampleTrack("clap1", "#............", "#..#.###", 1/onathey, new TimelineArtist("#da4", 30, 7)),
-        'snare': new SampleTrack("snare1", "..#...#.", "..#..", 1/onaphi),
-        'kick': new SampleTrack("kick1", "#.", ".", 1/onaphi),
-      }
-
-      for (const name in samplers) {
-        samplers[name].addUntilTime(300)
-      }
       const m1  = new MyMelody(["C4", "E4", "G4", "F4", "E4"], 3)
       const m2  = new MyMelody(["C4", "G4", "E4"], 2)
       const m22 = new MyMelody(["E4", "G4", "~"], 2)
@@ -973,25 +978,28 @@
           if (FIB.word[i]) order.push(pause(long.level))
           else order.push(pause(short.level))
         }
-        for (; i < n+skips; i++) {
+        for (; i < n; i++) {
           if (FIB.word[i]) order.push(long)
           else order.push(short)
         }
         playSequenceAtNextLong(order)
       }
       
-      // playSequenceAtNextLong([m1, m2, m1, m3, m22, m1, m4])
-      playSequenceAtNextLong([mm1, mm3, mm1, mm2, pause(5), mm1, mm3, mm1, mm2])
-      playSequenceAtNextLong([arrows21, arrows23, arrows21, arrows22])
-      playRepeatedPair(arp1, arp2, 200, 7)
-      playRepeatedPair(arrows11, arrows12, 200, 8)
-      
+      function addMySong() {
+        // playSequenceAtNextLong([m1, m2, m1, m3, m22, m1, m4])
+        playSequenceAtNextLong([mm1, mm3, mm1, mm2, pause(5), mm1, mm3, mm1, mm2])
+        playSequenceAtNextLong([arrows21, arrows23, arrows21, arrows22])
+        playRepeatedPair(arp1, arp2, 200, 7)
+        playRepeatedPair(arrows11, arrows12, 200, 8)
+      }
+
       function time_to_x(t) { return 50+t*50 }
       function draw() {
         context.clearRect(0, 0, canvas.width, canvas.height)
         context.fillStyle = "white"
         context.fillRect(time_to_x(0), 0, 3, 100)
-        const now = audioContext.currentTime
+        let now = 0
+        if(audioContext) now = audioContext.currentTime
 
         // context.fillStyle = "green"
         // for (let i = 0; i < basslineValues.length-1; i++) {
@@ -1018,6 +1026,12 @@
       requestAnimationFrame(draw);
 
       function playAudio() {
+        // Check if for whatever reason we weren't able to make the context yet
+        if (!audioContext) {
+          setup();
+          addMySong()
+        }
+
         myTimer.isPlaying = true
         if (makeRecording) {
           isRecording = true
@@ -1049,7 +1063,7 @@
 
         rhythmGame.pauseAudio()
       }
-      pauseAudio()
+      // pauseAudio()
     </script>
     
     
