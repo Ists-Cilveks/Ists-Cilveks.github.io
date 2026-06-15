@@ -155,7 +155,7 @@
             </datalist>
           </div>
           <div class="right">
-            <span>Current waveform: </span>
+            <span>Synth waveform: </span>
             <select name="waveform">
               <option value="sine">Sine</option>
               <option value="square" selected>Square</option>
@@ -166,7 +166,7 @@
           </div>
         </div>
         
-        <button style="font-size: 120%;" class="basic-btn" onclick="myTimer.isPlaying ? pauseAudio() : playAudio()">Play/Pause</button>
+        <button style="font-size: 120%;" class="basic-btn" onclick="togglePlaying()">Play/Pause</button>
         <p>(The keyboard doesn't work while the beat isn't playing. Also it'll end eventually, and then you have to refresh the page.)</p>
         
         <h2 lang="en">Recording:</h2>
@@ -865,7 +865,12 @@
       addEventListener("keydown", keyNote);
       addEventListener("keyup", keyNote);
 
-
+      addEventListener("keydown", function (event) {
+        if (event.code == "Space") {
+          togglePlaying()
+          event.preventDefault()
+        }
+      });
 
       maxUsedTimelineY = 0
       class TimelineArtist {
@@ -1062,6 +1067,9 @@
         window.clearTimeout(timerID);
 
         rhythmGame.pauseAudio()
+      }
+      function togglePlaying() {
+        myTimer.isPlaying ? pauseAudio() : playAudio()
       }
       // pauseAudio()
     </script>

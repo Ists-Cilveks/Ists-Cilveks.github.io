@@ -84,18 +84,22 @@ class RhythmGame {
 				case "a":
 				case "ArrowLeft":
 					game.noteReleased(1, event.timeStamp)
+					event.preventDefault();
 					break;
 				case "s":
 				case "ArrowDown":
 					game.noteReleased(2, event.timeStamp)
+					event.preventDefault();
 					break;
 				case "k":
 				case "ArrowUp":
 					game.noteReleased(3, event.timeStamp)
+					event.preventDefault();
 					break;
 				case "l":
 				case "ArrowRight":
 					game.noteReleased(4, event.timeStamp)
+					event.preventDefault();
 					break;
 			}
 		}
@@ -127,18 +131,22 @@ class RhythmGame {
 				case "a":
 				case "ArrowLeft":
 					game.notePressed(1, event.timeStamp)
+					event.preventDefault();
 					break;
 				case "s":
 				case "ArrowDown":
 					game.notePressed(2, event.timeStamp)
+					event.preventDefault();
 					break;
 				case "k":
 				case "ArrowUp":
 					game.notePressed(3, event.timeStamp)
+					event.preventDefault();
 					break;
 				case "l":
 				case "ArrowRight":
 					game.notePressed(4, event.timeStamp)
+					event.preventDefault();
 					break;
 			}
 		}
