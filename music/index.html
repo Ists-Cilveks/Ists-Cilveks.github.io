@@ -41,11 +41,24 @@
         -moz-user-select: none;
         -webkit-user-select: none;
         -ms-user-select: none;
+        
+        background-color: white;
+        /* color: black; */
+        color: transparent;
+      }
+      
+      .accidental {
+        background-color: #222;
+        /* color: white; */
+        box-shadow: 2px 2px black;
+        height: 55px;
+        width: 14px;
+        z-index: 2;
+        margin: 0 -5px 0 -10px;
       }
 
       .key div {
-        position: absolute;
-        bottom: 0;
+        position: relative;
         text-align: center;
         width: 100%;
         pointer-events: none;
@@ -63,12 +76,11 @@
       .key:active,
       .active {
         background-color: black;
-        color: white;
+        /* color: white; */
       }
 
       .octave {
         display: inline-block;
-        padding-right: 6px;
       }
 
       .settingsBar {
@@ -580,10 +592,12 @@
           const keyList = Object.entries(keys);
           const octaveElem = document.createElement("div");
           octaveElem.className = "octave";
-
+          // console.log(keyList);
+          
           keyList.forEach((key) => {
-            if (key[0].length === 1) {
-              octaveElem.appendChild(createKey(key[0], idx, key[1]));
+            // if (key[0].length === 1) {
+            if (true) {
+              octaveElem.appendChild(createKey(key[0], idx, key[1], ""));
             }
           });
 
@@ -774,25 +788,33 @@
           )
         }
       }
-
       
-      function createKey(note, octave, freq) {
-        const keyElement = document.createElement("div");
-        const labelElement = document.createElement("div");
 
+      let synthKeys = []
+      function createKey(note, octave, freq, keyboardKey) {
+        const keyElement = document.createElement("div");
+        
         keyElement.className = "key";
         keyElement.dataset["octave"] = octave;
         keyElement.dataset["note"] = note;
         keyElement.dataset["frequency"] = freq;
+
+        const labelElement = document.createElement("div");
+        // labelElement.appendChild(document.createTextNode(keyboardKey));
         labelElement.appendChild(document.createTextNode(note));
         labelElement.appendChild(document.createElement("sub")).textContent = octave;
         keyElement.appendChild(labelElement);
+
+        if (note.length === 2) {
+          keyElement.className += " accidental"
+        }
 
         keyElement.addEventListener("mousedown", notePressed);
         keyElement.addEventListener("mouseup", noteReleased);
         keyElement.addEventListener("mouseover", notePressed);
         keyElement.addEventListener("mouseleave", noteReleased);
 
+        synthKeys.push(keyElement)
         return keyElement;
       }
       function playTone(freq) {
@@ -839,7 +861,6 @@
       function changeVolume(event) {
         synthGainNode.gain.value = volumeControl.value;
       }
-      const synthKeys = document.querySelectorAll(".key");
 
       const keyCodes = [
         // "Space",
@@ -851,7 +872,9 @@
         "Digit1", "KeyQ", "Digit2", "KeyW", "KeyE", "Digit4", "KeyR", "Digit5", "KeyT", "KeyY", "Digit7", "KeyU", "Digit8", "KeyI", "Digit9", "KeyO", "KeyP", "Minus", "BracketLeft", "Equal", "BracketRight", "Backslash", 
       ];
       function keyNote(event) {
-        const elKey = synthKeys[keyCodes.indexOf(event.code)];
+        let index = keyCodes.indexOf(event.code)
+        if (index == -1) return
+        const elKey = synthKeys[index+23];
         if (elKey) {
           if (event.type === "keydown") {
             elKey.tabIndex = -1;
