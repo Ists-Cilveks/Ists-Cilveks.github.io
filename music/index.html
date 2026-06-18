@@ -125,6 +125,32 @@
         vertical-align: baseline;
       }
 
+      
+      .pads {
+        display: flex;
+        width: 300px;
+      }
+
+      .pads>button {
+        height: 20px;
+        opacity: 20%;
+        background-color: var(--framing);
+        border: 1.5px solid var(--hc-bg);
+        cursor: pointer;
+      }
+
+      button[data-selected] {
+        background-color: var(--framing);
+        opacity: 100%;
+      }
+
+      .short-width {
+        width: 100%;
+      }
+      .long-width {
+        width: 161.8%;
+      }
+
     </style>
   </head>
   <body class="main-content">
@@ -183,6 +209,9 @@
         <button style="font-size: 120%;" class="basic-btn" onclick="togglePlaying()">Play/Pause</button>
         <p>(The keyboard doesn't work while the beat isn't playing. Also it'll end eventually, and then you have to refresh the page.)</p>
         
+        <h2 lang="en">Pads</h2>
+        <div id="pad-container"></div>
+
         <h2 lang="en">Recording:</h2>
         <p lang="en">This element will store the audio after you press pause. You can then save it as a file by right clicking.</p>
         <audio id="audio-recording" controls></audio>
@@ -202,6 +231,32 @@
     <p lang="en">This is an experiment of <a href="https://www.youtube.com/watch?v=pM-e_csNupM">key patterns</a> with a ratio of φ. The music is made of long and short beats according to the <a href="https://en.wikipedia.org/wiki/Fibonacci_word">Fibonacci word</a>: <span style="font-family: monospace;">long short long, long short, long short long. long short long, long short. etc.</span> You can then think of the music as having long and short measures that follow that same pattern.</p>
     
     <script>
+      const padContainer = document.getElementById("pad-container")
+      class PadSet {
+        constructor () {
+          this.container = document.createElement("div")
+          padContainer.appendChild(this.container)
+          this.container.className = "pads"
+          this.pads = []
+          for (let i = 0; i < 8; i++) {
+            let btn = document.createElement("button")
+            btn.className = FIB.word[i] ? "long-width" : "short-width"
+            let btnid = "v1n" + (i+1)
+            btn.id = btnid
+            btn.addEventListener("click", function() {
+              togglePad(btnid)
+            })
+            this.container.appendChild(btn)
+            this.pads[i] = btn
+          }
+        }
+      }
+
+      function togglePad(id) {
+        let btn = document.getElementById(id)
+        btn.toggleAttribute("data-selected")
+      }
+
       const canvas = document.getElementById("music-canvas")
       const context = canvas.getContext("2d")
 
@@ -514,6 +569,10 @@
       //   }
       //   timerID = setTimeout(scheduler, lookahead);
       // }
+
+
+      const myPadSet = new PadSet()
+
 
       let playbackRate = 1;
       function playSample(audioContext, audioBuffer, time) {
@@ -891,7 +950,7 @@
       addEventListener("keydown", keyNote);
       addEventListener("keyup", keyNote);
 
-      addEventListener("keydown", function (event) {
+      rhythmGame.rhythmContainer.addEventListener("keydown", function (event) {
         if (event.code == "Space") {
           togglePlaying()
           event.preventDefault()
