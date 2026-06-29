@@ -135,7 +135,8 @@
         height: 20px;
         opacity: 20%;
         background-color: var(--framing);
-        border: 1.5px solid var(--hc-bg);
+        border: 1.5px inset var(--hc-bg);
+        padding: 0;
         cursor: pointer;
       }
 
@@ -233,24 +234,69 @@
     <script>
       const padContainer = document.getElementById("pad-container")
       class PadSet {
-        constructor () {
+        constructor (name, level = 4, sublevel = 1, sampleTrack, defaultPattern, shortDefaultPattern) {
+          this.name = name
+          this.level = level
+          this.numPads = FIB.sequence[level-sublevel]
+          this.numPadsInShort = FIB.sequence[level-sublevel-1]
+          this.sampleTrack = sampleTrack
           this.container = document.createElement("div")
           padContainer.appendChild(this.container)
           this.container.className = "pads"
           this.pads = []
-          for (let i = 0; i < 8; i++) {
+          for (let i = 0; i < this.numPads; i++) {
             let btn = document.createElement("button")
             btn.className = FIB.word[i] ? "long-width" : "short-width"
-            let btnid = "v1n" + (i+1)
+            let btnid = this.name + "n" + (i+1)
             btn.id = btnid
             btn.addEventListener("click", function() {
               togglePad(btnid)
             })
             this.container.appendChild(btn)
             this.pads[i] = btn
+            if (defaultPattern[i] != ".") togglePad(btnid)
           }
         }
+
+        // isNextBeatActive(t = audioContext.currentTime) {
+        //   let phinary = myTimer.getNextLong(4, t)
+        //   console.log(phinary);
+          
+        // }
+
+        padIsActive(n) {
+          return this.pads[n].hasAttribute("data-selected")
+        }
+
+        updateSampleTrack() {
+          let str = ""
+          for (let i = 0; i < this.numPads; i++) {
+            str += this.padIsActive(i) ? "#" : "."
+          }
+          this.sampleTrack.longString = str
+          this.sampleTrack.shortString = str.slice(0, this.numPadsInShort)
+          console.log(this.sampleTrack.longString);
+          
+        }
+
+        addNextPart(t = audioContext.currentTime) {
+          // let phinary = myTimer.getNextLong(level, t)
+          // console.log(phinary);
+          
+          // for (let n = 0; n < 8; n++) {
+          //   t = phinary + myTimer.getBeatTime(n, 1)
+          //   if (this.padIsActive(n)) {
+          //     this.sampleTrack.addNote()
+          //   }
+          // }
+
+          this.updateSampleTrack()
+
+          this.sampleTrack.addNextPart()
+        }
       }
+
+      let myPadSet
 
       function togglePad(id) {
         let btn = document.getElementById(id)
@@ -560,18 +606,26 @@
       let timerID;
       const scheduleAheadTime = 0.1; // How far ahead to schedule audio (sec)
       const lookahead = 25.0; // How frequently to call scheduling function (in milliseconds)
-      // function scheduler() {
-      //   // While there are notes that will need to play before the next interval,
-      //   // schedule them and advance the pointer.
-      //   while (nextNoteTime < audioContext.currentTime + scheduleAheadTime) {
-      //     // scheduleNote(currentNote, nextNoteTime);
-      //     nextNote();
-      //   }
-      //   timerID = setTimeout(scheduler, lookahead);
-      // }
-
-
-      const myPadSet = new PadSet()
+      function scheduler() {
+        // While there are notes that will need to play before the next interval,
+        // schedule them and advance the pointer.
+        // while (nextNoteTime < audioContext.currentTime + scheduleAheadTime) {
+        //   // scheduleNote(currentNote, nextNoteTime);
+        //   nextNote();
+        // }
+        // for (const sampler of samplers) {
+        //   if (sampler.time < audioContext.currentTime + scheduleAheadTime) {
+        //     sampler.addNextPart()
+        //   }
+        // }
+        for (const name in padSets) {
+          const set = padSets[name]
+          if (set.sampleTrack.time < audioContext.currentTime + scheduleAheadTime) {
+            set.addNextPart()
+          }
+        }
+        timerID = setTimeout(scheduler, lookahead);
+      }
 
 
       let playbackRate = 1;
@@ -585,7 +639,8 @@
         return sampleSource;
       }
 
-      let samplers
+      let samplers = {}
+      let padSets = {}
       
       // Synth from https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Simple_synth
       function createNoteTable() {
@@ -675,16 +730,32 @@
           oscList[i] = {};
         }
 
-        samplers = {
-          'hat': new SampleTrack("closed-hat1", "#.", "#", 1/epsi, new TimelineArtist("white")),
-          'clap': new SampleTrack("clap1", "#............", "#..#.###", 1/onathey, new TimelineArtist("#da4", 30, 7)),
-          'snare': new SampleTrack("snare1", "..#...#.", "..#..", 1/onaphi),
-          'kick': new SampleTrack("kick1", "#.", ".", 1/onaphi),
+        
+        // for (const name in samplers) {
+        //   samplers[name].addUntilTime(300)
+        // }
+
+        function addSamplePadSet(name, sampleName, defaultPattern, level, sublevel, artist=undefined) {
+          let shortLength = FIB.sequence[level-sublevel-1]
+          let shortDefaultPattern = defaultPattern.slice(0, shortLength)
+          samplers[name] = new SampleTrack(sampleName, defaultPattern, shortDefaultPattern, phi**(sublevel-2))
+          padSets[name] = new PadSet(name, level, sublevel, samplers[name], defaultPattern, shortDefaultPattern)
         }
 
-        for (const name in samplers) {
-          samplers[name].addUntilTime(300)
-        }
+        addSamplePadSet('hat', "closed-hat1", "#.", -3, -4, new TimelineArtist("white"))
+        addSamplePadSet('clap', "clap1", "#............#..#.###", 3, -3)
+        addSamplePadSet('snare', "snare1", "..#...#...#..", 3, -2)
+        addSamplePadSet('kick', "kick1", "#.", 0, -1)
+        
+        // samplers = {
+        //   'hat': new SampleTrack("closed-hat1", "#.", "#", 1/epsi, new TimelineArtist("white")),
+        //   'clap': new SampleTrack("clap1", "#............", "#..#.###", 1/onathey, new TimelineArtist("#da4", 30, 7)),
+        //   'snare': new SampleTrack("snare1", "..#...#.", "..#..", 1/onaphi),
+        //   'kick': new SampleTrack("kick1", "#.", ".", 1/onaphi),
+        // }
+        // padSets = {
+        //   'clap': new PadSet(4, 1, samplers['clap'])
+        // }
       }
 
       class MyPlayer {
@@ -1138,7 +1209,7 @@
 
         currentNote = 0;
         nextNoteTime = audioContext.currentTime;
-        // scheduler(); // kick off scheduling
+        scheduler(); // kick off scheduling
         requestAnimationFrame(draw); // start the drawing loop.
 			}
       function pauseAudio() {
