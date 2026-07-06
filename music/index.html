@@ -434,18 +434,19 @@
         }
       }
       class Phinary { // Base phi number, with no consecutive 1s
-        unitIndex = 0 // the index at which rep corresponds to one. must be within the array bounds.
+        unitIndex = 0 // the index at which rep corresponds to one. must be within the array bounds. equivalent to the number of digits after the "decimal" point.
         rep = [false] // the bits of the phinary representation, least to most significant
         v = 0
-        constructor(v, unitIndex, precision = 1) {
+        constructor(v, unitIndex = 0) {
+          if (typeof(unitIndex) == "number") this.unitIndex = unitIndex
           if (typeof(v) == "object") { // From array
-            if (typeof(unitIndex) == "number") this.unitIndex = unitIndex
             this.rep = v
             this.updateV()
           }
           else if (typeof(v) == "number") { // From number
-            this.v = v
-            this.rep = Phinary.fromNumber(v, precision)
+            // this.v = v
+            this.rep = Phinary.fromNumber(v, unitIndex)
+            this.updateV()
           }
           return this
         }
@@ -455,16 +456,16 @@
           return new Phinary(zeck.rep, level)
         }
 
-        static fromNumber(v, precision = 1) {
+        static fromNumber(v, unitIndex = 0) {
           let res = []
           let i = Math.ceil(Math.log(v) / Math.log(phi)) - 1
           if (i < 0) i = 0
-          // v += precision / 2 // we'll round it down later
-          // while (v > precision || this.unitIndex /*hasn't been reached*/) { // TODO: set precision
+          i += unitIndex
+
           for (; i >= 0; i--) {
-            const fib = phi ** i;
-            if (v >= fib) {
-              v -= fib
+            const pow = phi ** (i - unitIndex);
+            if (v >= pow) {
+              v -= pow
               res[i] = true
 
               // can skip bc no two are true in a row. We need to fill res with falses too and to do that we have to check whether it's in bounds or not
