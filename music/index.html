@@ -395,12 +395,12 @@
         function addSamplePadSet(name, sampleName, defaultPattern, level, sublevel, artist=undefined) {
           let shortLength = FIB.sequence[level-sublevel-1]
           let shortDefaultPattern = defaultPattern.slice(0, shortLength)
-          samplers[name] = new SampleTrack(sampleName, defaultPattern, shortDefaultPattern, phi**(sublevel-2))
+          samplers[name] = new SampleTrack(sampleName, defaultPattern, shortDefaultPattern, phi**(sublevel-2), artist)
           padSets[name] = new PadSet(name, level, sublevel, samplers[name], defaultPattern, shortDefaultPattern)
         }
 
         addSamplePadSet('hat', "closed-hat1", "#.", -3, -4, new TimelineArtist("white"))
-        addSamplePadSet('clap', "clap1", "#....#....##.#..#.###", 3, -3)
+        addSamplePadSet('clap', "clap1", "#....#....##.#..#.###", 3, -3, new TimelineArtist("#da4", 30, 7))
         addSamplePadSet('snare', "snare1", "..#...#...#..", 3, -2)
         addSamplePadSet('kick', "kick1", "#.", 0, -1)
         
@@ -589,14 +589,14 @@
         }
       });
 
-      maxUsedTimelineY = 0
       class TimelineArtist {
+        static maxUsedY = 0
         constructor(color="gray", y, height=3) {
           this.color = color
           if (y != undefined) { this.y = y }
           else {
-            maxUsedTimelineY += 7
-            this.y = maxUsedTimelineY
+            TimelineArtist.maxUsedY += 7
+            this.y = TimelineArtist.maxUsedY
           }
           this.height = height
         }
