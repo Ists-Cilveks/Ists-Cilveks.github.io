@@ -15,11 +15,14 @@ if (true) {
     fibWord = newFibWord
   }
   let fibNums = [1, 2]
+  let reverse = {1: 0, 2: 1}
   for (let i = 2; i < 50; i++) {
     fibNums[i] = fibNums[i-1] + fibNums[i-2];
+    reverse[fibNums[i]] = i
   }
   FIB.word = fibWord
   FIB.sequence = fibNums
+  FIB.reverse = reverse
 }
 
 class Zeckendorf { // The "Fibonacci base" representation of n

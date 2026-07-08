@@ -329,7 +329,7 @@
 
       let samplers = {}
       let padSets = {}
-      
+
       // Synth from https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Simple_synth
       function createNoteTable() {
         const noteFreq = [
@@ -421,7 +421,7 @@
         }
       }
 
-      class MyPlayer {
+      class FixedPlayer {
         constructor(level = 4) {
           this.level = level
           this.duration = myTimer.getDurationOfLevel(this.level)
@@ -444,7 +444,7 @@
       //   }
       // }
 
-      class MyMelody extends MyPlayer {
+      class MonoMelody extends FixedPlayer {
         constructor(pattern, level = 4, soundType = "sawtooth") {
           super(level)
           this.pattern = pattern
@@ -490,6 +490,24 @@
           }
           stopActiveNotes()
         }
+        // playSplicey(n, skips) {
+        //   // TODO: only works when starting at time 0
+        //   let order = []
+        //   let i = 0
+        //   let long = this.pattern.slice(0, FIB[this.level])
+        //   for (; i < skips; i++) {
+        //     if (FIB.word[i]) order.push(pause(this.level-1))
+        //     else order.push(pause(this.level-2))
+        //   }
+        //   for (; i < n; i++) {
+        //     if (FIB.word[i]) order.push(this.long)
+        //     else order.push(short)
+        //   }
+        //   playSequenceAtNextLong(order)
+        // }
+        // slice(start, end) {
+
+        // }
 
         playFreq(freq, time, endTime, node = synthGainNode) {
           const osc = audioContext.createOscillator();
@@ -513,7 +531,7 @@
         }
       }
 
-      class MyRhythm extends MyPlayer {
+      class RhythmChart extends FixedPlayer {
         constructor(pattern, level = 4, game = rhythmGame) {
           super(level)
           this.pattern = pattern
@@ -582,6 +600,40 @@
         }
       }
       
+
+      class Section {}
+      class MonoSection {
+        constructor(patterns, noteLevel, minLevel, soundType, rhythmChart, prominence=0) {
+          this.patterns = patterns
+          this.minLevel = minLevel
+          this.soundType = soundType
+          this.rhythmChart = rhythmChart
+          this.prominence = prominence
+          this.melodies = []
+          for (const pat of patterns) {
+            let level = noteLevel + FIB.reverse[pat.length]
+            this.melodies.push(new MonoMelody(pat, level, this.soundType))
+          }
+        }
+
+        playBasicPattern(n, skips) {
+          // TODO: only works when starting at time 0
+          let order = []
+          let i = 0
+          // Assumes [0] is long and [1] is short
+          let long = this.melodies[0]
+          let short = this.melodies[1]
+          for (; i < skips; i++) {
+            if (FIB.word[i]) order.push(pause(long.level))
+            else order.push(pause(short.level))
+          }
+          for (; i < n; i++) {
+            if (FIB.word[i]) order.push(long)
+            else order.push(short)
+          }
+          playSequenceAtNextLong(order)
+        }
+      }
 
       rhythmGame.rhythmContainer.addEventListener("keydown", function (event) {
         if (event.code == "Space") {
@@ -653,14 +705,14 @@
         }
       }
 
-      const m1  = new MyMelody(["C4", "E4", "G4", "F4", "E4"], 3)
-      const m2  = new MyMelody(["C4", "G4", "E4"], 2)
-      const m22 = new MyMelody(["E4", "G4", "~"], 2)
-      const m3  = new MyMelody(["C4", "D4", "G4"], 3)
-      const m4  = new MyMelody(["F4", "E4", "D4"], 2)
-      const mm1 = new MyMelody(["C4", "~", "G4", "F4", "~", "E4", "F4", "~"], 3, "custom")
+      const m1  = new MonoMelody(["C4", "E4", "G4", "F4", "E4"], 3)
+      const m2  = new MonoMelody(["C4", "G4", "E4"], 2)
+      const m22 = new MonoMelody(["E4", "G4", "~"], 2)
+      const m3  = new MonoMelody(["C4", "D4", "G4"], 3)
+      const m4  = new MonoMelody(["F4", "E4", "D4"], 2)
+      const mm1 = new MonoMelody(["C4", "~", "G4", "F4", "~", "E4", "F4", "~"], 3, "custom")
       // "C4 "
-      const mm2 = new MyMelody([
+      const mm2 = new MonoMelody([
         // "E4", "~", "F4", "~", "G4", "F4", "~", "E4",
         // "~", "~", "D4", "~", "E4",
         // "D4", "~", "C4", "~", "~", "~", "~", "~"]
@@ -668,23 +720,25 @@
         "G4", "F4", "~", "E4", "~", "~", "~", "~", "~", "~", "D4", "~", "~",
         "~", "~", "E4", "D4", "~", "C4", "~", "~", "~", "~", "~", "~", "~"
       ], 4, "custom")
-      const mm3 = new MyMelody(["E4", "D4", "~", "~", "~"], 2, "custom")
-      const arp1 = new MyMelody(["D2", "G2", "A2", "D2", "G2", "A2", "G2", "A2"], 2, "sawtooth")
-      const arp2 = new MyMelody(["C3", "B2", "A2", "G2", "A2"], 1, "sawtooth")
-      const over1 = new MyMelody([""])
+      const mm3 = new MonoMelody(["E4", "D4", "~", "~", "~"], 2, "custom")
+      // const arp1 = new MyMelody(["D2", "G2", "A2", "D2", "G2", "A2", "G2", "A2"], 2, "sawtooth")
+      // const arp2 = new MyMelody(["C3", "B2", "A2", "G2", "A2"], 1, "sawtooth")
+      // const arp12 = arp1.concat(arp2)
+      const arp12 = new MonoSection([["D2", "G2", "A2", "D2", "G2", "A2", "G2", "A2"], ["C3", "B2", "A2", "G2", "A2"]], -2, 1, "sawtooth")
+      const over1 = new MonoMelody([""])
       function pause(level) {
-        return new MyMelody(["."], level)
+        return new MonoMelody(["."], level)
       }
 
       // Keyboard, pitch significance
-      const arrows11 = new MyRhythm("12312323", 2)
-      const arrows12 = new MyRhythm("43212", 1)
+      const arrows11 = new RhythmChart("12312323", 2)
+      const arrows12 = new RhythmChart("43212", 1)
       // Maybe interesting dance with legs crossing
       // const arrows11 = new MyRhythm("12442112", 2)
       // const arrows12 = new MyRhythm("34124", 1)
-      const arrows21 = new MyRhythm("1.43.23.", 3)
-      const arrows22 = new MyRhythm("2..3....43.2......1....32.1.......", 4)
-      const arrows23 = new MyRhythm("21...", 2)
+      const arrows21 = new RhythmChart("1.43.23.", 3)
+      const arrows22 = new RhythmChart("2..3....43.2......1....32.1.......", 4)
+      const arrows23 = new RhythmChart("21...", 2)
 
       function playSequenceAtNextLong(players, startTime = audioContext.currentTime) {
         time = startTime
@@ -708,11 +762,12 @@
         playSequenceAtNextLong(order)
       }
       
+      
       function addMySong() {
         // playSequenceAtNextLong([m1, m2, m1, m3, m22, m1, m4])
         playSequenceAtNextLong([mm1, mm3, mm1, mm2, pause(5), mm1, mm3, mm1, mm2])
         playSequenceAtNextLong([arrows21, arrows23, arrows21, arrows22])
-        playRepeatedPair(arp1, arp2, 200, 7)
+        arp12.playBasicPattern(200, 7)
         playRepeatedPair(arrows11, arrows12, 200, 8)
       }
 
