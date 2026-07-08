@@ -666,8 +666,8 @@
       }
 
       class SampleTrack {
-        constructor(sampleName, longString, shortString, longBeatLength=1/theta, artist=new TimelineArtist()) {
-          this.sampler = setupSample("samples/"+sampleName+".wav")
+        constructor(sampleName, longString, shortString, longBeatLength=1/theta, artist=new TimelineArtist(), preventOverlap=false) {
+          this.sampler = setupSample(getSamplePath(sampleName))
           this.shortString = shortString
           this.longString = longString
           this.time = 0
@@ -675,6 +675,7 @@
           this.longBeatLength = longBeatLength
           this.storedValues = []
           this.artist = artist
+          this.preventOverlap = preventOverlap
         }
 
         addNextPart() {
@@ -682,17 +683,20 @@
           let partValues = []
           for (let beat = 0; beat < string.length; beat++) {
             let symbol = string[beat]
+            let beatLength = myTimer.barLength * this.longBeatLength
+            if (!FIB.word[beat]) { beatLength/=phi }
+            let time = this.time
+            let nextTime = this.time + beatLength
             if (symbol != ".") {
               partValues.push([this.time, symbol])
               this.storedValues.push([this.time, symbol])
-              let time = this.time
+              let preventOverlap = this.preventOverlap
               this.sampler.then((sample) => {
-                playSample(audioContext, sample, time)
+                let sampleSource = playSample(audioContext, sample, time)
+                if (preventOverlap) sampleSource.stop(nextTime)
               })
             }
-            let beatLength = myTimer.barLength * this.longBeatLength
-            if (!FIB.word[beat]) { beatLength/=phi }
-            this.time += beatLength
+            this.time = nextTime
           }
           this.partIndex++
         }
