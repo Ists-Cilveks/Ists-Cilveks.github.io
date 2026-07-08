@@ -316,11 +316,12 @@
 
 
       let playbackRate = 1;
-      function playSample(audioContext, audioBuffer, time) {
+      function playSample(audioContext, audioBuffer, time, playbackRate) {
         const sampleSource = new AudioBufferSourceNode(audioContext, {
           buffer: audioBuffer,
           playbackRate: playbackRate,
         });
+        if (playbackRate) sampleSource.playbackRate.value = playbackRate;
         sampleSource.connect(mainGainNode);
         sampleSource.start(time);
         return sampleSource;
