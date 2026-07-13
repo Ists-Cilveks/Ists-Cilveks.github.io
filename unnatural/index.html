@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Unnatural</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="/css/style.css" rel="stylesheet">
+  </head>
+  <body class="main-content">
+    <script src="/js/Color.js"></script>
+    <script src="/css/palettize.js"></script>
+    <script src="/js/particles.js"></script>
+    <script src="/js/SVGRequests.js"></script>
+    
+    <a class="basic-btn home-btn" href="/" lang="en">home</a>
+    <a class="basic-btn home-btn" href="/index.html?l=lv" lang="lv">uz sākumu</a>
+    <a class="basic-btn home-btn ll" href="/index.html?l=tok" style="font-size: 250%;" lang="tok">lipu-open</a>
+    
+    <header id="main-header">
+      <h1 lang="en">Unnatural</h1>
+      <p lang="en" style="size: 120%;">A number system without natural numbers.</p>
+    </header>
+		<script src="/js/themes.js"></script>
+    <script src="/js/languages.js" my-languges="en"></script>
+
+    <p lang="en">TODO: this page desperately needs images.</p>
+    
+    <p lang="en">My main goal was to come up with a society that doesn't give much significance to natural numbers. They may be possible to express, but I want to find a way for day to day activities to be done using essentially order of magnitude estimates.</p>
+
+    <p lang="en">If you ask for sums of nice-looking numbers to also be somewhat nice-looking, you get that if 1 is a digit (i.e. maximally nice-looking), then 2, 3, 4 etc. will also be nice-looking. I don't want that, so this number system focuses much more on multiplication.</p>
+    
+
+    <h2>The number system</h2>
+
+    <p lang="en">In short, we represent numbers greater than 1 as their base φ logarithm expressed in base 9 using the digits 1, φ, θ, ...</p>
+
+    <p lang="en">Instead of having digits for 0, 1, 2, 3 etc. we have digits for 1, a<sup>1</sup>, a<sup>2</sup>, a<sup>3</sup> etc. Different choices for a are possible, but a sorta obvious one is the golden ratio φ, which ensures that certain digits can be added to give other existing digits (1+φ=φ<sup>2</sup>). In the future it would be nice to look at some other options too (a=2 for example would give 1+1=2, which is even simpler but unfortunately uses natural numbers).</p>
+
+    <p lang="en">In my system the single digit numbers are:</p>
+    <table>
+      <tr lang="en">
+        <th>Symbol</th>
+        <th>Name</th>
+        <th>Value</th>
+      </tr>
+      <tr>
+        <td>1</td>
+        <td lang="en">one<br>/wʌn/</td>
+        <td>1</td>
+      </tr>
+      <tr>
+        <td>φ</td>
+        <td lang="en">phi<br>/faɪ/</td>
+        <td>φ≈1.628</td>
+      </tr>
+      <tr>
+        <td>θ</td>
+        <td lang="en">they<br>/θeɪ/</td>
+        <td>φ<sup>2</sup>≈2.628</td>
+      </tr>
+      <tr>
+        <td>ᘔ</td>
+        <td lang="en">ona<br>/oʊnə/</td>
+        <td>φ<sup>3</sup>≈4.236</td>
+      </tr>
+      <tr>
+        <td>ᘔ<sub>φ</sub></td>
+        <td lang="en">onaphi<br>/oʊnəfaɪ/</td>
+        <td>φ<sup>4</sup>≈6.854</td>
+      </tr>
+      <tr>
+        <td>ᘔ<sub>θ</sub></td>
+        <td lang="en">onathey<br>/oʊnəθeɪ/</td>
+        <td>φ<sup>5</sup>≈11.09</td>
+      </tr>
+      <tr>
+        <td>ε</td>
+        <td lang="en">epsi<br>/ɛpsɪ/</td>
+        <td>φ<sup>6</sup>≈17.94</td>
+      </tr>
+      <tr>
+        <td>ε<sub>φ</sub></td>
+        <td lang="en">epsiphi<br>/ɛpsɪfaɪ/</td>
+        <td>φ<sup>7</sup>≈29.03</td>
+      </tr>
+      <tr>
+        <td>ε<sub>θ</sub></td>
+        <td lang="en">epsithey<br>/ɛpsɪθeɪ/</td>
+        <td>φ<sup>8</sup>≈46.98</td>
+      </tr>
+    </table>
+    <p lang="en">We use base 9 with a subbase of 3. This is not necessarily naturalistic, but I just don't want to memorize too many names and symbols. These digits are arbitrary and I'm not super proud of them, but that's not the focus.</p>
+
+    <p lang="en">After that a positional base 9 system is used to represent higher powers of φ, as well as fractional powers:</p>
+    <ul style="list-style-type:none;">
+      <li>φ<sup>9</sup>=φ1≈76.01</li>
+      <li>φ<sup>81</sup>=φ11≈8.472·10^16</li>
+      <li>φ<sup>1/9</sup>=1.φ=.φ≈1.0549</li>
+      <li>φ<sup>1/81</sup>=1.1φ=.1φ≈1.0060</li>
+      <li>π=φ<sup>2+3/9+3/81+6/729+…</sup>=φ<sup>2</sup>.φ<sup>3</sup>φ<sup>3</sup>φ<sup>6</sup>…</li>
+    </ul>
+
+    <p lang="en">So far we can only represent numbers greater than or equal to 1. We use reciprocals (/) and negatives (-) to get the rest:</p>
+    <ul style="list-style-type:none;">
+      <li>.φ≈1.055</li>
+      <li>/.φ≈0.948 </li>
+      <li>-.φ≈-1.055</li>
+      <li>-/.φ≈-0.948</li>
+    </ul>
+    <p lang="en">So the real numbers get split into 4 parts: negatives less than -1, negatives greater than -1, positives less than 1, positives greater than 1. Both 0 and ±∞ are seen as limiting cases.</p>
+
+
+    <h2>Operations</h2>
+
+    <p lang="en">Multiplication (·) replaces addition (+), and a special new operation (··) that's similar to exponentiation replaces multiplication (·). They have inverses respectively (/) and (//). Addition (+) is still possible (some cases like 1+φ=θ are still simple) but in general it's not pretty. I imagine the society using this number system would see addition as a pretty weird and difficult operation, since it only has a few pretty cases. Exponentiation is not nice (since raising numbers to irrational powers is generally not nice).</p>
+
+    <p lang="en">Also when i write log, i mean the logarithm with base φ.</p>
+
+    <p lang="en">If multiplication is adding exponents, the new operation is multiplying exponents.</p>
+    <ul style="list-style-type:none;">
+    <li>a·b=φ<sup>log(a·b)</sup>=φ<sup>log a + log b</sup></li>
+    <li>a··b=φ<sup>log(a··b)</sup>=φ<sup>log a · log b</sup></li>
+    </ul>
+
+    <h3>Integration</h3>
+    <p lang="en"><a href="https://en.wikipedia.org/wiki/Product_integral">Product integrals</a>, as far as I can tell, become somewhat easier, and can be defined more directly than regular integrals.</p>
+
+    <h3>Intuition</h3>
+    <p lang="en">Since multiplication is elementary, some operations will be much simpler. Multiplying a circle's diameter by pi with high precision is as easy as long addition. Compound interest is as easy as multiplication if the rate is constant, or an integral if not. I think. I'm still not quite sure how integrals work. They would have better intuition about exponential processes like bacteria growth or epidemics (or, y'know, <a href="https://en.wikipedia.org/wiki/Wheat_and_chessboard_problem">chessboards of rice</a>).</p>
+
+    <h3>Geometric mean</h3>
+    <p lang="en">Calculating the geometric mean here is just like calculating the average in the usual notation. The geometric mean of φ and φ<sup>3</sup>=ᘔ is (φ·ᘔ)//(φ<sup>2</sup>)=ᘔ<sub>φ</sub>//θ=θ=φ<sup>2</sup>, just like the average of 1 and 3 is (1+3)/2=4/2=2. Allegedly the geometric mean is in some sense more intuitive, and imo makes more sense for errors of scientific measurements, so it's good that this system makes it easy to calculate.</p>
+
+
+    <h2>Music</h2>
+
+    <p lang="en">This number system was a nice way to explore a musical idea I had had: fractal swing. So you know how you can have swing eighths or swing sixteenths, where the notes make pairs of longer and shorter notes? Could you combine them, along with quarter notes and half notes, and measures? Then you'd get rhythms that at no level repeat quite the same way, but instead get sped up a bit.</p>
+
+    <p lang="en">What happens if you try to make music where instead of an even pulse (like the natural numbers), the beats are spaced with each "level" of the metric hierarchy starting at a different power of φ? This has less to do with the number system above and more with <a href="https://en.wikipedia.org/wiki/Golden_ratio_base">phinary</a> and <a href="https://en.wikipedia.org/wiki/Fibonacci_word">the Fibonacci word</a>.</p>
+
+    <p lang="en">For the (work in progress) result, see my page on <a href="../music">golden ratio music</a>.</p>
+    
+  </body>
+</html>
