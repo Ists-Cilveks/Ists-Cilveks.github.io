@@ -9,7 +9,7 @@ const FIB = {}
 if (true) {
   let lastFibWord = [true]
   let fibWord = [true, false]
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < 17; i++) {
     let newFibWord = fibWord.concat(lastFibWord)
     lastFibWord = fibWord
     fibWord = newFibWord

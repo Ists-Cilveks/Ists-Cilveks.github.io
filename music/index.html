@@ -161,7 +161,7 @@
     <script>
       const padContainer = document.getElementById("pad-container")
       class PadSet {
-        constructor (name, level = 4, sublevel = 1, sampleTrack, defaultPattern, shortDefaultPattern) {
+        constructor (name, level = 4, sublevel = 1, sampleTrack, defaultPattern) {
           this.name = name
           this.level = level
           this.numPads = FIB.sequence[level-sublevel]
@@ -267,9 +267,8 @@
         return audioBuffer;
       }
 
-      async function setupSample(sampleName) {
-        const filePath = sampleName;
-        const sample = await getFile(audioContext, filePath);
+      async function setupSample(samplePath) {
+        const sample = await getFile(audioContext, samplePath);
         return sample;
       }
 
@@ -394,17 +393,17 @@
         //   samplers[name].addUntilTime(300)
         // }
 
-        function addSamplePadSet(name, sampleName, defaultPattern, level, sublevel, artist=undefined) {
+        function addSamplePadSet(name, sampleName, defaultPattern, level, sublevel, artist=undefined, preventOverlap=false) {
           let shortLength = FIB.sequence[level-sublevel-1]
           let shortDefaultPattern = defaultPattern.slice(0, shortLength)
-          samplers[name] = new SampleTrack(sampleName, defaultPattern, shortDefaultPattern, phi**(sublevel-2), artist)
-          padSets[name] = new PadSet(name, level, sublevel, samplers[name], defaultPattern, shortDefaultPattern)
+          samplers[name] = new SampleTrack(sampleName, defaultPattern, shortDefaultPattern, phi**(sublevel-2), artist, preventOverlap)
+          padSets[name] = new PadSet(name, level, sublevel, samplers[name], defaultPattern)
         }
 
-        addSamplePadSet('hat', "closed-hat1", "#.", -3, -4, new TimelineArtist("white"))
+        addSamplePadSet('hat', "ch1.flac", "#.", -3, -4, new TimelineArtist("white"))
+        // addSamplePadSet('snare', "snare1", "..#...#...#..", 3, -2)
+        addSamplePadSet('kick', "MSXKICK_019", "#.", 0, -1, undefined, true)
         addSamplePadSet('clap', "clap1", "#....#....##.#..#.###", 3, -3, new TimelineArtist("#da4", 30, 7))
-        addSamplePadSet('snare', "snare1", "..#...#...#..", 3, -2)
-        addSamplePadSet('kick', "kick1", "#.", 0, -1)
         
         // samplers = {
         //   'hat': new SampleTrack("closed-hat1", "#.", "#", 1/epsi, new TimelineArtist("white")),
@@ -432,6 +431,10 @@
           let t = myTimer.getNextLong(this.level, from)
           this.play(t)
         }
+
+        play(t) {
+          console.error("Undefined abstract method");
+        }
       }
 
       // class MySequence extends MyPlayer {
@@ -444,12 +447,13 @@
 
       //   }
       // }
-
+      
       class MonoMelody extends FixedPlayer {
-        constructor(pattern, level = 4, soundType = "sawtooth") {
+        constructor(pattern, level = 4, synth = new OscillatorSynth()) {
           super(level)
           this.pattern = pattern
-          this.type = soundType
+          if (typeof(synth) === "string") this.synth = new OscillatorSynth(synth)
+          else this.synth = synth
         }
         
         play(time) {
@@ -482,9 +486,11 @@
                 
               }
               else {
-                let freq = noteFreq[note[1]][note[0]]
-                // activeNotes = this.playFreq(freq, time+current, time+next)
-                activeNotes = this.playFreq(freq, time+current, undefined)
+                let freq
+                if (note.length==2) freq = noteFreq[note[1]][note[0]]
+                else if (note.length==3) freq = noteFreq[note[2]][note[0]+note[1]]
+                // activeNotes = this.synth.playFreq(time+current, freq, time+next)
+                activeNotes = this.synth.playFreq(time+current, freq, undefined)
               }
             }
             current = next
@@ -509,27 +515,6 @@
         // slice(start, end) {
 
         // }
-
-        playFreq(freq, time, endTime, node = synthGainNode) {
-          const osc = audioContext.createOscillator();
-          osc.connect(node);
-
-          const type = this.type;
-
-          if (type === "custom") {
-            osc.setPeriodicWave(customWaveform);
-          } else {
-            osc.type = type;
-          }
-
-          osc.frequency.value = freq;
-
-          osc.start(time);
-          if (endTime != undefined) {
-            osc.stop(endTime);
-          }
-          return [osc]
-        }
       }
 
       class RhythmChart extends FixedPlayer {
@@ -665,6 +650,67 @@
         }
       }
 
+      class Synth {
+        // currentlyPlaying = []
+
+        playFreq(time, freq, endTime, node = synthGainNode) {
+        }
+      }
+      class OscillatorSynth extends Synth {
+        constructor (type="square") {
+          super()
+          this.type = type
+        }
+        
+        playFreq(time, freq, endTime, node = synthGainNode) {
+          const osc = audioContext.createOscillator();
+          osc.connect(node);
+
+          const type = this.type;
+
+          if (type === "custom") {
+            osc.setPeriodicWave(customWaveform);
+          } else {
+            osc.type = type;
+          }
+
+          osc.frequency.value = freq;
+
+          osc.start(time);
+          if (endTime != undefined) {
+            osc.stop(endTime);
+          }
+          return [osc]
+        }
+      }
+      function getSamplePath(name) {
+        if (name.split(".").length == 1) name += ".wav"
+        if (name.split("/").length == 1) name = "samples/" + name
+        return name
+      }
+      class SampleSynth extends Synth {
+        constructor (sampleName, defaultFreq) {
+          super()
+          this.defaultFreq = defaultFreq
+
+          let sampleSynth = this
+          
+          function setup() {sampleSynth.setupSample(sampleName)}
+          setupFuncs.push(setup)
+        }
+
+        setupSample(sampleName) {
+          this.sampler = setupSample(getSamplePath(sampleName))
+        }
+
+        playFreq(time, freq, endTime, node = synthGainNode) {
+          let rate = freq / this.defaultFreq
+          this.sampler.then((sample) => {
+            let sampleSource = playSample(audioContext, sample, time, rate)
+          })
+        }
+      }
+
       class SampleTrack {
         constructor(sampleName, longString, shortString, longBeatLength=1/theta, artist=new TimelineArtist(), preventOverlap=false) {
           this.sampler = setupSample(getSamplePath(sampleName))
@@ -726,10 +772,12 @@
         "~", "~", "E4", "D4", "~", "C4", "~", "~", "~", "~", "~", "~", "~"
       ], 4, "custom")
       const mm3 = new MonoMelody(["E4", "D4", "~", "~", "~"], 2, "custom")
-      // const arp1 = new MyMelody(["D2", "G2", "A2", "D2", "G2", "A2", "G2", "A2"], 2, "sawtooth")
-      // const arp2 = new MyMelody(["C3", "B2", "A2", "G2", "A2"], 1, "sawtooth")
+      const mySampleSynth = new SampleSynth("oldskool", noteFreq[4]["C"])
+      // const arp1 = new MonoMelody(["D2", "G2", "A2", "D2", "G2", "A2", "G2", "A2"], 2, mySampleSynth)
+      // const arp2 = new MonoMelody(["C3", "B2", "A2", "G2", "A2"], 1, mySampleSynth)
       // const arp12 = arp1.concat(arp2)
-      const arp12 = new MonoSection([["D2", "G2", "A2", "D2", "G2", "A2", "G2", "A2"], ["C3", "B2", "A2", "G2", "A2"]], -2, 1, "sawtooth")
+      const arp12 = new MonoSection([["E3", "A3", "C#4", "E3", "A3", "C#4", "A3", "C#4"], ["D4", "C#4", "B3", "A3", "B3"]], -2, 1, mySampleSynth)
+      // const arp12 = new MonoSection([["D3", "G3", "A3", "D3", "G3", "A3", "G3", "A3"], ["C4", "B3", "A3", "G3", "A3"]], -2, 1, mySampleSynth)
       const over1 = new MonoMelody([""])
       function pause(level) {
         return new MonoMelody(["."], level)
@@ -771,9 +819,22 @@
       function addMySong() {
         // playSequenceAtNextLong([m1, m2, m1, m3, m22, m1, m4])
         playSequenceAtNextLong([mm1, mm3, mm1, mm2, pause(5), mm1, mm3, mm1, mm2])
-        playSequenceAtNextLong([arrows21, arrows23, arrows21, arrows22])
-        arp12.playBasicPattern(200, 7)
-        playRepeatedPair(arrows11, arrows12, 200, 8)
+        // playSequenceAtNextLong([arrows21, arrows23, arrows21, arrows22])
+        // arp12.playBasicPattern(200, 0)
+        // playRepeatedPair(arrows11, arrows12, 200, 8)
+
+        let changeTime = myTimer.getNextLong(5, 1)
+
+        let hum = setupSample(getSamplePath("heaven_loop2.flac"))
+        hum.then((sample) => {
+          let sampleSource = playSample(audioContext, sample, changeTime)
+          sampleSource.loop = true
+        })
+
+        let phaser = setupSample(getSamplePath("mid lifter Happy Hardcore FX 05"))
+        phaser.then((sample) => {
+          let sampleSource = playSample(audioContext, sample, changeTime-3.8)
+        })
       }
 
       function time_to_x(t) { return 50+t*50 }
