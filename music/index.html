@@ -52,11 +52,11 @@
       
       .pads {
         display: flex;
-        width: 300px;
+        width: 100%;
       }
 
       .pads>button {
-        height: 20px;
+        height: 1.7em;
         opacity: 20%;
         background-color: var(--framing);
         border: 1.5px inset var(--hc-bg);
@@ -76,6 +76,15 @@
         width: 161.8%;
       }
 
+      .round-btn {
+        width: 1.7em;
+        height: 1.7em;
+        padding: 0;
+        margin: 0px 1px;
+        /* border: 1px solid var(--deep-framing); */
+        min-width: 0;
+        border-radius: 100%;
+      }
     </style>
   </head>
   <body class="main-content">
@@ -161,28 +170,38 @@
     <script>
       const padContainer = document.getElementById("pad-container")
       class PadSet {
-        constructor (name, level = 4, sublevel = 1, sampleTrack, defaultPattern) {
+        constructor (name, level = 4, sublevel = 1, sampleTrack, defaultPattern = "") {
           this.name = name
-          this.level = level
-          this.numPads = FIB.sequence[level-sublevel]
-          this.numPadsInShort = FIB.sequence[level-sublevel-1]
           this.sampleTrack = sampleTrack
-          this.container = document.createElement("div")
-          padContainer.appendChild(this.container)
-          this.container.className = "pads"
-          this.pads = []
-          for (let i = 0; i < this.numPads; i++) {
-            let btn = document.createElement("button")
-            btn.className = FIB.word[i] ? "long-width" : "short-width"
-            let btnid = this.name + "n" + (i+1)
-            btn.id = btnid
-            btn.addEventListener("click", function() {
-              togglePad(btnid)
-            })
-            this.container.appendChild(btn)
-            this.pads[i] = btn
-            if (defaultPattern[i] != ".") togglePad(btnid)
-          }
+          this.updateLevel(level)
+          this.updateSublevel(sublevel)
+          // padContainer
+          // > rowContainer
+          // > > [ ][][ ][ ][] actualPadContainer
+          // > > (-)(+) setupContainer
+          this.rowContainer = document.createElement("div")
+          this.rowContainer.className = "pads"
+          padContainer.appendChild(this.rowContainer)
+            this.actualPadContainer = document.createElement("div")
+            this.actualPadContainer.className = "pads"
+            this.rowContainer.appendChild(this.actualPadContainer)
+            this.setupContainer = document.createElement("div")
+            // this.setupContainer.className = "pads"
+            this.setupContainer.style = "display:flex;"
+            this.rowContainer.appendChild(this.setupContainer)
+              let padset = this
+              this.subBtn = document.createElement("button")
+              this.subBtn.innerHTML = "–"
+              this.subBtn.onclick = function(){padset.decreaseDivisions()}
+              this.subBtn.className = "basic-btn round-btn"
+              this.setupContainer.appendChild(this.subBtn)
+              this.addBtn = document.createElement("button")
+              this.addBtn.innerHTML = "+"
+              this.addBtn.onclick = function(){padset.increaseDivisions()}
+              this.addBtn.className = "basic-btn round-btn"
+              this.setupContainer.appendChild(this.addBtn)
+          this.pattern = defaultPattern
+          this.makePads()
         }
 
         // isNextBeatActive(t = audioContext.currentTime) {
@@ -219,14 +238,65 @@
 
           this.sampleTrack.addNextPart()
         }
+
+        makePads() {
+          this.actualPadContainer.textContent = '' // Clear nodes if they've already been added
+          this.pads = []
+          let padset = this
+          for (let i = 0; i < this.numPads; i++) {
+            let btn = document.createElement("button")
+            btn.className = FIB.word[i] ? "long-width" : "short-width"
+            let btnid = this.name + "n" + (i+1)
+            btn.id = btnid
+            function disablePad() {
+              padset.pattern = padset.pattern.substring(0, i) + '.' + padset.pattern.substring(i+1)
+              btn.removeAttribute("data-selected")
+            }
+            function enablePad() {
+              padset.pattern = padset.pattern.substring(0, i) + '#' + padset.pattern.substring(i+1)
+              btn.setAttribute("data-selected", "")
+            }
+            btn.addEventListener("click", function() {
+              if (padset.pattern[i] == "#") disablePad()
+              else enablePad()
+            })
+            this.actualPadContainer.appendChild(btn)
+            this.pads[i] = btn
+            if (this.pattern[i] == "#") enablePad()
+          }
+        }
+
+        updateLengths() {
+          this.numPads = FIB.sequence[this.level-this.sublevel]
+          this.numPadsInShort = FIB.sequence[this.level-this.sublevel-1]
+        }
+        updateLevel(value) {
+          this.level = value
+          this.updateLengths()
+          // TODO: also change sampleTrack
+        }
+        updateSublevel(value) {
+          this.sublevel = value
+          this.sampleTrack.updateLongBeatLevel(value)
+          this.updateLengths()
+        }
+
+        increaseDivisions() {
+          this.updateSublevel(this.sublevel-1)
+          this.pattern = myTimer.refineRhythm(this.pattern)
+          console.log(this.pattern);
+          
+          this.makePads()
+        }
+        decreaseDivisions() {
+          this.updateSublevel(this.sublevel+1)
+          this.pattern = myTimer.thinOutRhythm(this.pattern)
+          console.log(this.pattern);
+          this.makePads()
+        }
       }
 
       let myPadSet
-
-      function togglePad(id) {
-        let btn = document.getElementById(id)
-        btn.toggleAttribute("data-selected")
-      }
 
       const canvas = document.getElementById("music-canvas")
       const context = canvas.getContext("2d")
@@ -245,13 +315,40 @@
       // var myTimer.barLength = 3.2
       // var myTimer.beatLength = myTimer.barLength/ona
 
-      
+      // The element that knows the metric hierarchy. Ideally everything should be written so that just by changing this you can also write songs in 4/4, 3/4, silver ratio etc.
       const myTimer = {
         isPlaying: false,
         barLength: 3.2,
         getBeatTime(n, level = 0) {
           return Phinary.fromBeatNumber(n, level).v
-        }
+        },
+        extendRhythm(rhythm){
+          level = FIB.reverse[rhythm.length]
+          len = FIB.sequence[level-1]
+          return rhythm + rhythm.slice(0, len)
+        },
+        trimRhythm(rhythm){
+          level = FIB.reverse[rhythm.length]
+          len = FIB.sequence[level-1]
+          return rhythm.slice(0, len)
+        },
+        refineRhythm(rhythm){
+          let res = ""
+          for (let i = 0; i < rhythm.length; i++) {
+            const char = rhythm[i]
+            res += char
+            if (FIB.word[i]) res += "."
+          }
+          return res
+        },
+        thinOutRhythm(rhythm){
+          let res = ""
+          for (let i = 0; i < rhythm.length; i++) {
+            const char = rhythm[i]
+            if (FIB.word[i]) res += char
+          }
+          return res
+        },
       }
       myTimer.beatLength = myTimer.barLength/ona
       myTimer.getDurationOfLevel = function(level) {return myTimer.beatLength * phi**level}
@@ -396,14 +493,15 @@
         function addSamplePadSet(name, sampleName, defaultPattern, level, sublevel, artist=undefined, preventOverlap=false) {
           let shortLength = FIB.sequence[level-sublevel-1]
           let shortDefaultPattern = defaultPattern.slice(0, shortLength)
-          samplers[name] = new SampleTrack(sampleName, defaultPattern, shortDefaultPattern, phi**(sublevel-2), artist, preventOverlap)
+          samplers[name] = new SampleTrack(sampleName, defaultPattern, shortDefaultPattern, sublevel, artist, preventOverlap)
           padSets[name] = new PadSet(name, level, sublevel, samplers[name], defaultPattern)
         }
 
-        addSamplePadSet('hat', "ch1.flac", "#.", -3, -4, new TimelineArtist("white"))
-        // addSamplePadSet('snare', "snare1", "..#...#...#..", 3, -2)
-        addSamplePadSet('kick', "MSXKICK_019", "#.", 0, -1, undefined, true)
-        addSamplePadSet('clap', "clap1", "#....#....##.#..#.###", 3, -3, new TimelineArtist("#da4", 30, 7))
+        // addSamplePadSet('hat', "ch1.flac", "#.", -2, -3, new TimelineArtist("white"))
+        addSamplePadSet('hat', "closed-hat1", "#.", -2, -3, new TimelineArtist("white"))
+        addSamplePadSet('snare', "snare1", "..#...#...#..", 4, -1)
+        addSamplePadSet('kick', "MSXKICK_019", "#.", 1, 0, undefined, true)
+        addSamplePadSet('clap', "clap1", "#....#....##.#..#.###", 4, -2, new TimelineArtist("#da4", 30, 7))
         
         // samplers = {
         //   'hat': new SampleTrack("closed-hat1", "#.", "#", 1/epsi, new TimelineArtist("white")),
@@ -712,13 +810,13 @@
       }
 
       class SampleTrack {
-        constructor(sampleName, longString, shortString, longBeatLength=1/theta, artist=new TimelineArtist(), preventOverlap=false) {
+        constructor(sampleName, longString, shortString, longBeatLevel=0, artist=new TimelineArtist(), preventOverlap=false) {
           this.sampler = setupSample(getSamplePath(sampleName))
           this.shortString = shortString
           this.longString = longString
           this.time = 0
           this.partIndex = 0
-          this.longBeatLength = longBeatLength
+          this.longBeatLevel = longBeatLevel
           this.storedValues = []
           this.artist = artist
           this.preventOverlap = preventOverlap
@@ -729,7 +827,7 @@
           let partValues = []
           for (let beat = 0; beat < string.length; beat++) {
             let symbol = string[beat]
-            let beatLength = myTimer.barLength * this.longBeatLength
+            let beatLength = myTimer.getDurationOfLevel(this.longBeatLevel)
             if (!FIB.word[beat]) { beatLength/=phi }
             let time = this.time
             let nextTime = this.time + beatLength
@@ -753,6 +851,10 @@
         }
         draw(now) {
           this.artist.draw(this.storedValues, now)
+        }
+
+        updateLongBeatLevel(value) {
+          this.longBeatLevel = value
         }
       }
 
