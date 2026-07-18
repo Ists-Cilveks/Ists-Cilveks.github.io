@@ -268,14 +268,11 @@
         increaseDivisions() {
           this.updateSublevel(this.sublevel-1)
           this.pattern = myTimer.refineRhythm(this.pattern)
-          console.log(this.pattern);
-          
           this.makePads()
         }
         decreaseDivisions() {
           this.updateSublevel(this.sublevel+1)
           this.pattern = myTimer.thinOutRhythm(this.pattern)
-          console.log(this.pattern);
           this.makePads()
         }
       }
@@ -602,9 +599,9 @@
         // golden
         // addSamplePadSet('hat', "ch1.flac", "#.", -2, -3, new TimelineArtist("white"))
         addSamplePadSet('hat', "closed-hat1", "#.", -2, -3, new TimelineArtist("white"))
-        addSamplePadSet('snare', "snare1", "..#...#...#..", 4, -1)
+        addSamplePadSet('snare', "snare1", "..#...#.", 2, -2)
         // addSamplePadSet('kick', "MSXKICK_019", "#.", 1, 0, undefined, true)
-        addSamplePadSet('kick', "kick1", "#.", 1, 0, undefined, true)
+        addSamplePadSet('kick', "kick1", "#..#.#..", 2, -2, undefined, true)
         addSamplePadSet('clap', "clap1", "#....#....##.#..#.###", 4, -2, new TimelineArtist("#da4", 30, 7))
         
         // // binary (4/4)
