@@ -64,6 +64,7 @@ h1 {
 	margin-left: 0.5em;
 	margin-right: 0.5em;
 	text-shadow: 0.07em 0.07em 0.05em var(--highlights);
+	width: 100%; /*so that the theme change icon and language select get pushed to the right*/
 }
 h2 {
 	text-decoration: underline var(--subtle-framing) 0.05em;
