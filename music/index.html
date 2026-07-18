@@ -8,47 +8,24 @@
     <link href="/keyboard.css" rel="stylesheet">
     <style>
       .settingsBar {
-        padding-top: 8px;
-        font:
-          14px "Open Sans",
-          "Lucida Grande",
-          "Arial",
-          sans-serif;
-        position: relative;
-        vertical-align: middle;
+        padding: 8px;
         width: 100%;
-        height: 30px;
+        display: flex;
+        font-size: 80%;
       }
 
-      .left {
-        width: 50%;
-        position: absolute;
-        left: 0;
-        display: table-cell;
+      .volumes-container > span {
+        display: inline-block;
+        width: 25%;
+      }
+      .volumes-container > input {
+        display: inline-block;
+        width: 60%;
+      }
+
+      .volumes-container * {
         vertical-align: middle;
       }
-
-      .left span,
-      .left input {
-        vertical-align: middle;
-      }
-
-      .right {
-        width: 50%;
-        position: absolute;
-        right: 0;
-        display: table-cell;
-        vertical-align: middle;
-      }
-
-      .right span {
-        vertical-align: middle;
-      }
-
-      .right input {
-        vertical-align: baseline;
-      }
-
       
       .pads {
         display: flex;
@@ -59,7 +36,7 @@
         height: 1.7em;
         opacity: 20%;
         background-color: var(--framing);
-        border: 1.5px inset var(--hc-bg);
+        border: 1.5px solid var(--hc-bg);
         padding: 0;
         cursor: pointer;
       }
@@ -113,22 +90,50 @@
           <div class="keyboard"></div>
         </div>
         <div class="settingsBar">
-          <div class="left">
-            <span>Synth volume: </span>
+          <div class="volumes-container" style="width: 50%;">
+            <span>Synths: </span>
             <input
               type="range"
               min="0.0"
               max="1.0"
               step="0.01"
               value="0.3"
-              list="volumes"
-              name="volume" />
-            <datalist id="volumes">
+              list="synth-volumes"
+              name="synth-volume" />
+            <datalist id="synth-volumes">
+              <option value="0.0" label="Mute"></option>
+              <option value="1.0" label="100%"></option>
+            </datalist>
+            <br>
+            <span>Drums: </span>
+            <input
+              type="range"
+              min="0.0"
+              max="1.0"
+              step="0.01"
+              value="0.3"
+              list="drum-volumes"
+              name="drum-volume" />
+            <datalist id="drum-volumes">
+              <option value="0.0" label="Mute"></option>
+              <option value="1.0" label="100%"></option>
+            </datalist>
+            <br>
+            <span>Master: </span>
+            <input
+              type="range"
+              min="0.0"
+              max="1.0"
+              step="0.01"
+              value="0.2"
+              list="master-volumes"
+              name="master-volume" />
+            <datalist id="master-volumes">
               <option value="0.0" label="Mute"></option>
               <option value="1.0" label="100%"></option>
             </datalist>
           </div>
-          <div class="right">
+          <div style="width: 50%;">
             <span>Synth waveform: </span>
             <select name="waveform">
               <option value="sine">Sine</option>
@@ -146,7 +151,7 @@
         <h2 lang="en">Pads</h2>
         <div id="pad-container"></div>
 
-        <h2 lang="en">Recording:</h2>
+        <h2 lang="en">Recording</h2>
         <p lang="en">This element will store the audio after you press pause. You can then save it as a file by right clicking.</p>
         <audio id="audio-recording" controls></audio>
 
@@ -168,6 +173,10 @@
     <script src="/js/phinary.js"></script>
     <script src="keyboard.js"></script>
     <script>
+      const synthVolumeControl = document.querySelector("input[name='synth-volume']");
+      const drumVolumeControl = document.querySelector("input[name='drum-volume']");
+      const masterVolumeControl = document.querySelector("input[name='master-volume']");
+
       const padContainer = document.getElementById("pad-container")
       class PadSet {
         constructor (name, level = 4, sublevel = 1, sampleTrack, defaultPattern = "") {
@@ -413,13 +422,13 @@
 
 
       let playbackRate = 1;
-      function playSample(audioContext, audioBuffer, time, playbackRate) {
+      function playSample(audioContext, audioBuffer, time, playbackRate, gainNode = mainGainNode) {
         const sampleSource = new AudioBufferSourceNode(audioContext, {
           buffer: audioBuffer,
           playbackRate: playbackRate,
         });
         if (playbackRate) sampleSource.playbackRate.value = playbackRate;
-        sampleSource.connect(mainGainNode);
+        sampleSource.connect(gainNode);
         sampleSource.start(time);
         return sampleSource;
       }
@@ -476,14 +485,22 @@
         };
 
         mainGainNode = audioContext.createGain();
-        synthGainNode = audioContext.createGain();
         mainGainNode.connect(audioContext.destination);
-        synthGainNode.connect(mainGainNode)
         mainGainNode.connect(recordingDestination)
+        synthGainNode = audioContext.createGain();
+        synthGainNode.connect(mainGainNode)
+        drumGainNode = audioContext.createGain();
+        drumGainNode.connect(mainGainNode)
         
-        mainGainNode.gain.value = 0.2;
-        volumeControl.addEventListener("change", changeVolume);
-        changeVolume()
+        function updateVolume(gainNode, controlNode) {
+          gainNode.gain.value = controlNode.value;
+        }
+        synthVolumeControl.addEventListener("change", event => {updateVolume(synthGainNode, synthVolumeControl)});
+        drumVolumeControl.addEventListener("change", event => {updateVolume(drumGainNode, drumVolumeControl)});
+        masterVolumeControl.addEventListener("change", event => {updateVolume(mainGainNode, masterVolumeControl)});
+        updateVolume(synthGainNode, synthVolumeControl)
+        updateVolume(drumGainNode, drumVolumeControl)
+        updateVolume(mainGainNode, masterVolumeControl)
 
         
         // for (const name in samplers) {
@@ -493,7 +510,7 @@
         function addSamplePadSet(name, sampleName, defaultPattern, level, sublevel, artist=undefined, preventOverlap=false) {
           let shortLength = FIB.sequence[level-sublevel-1]
           let shortDefaultPattern = defaultPattern.slice(0, shortLength)
-          samplers[name] = new SampleTrack(sampleName, defaultPattern, shortDefaultPattern, sublevel, artist, preventOverlap)
+          samplers[name] = new SampleTrack(sampleName, defaultPattern, shortDefaultPattern, sublevel, artist, preventOverlap, drumGainNode)
           padSets[name] = new PadSet(name, level, sublevel, samplers[name], defaultPattern)
         }
 
@@ -810,7 +827,7 @@
       }
 
       class SampleTrack {
-        constructor(sampleName, longString, shortString, longBeatLevel=0, artist=new TimelineArtist(), preventOverlap=false) {
+        constructor(sampleName, longString, shortString, longBeatLevel=0, artist=new TimelineArtist(), preventOverlap=false, gainNode=mainGainNode) {
           this.sampler = setupSample(getSamplePath(sampleName))
           this.shortString = shortString
           this.longString = longString
@@ -820,6 +837,7 @@
           this.storedValues = []
           this.artist = artist
           this.preventOverlap = preventOverlap
+          this.gainNode = gainNode
         }
 
         addNextPart() {
@@ -836,7 +854,7 @@
               this.storedValues.push([this.time, symbol])
               let preventOverlap = this.preventOverlap
               this.sampler.then((sample) => {
-                let sampleSource = playSample(audioContext, sample, time)
+                let sampleSource = playSample(audioContext, sample, time, undefined, this.gainNode)
                 if (preventOverlap) sampleSource.stop(nextTime)
               })
             }

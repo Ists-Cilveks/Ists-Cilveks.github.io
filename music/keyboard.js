@@ -4,7 +4,6 @@ let mainGainNode = null;
 let synthGainNode = null;
 const keyboard = document.querySelector(".keyboard");
 const wavePicker = document.querySelector("select[name='waveform']");
-const volumeControl = document.querySelector("input[name='volume']");
 let customWaveform = null;
 let sineTerms = null;
 let cosineTerms = null;
@@ -76,9 +75,6 @@ function noteReleased(event) {
       delete dataset["pressed"];
     }
   }
-}
-function changeVolume(event) {
-  synthGainNode.gain.value = volumeControl.value;
 }
 
 const keyCodes = [
