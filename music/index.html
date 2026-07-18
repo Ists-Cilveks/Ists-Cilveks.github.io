@@ -46,13 +46,6 @@
         opacity: 100%;
       }
 
-      .short-width {
-        width: 100%;
-      }
-      .long-width {
-        width: 161.8%;
-      }
-
       .round-btn {
         width: 1.7em;
         height: 1.7em;
@@ -111,7 +104,7 @@
               min="0.0"
               max="1.0"
               step="0.01"
-              value="0.3"
+              value="0.5"
               list="drum-volumes"
               name="drum-volume" />
             <datalist id="drum-volumes">
@@ -213,12 +206,6 @@
           this.makePads()
         }
 
-        // isNextBeatActive(t = audioContext.currentTime) {
-        //   let phinary = myTimer.getNextLong(4, t)
-        //   console.log(phinary);
-          
-        // }
-
         padIsActive(n) {
           return this.pads[n].hasAttribute("data-selected")
         }
@@ -229,22 +216,10 @@
             str += this.padIsActive(i) ? "#" : "."
           }
           this.sampleTrack.longString = str
-          this.sampleTrack.shortString = str.slice(0, this.numPadsInShort)
         }
 
         addNextPart(t = audioContext.currentTime) {
-          // let phinary = myTimer.getNextLong(level, t)
-          // console.log(phinary);
-          
-          // for (let n = 0; n < 8; n++) {
-          //   t = phinary + myTimer.getBeatTime(n, 1)
-          //   if (this.padIsActive(n)) {
-          //     this.sampleTrack.addNote()
-          //   }
-          // }
-
           this.updateSampleTrack()
-
           this.sampleTrack.addNextPart()
         }
 
@@ -254,7 +229,7 @@
           let padset = this
           for (let i = 0; i < this.numPads; i++) {
             let btn = document.createElement("button")
-            btn.className = FIB.word[i] ? "long-width" : "short-width"
+            btn.style.width = myTimer.getBeatLength(i, this.sublevel)/myTimer.getUnitLength(this.sublevel)*100+"%"
             let btnid = this.name + "n" + (i+1)
             btn.id = btnid
             function disablePad() {
@@ -328,9 +303,22 @@
       const myTimer = {
         isPlaying: false,
         barLength: 3.2,
+        // get beatLength() {return this.barLength/ona},
+        getUnitLength(level = 0) {
+          return this.beatLength * phi**level
+        },
+        getBeatLength(n, level = 0) {
+          let len = this.getUnitLength(level)
+          if (!FIB.word[n]) len /= phi
+          return len
+        },
+        getNextBeat(level = 4, from = audioContext.currentTime) {
+          return new Phinary(from/this.beatLength).getNextAtLevel(level+1).v*this.beatLength
+        },
         getBeatTime(n, level = 0) {
           return Phinary.fromBeatNumber(n, level).v
         },
+        
         extendRhythm(rhythm){
           level = FIB.reverse[rhythm.length]
           len = FIB.sequence[level-1]
@@ -358,12 +346,34 @@
           }
           return res
         },
+
+        getSubpattern(pattern, level, partIndex) {
+          return FIB.word[partIndex] ? pattern : this.trimRhythm(pattern)
+        },
+
+        playSequenceAtNextLong(players, startTime = audioContext.currentTime) {
+          time = startTime
+          for (const player of players) {
+            player.playAtNextLong(time)
+            time = player.endTime - 0.05 // TODO: may break i guess
+          }
+        },
+        playRepeatedPair(long, short, n, skips) {
+          // TODO: only works when starting at time 0
+          let order = []
+          let i = 0
+          for (; i < skips; i++) {
+            if (FIB.word[i]) order.push(pause(long.level))
+            else order.push(pause(short.level))
+          }
+          for (; i < n; i++) {
+            if (FIB.word[i]) order.push(long)
+            else order.push(short)
+          }
+          this.playSequenceAtNextLong(order)
+        },
       }
-      myTimer.beatLength = myTimer.barLength/ona
-      myTimer.getDurationOfLevel = function(level) {return myTimer.beatLength * phi**level}
-      myTimer.getNextLong = function(level = 4, from = audioContext.currentTime) {
-        return new Phinary(from/myTimer.beatLength).getNextAtLevel(level+1).v*myTimer.beatLength
-      }
+      myTimer.beatLength=myTimer.barLength/ona
 
       // Sample loading from https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Advanced_techniques
       async function getFile(audioContext, filepath) {
@@ -508,28 +518,16 @@
         // }
 
         function addSamplePadSet(name, sampleName, defaultPattern, level, sublevel, artist=undefined, preventOverlap=false) {
-          let shortLength = FIB.sequence[level-sublevel-1]
-          let shortDefaultPattern = defaultPattern.slice(0, shortLength)
-          samplers[name] = new SampleTrack(sampleName, defaultPattern, shortDefaultPattern, sublevel, artist, preventOverlap, drumGainNode)
+          samplers[name] = new SampleTrack(sampleName, defaultPattern, sublevel, artist, preventOverlap, drumGainNode)
           padSets[name] = new PadSet(name, level, sublevel, samplers[name], defaultPattern)
         }
 
         // addSamplePadSet('hat', "ch1.flac", "#.", -2, -3, new TimelineArtist("white"))
         addSamplePadSet('hat', "closed-hat1", "#.", -2, -3, new TimelineArtist("white"))
         addSamplePadSet('snare', "snare1", "..#...#...#..", 4, -1)
-        addSamplePadSet('kick', "MSXKICK_019", "#.", 1, 0, undefined, true)
+        // addSamplePadSet('kick', "MSXKICK_019", "#.", 1, 0, undefined, true)
+        addSamplePadSet('kick', "kick1", "#.", 1, 0, undefined, true)
         addSamplePadSet('clap', "clap1", "#....#....##.#..#.###", 4, -2, new TimelineArtist("#da4", 30, 7))
-        
-        // samplers = {
-        //   'hat': new SampleTrack("closed-hat1", "#.", "#", 1/epsi, new TimelineArtist("white")),
-        //   'clap': new SampleTrack("clap1", "#............", "#..#.###", 1/onathey, new TimelineArtist("#da4", 30, 7)),
-        //   'snare': new SampleTrack("snare1", "..#...#.", "..#..", 1/onaphi),
-        //   'kick': new SampleTrack("kick1", "#.", ".", 1/onaphi),
-        // }
-        // padSets = {
-        //   'clap': new PadSet(4, 1, samplers['clap'])
-        // }
-
 
         for (const f of setupFuncs) {
           f()
@@ -539,11 +537,11 @@
       class FixedPlayer {
         constructor(level = 4) {
           this.level = level
-          this.duration = myTimer.getDurationOfLevel(this.level)
+          this.duration = myTimer.getUnitLength(this.level)
         }
 
         playAtNextLong(from = undefined) {
-          let t = myTimer.getNextLong(this.level, from)
+          let t = myTimer.getNextBeat(this.level, from)
           this.play(t)
         }
 
@@ -625,7 +623,7 @@
         //     if (FIB.word[i]) order.push(this.long)
         //     else order.push(short)
         //   }
-        //   playSequenceAtNextLong(order)
+        //   myTimer.playSequenceAtNextLong(order)
         // }
         // slice(start, end) {
 
@@ -732,7 +730,7 @@
             if (FIB.word[i]) order.push(long)
             else order.push(short)
           }
-          playSequenceAtNextLong(order)
+          myTimer.playSequenceAtNextLong(order)
         }
       }
 
@@ -827,13 +825,12 @@
       }
 
       class SampleTrack {
-        constructor(sampleName, longString, shortString, longBeatLevel=0, artist=new TimelineArtist(), preventOverlap=false, gainNode=mainGainNode) {
+        constructor(sampleName, pattern, level=0, artist=new TimelineArtist(), preventOverlap=false, gainNode=mainGainNode) {
           this.sampler = setupSample(getSamplePath(sampleName))
-          this.shortString = shortString
-          this.longString = longString
+          this.pattern = pattern
           this.time = 0
           this.partIndex = 0
-          this.longBeatLevel = longBeatLevel
+          this.level = level
           this.storedValues = []
           this.artist = artist
           this.preventOverlap = preventOverlap
@@ -841,12 +838,11 @@
         }
 
         addNextPart() {
-          const string = FIB.word[this.partIndex] ? this.longString : this.shortString
+          const pattern = myTimer.getSubpattern(this.pattern, this.level, this.partIndex)
           let partValues = []
-          for (let beat = 0; beat < string.length; beat++) {
-            let symbol = string[beat]
-            let beatLength = myTimer.getDurationOfLevel(this.longBeatLevel)
-            if (!FIB.word[beat]) { beatLength/=phi }
+          for (let beat = 0; beat < pattern.length; beat++) {
+            let symbol = pattern[beat]
+            let beatLength = myTimer.getBeatLength(beat, this.level)
             let time = this.time
             let nextTime = this.time + beatLength
             if (symbol != ".") {
@@ -872,7 +868,7 @@
         }
 
         updateLongBeatLevel(value) {
-          this.longBeatLevel = value
+          this.level = value
         }
       }
 
@@ -912,38 +908,15 @@
       const arrows21 = new RhythmChart("1.43.23.", 3)
       const arrows22 = new RhythmChart("2..3....43.2......1....32.1.......", 4)
       const arrows23 = new RhythmChart("21...", 2)
-
-      function playSequenceAtNextLong(players, startTime = audioContext.currentTime) {
-        time = startTime
-        for (const player of players) {
-          player.playAtNextLong(time)
-          time = player.endTime - 0.05 // TODO: may break i guess
-        }
-      }
-      function playRepeatedPair(long, short, n, skips) {
-        // TODO: only works when starting at time 0
-        let order = []
-        let i = 0
-        for (; i < skips; i++) {
-          if (FIB.word[i]) order.push(pause(long.level))
-          else order.push(pause(short.level))
-        }
-        for (; i < n; i++) {
-          if (FIB.word[i]) order.push(long)
-          else order.push(short)
-        }
-        playSequenceAtNextLong(order)
-      }
-      
       
       function addMySong() {
-        // playSequenceAtNextLong([m1, m2, m1, m3, m22, m1, m4])
-        playSequenceAtNextLong([mm1, mm3, mm1, mm2, pause(5), mm1, mm3, mm1, mm2])
-        // playSequenceAtNextLong([arrows21, arrows23, arrows21, arrows22])
+        // myTimer.playSequenceAtNextLong([m1, m2, m1, m3, m22, m1, m4])
+        myTimer.playSequenceAtNextLong([mm1, mm3, mm1, mm2, pause(5), mm1, mm3, mm1, mm2])
+        // myTimer.playSequenceAtNextLong([arrows21, arrows23, arrows21, arrows22])
         // arp12.playBasicPattern(200, 0)
         // playRepeatedPair(arrows11, arrows12, 200, 8)
 
-        let changeTime = myTimer.getNextLong(6, 1)
+        let changeTime = myTimer.getNextBeat(6, 1)
 
         let hum = setupSample(getSamplePath("heaven_loop2.flac"))
         hum.then((sample) => {
