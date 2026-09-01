@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>MVP Racing</title>
+  <style media="screen">
+    body{
+      background-color: rgb(10,50,40);
+      color: rgb(200, 200, 200);
+      font-size: 40px;
+      overflow: hidden;
+      font-size: 300%;
+    }
+    canvas{
+      position: absolute;
+      left: 0;
+      top: 0;
+      outline: 2px dashed navy;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="300" height="300"></canvas>
+  <script type="text/javascript">
+    "use strict";
+
+    function rand(max=1) {
+      return Math.random()*max;
+    }
+    function rand0(max=1) {
+      return (Math.random()-0.5)*max;
+    }
+    function randInt(max=2) {
+      return Math.floor(Math.random()*max);
+    }
+    function randProb(p=0.5) {
+      return p>Math.random();
+    }
+    function randRange(a, b) {
+      return Math.random()*(b-a)+a;
+    }
+    function clamp(num, val=1) {//num to clamp, special value
+      return 1-(val/(num+val));
+    }
+    function colorLerp(x, n1, n2) {
+      return n2.sub(n1).mult(x).add(n1);
+    }
+    function cutoff(x, min, max) {
+      if (min && x<min) {
+        return min;
+      }
+      if (max && x>max) {
+        return max;
+      }
+      return x;
+    }
+    function closenessPenalty(x, coefficient) { //what number to divide x by for to not reach 1
+      return 1-coefficient-coefficient/(x-1);
+    }
+    function round(v, p=2) {
+      return Math.round(v*10**p+Number.EPSILON)/10**p;
+    }
+
+    var canvas=document.getElementById("canvas");
+    var context=canvas.getContext("2d");
+    var TAU=2*Math.PI;
+    var PI=Math.PI;
+    var HPI=Math.PI/2;
+    var loops=0;
+    var paused=false;
+    var frameskip=1;
+    var cars=[];
+    var keys=[];
+    var HEIGHT=100;
+    var RATIO=1;
+    var g=0.0005;
+
+    /* TODO:
+      check to-dos and fix-mes
+      collisions
+        with each other
+        with the outer wall
+          improve
+        with a track's outline
+        change angle velocity upon collision
+        smooth out with time rewinding
+      mirrors
+        destructible
+
+    */
+
+    function Color(r=255, g=0, b=255, a=1) {
+      this.r=r;
+      this.g=g;
+      this.b=b;
+      this.a=a;
+      this.each=function(f) {
+        return new Color(f(this.r), f(this.g), f(this.b));
+      }
+      this.modify=function(amp) {
+        return this.each(function(n) {
+          var x=n+rand0(amp);
+          if (x>255) {
+            return 255;
+          }
+          else if (x<0) {
+            return 0;
+          }
+          else {
+            return x;
+          }
+        });
+      }
+      this.add=function(v) {
+        return new Color(this.r+v.r, this.g+v.g, this.b+v.b);
+      }
+      this.sub=function(v) {
+        return new Color(this.r-v.r, this.g-v.g, this.b-v.b);
+      }
+      this.mult=function(v) {
+        return new Color(this.r*v, this.g*v, this.b*v);
+      }
+      this.rgb=function() {
+        return "rgb("+this.r+","+this.g+","+this.b+")";
+      }
+    }
+    function randColor(v=255) {
+      return new Color(randInt(v), randInt(v), randInt(v));
+    }
+    if (true) {//colors used
+      var colors={
+        car1: new Color(200, 7, 25),
+        car2: new Color(170, 6, 15),
+        carWindow: new Color(40, 8, 20),
+
+        white: new Color(255, 255, 255),
+        black: new Color(0, 0, 0),
+        red: new Color(255, 0, 0),
+        green: new Color(0, 255, 0),
+        blue: new Color(0, 0, 255),
+        yellow: new Color(255, 255, 0),
+        magenta: new Color(255, 0, 255),
+        cyan: new Color(0, 255, 255),
+
+        darkRed: new Color(127, 0, 0),
+        orange: new Color(255, 127, 0),
+        gray: new Color(127, 127, 127)
+      }
+      // var colleaf=new Color(60,220,30);
+      // var colbran1=new Color(40,10,10);
+      // var colbran2=new Color(90,60,40);
+      // var colbran2=new Color(40,10,10);
+      // var colbran1=new Color(10,10,10);
+      // var colbran2=new Color(30,40,20);
+    }
+
+    function Vec2(x=0, y=0) {
+      this.x=x;
+      this.y=y;
+      this.copy=function() {
+        return new Vec2(this.x, this.y);
+      }
+      this.add=function(v1, v2) {// FIXME: doesn't always work with both values
+        if (v2) {
+          return new Vec2(this.x+v1, this.y+v2);
+        }
+        return new Vec2(this.x+v1.x, this.y+v1.y);
+      }
+      this.sub=function(v) {
+        return new Vec2(this.x-v.x, this.y-v.y);
+      }
+      this.mult=function(n) {
+        return new Vec2(this.x*n, this.y*n);
+      }
+      this.div=function(n) {
+        return new Vec2(this.x/n, this.y/n);
+      }
+      this.iHatLanding=function(v) {
+        return new Vec2(v.x*this.x-v.y*this.y, v.x*this.y+v.y*this.x);
+      }
+      this.len=function() {
+        return Math.sqrt(this.x**2+this.y**2);
+      }
+      this.dist=function(v) {
+        return Math.sqrt((this.x-v.x)**2+(this.y-v.y)**2);
+      }
+      this.sqDist=function(v) {
+        return (this.x-v.x)**2+(this.y-v.y)**2;
+      }
+      this.dir=function() {//angle to x axis in radians
+        return Math.atan2(this.y, this.x);
+      }
+      this.taxi=function() {//taxicab distance length
+        return this.x+this.y;
+      }
+      this.screen=function() {//coordinates for drawing
+        return new Vec2(this.x*HEIGHT, this.y*HEIGHT);
+      }
+    }
+    function rand0Vec2(v=1) {
+      return new Vec2(rand0(v), rand0(v));
+    }
+    function polarVec2(d, m=1) {//cartesian vector from polar coordinates
+      return new Vec2(Math.cos(d)*m, Math.sin(d)*m);
+    }
+
+    function quickVec2ScreenLine(p1, p2, width=2, color=colors.yellow) {
+      context.strokeStyle=color.rgb() || color;
+      context.lineWidth=width;
+      context.beginPath();
+      var e=p1.screen();
+      context.moveTo(e.x, e.y);
+      e=p2.screen();
+      context.lineTo(e.x, e.y);
+      context.stroke();
+    }
+    function quickVec2Line(p1, p2, width=2, color=colors.yellow) {
+      context.strokeStyle=color.rgb() || color;
+      context.lineWidth=width;
+      context.beginPath();
+      context.moveTo(p1.x, p1.y);
+      context.lineTo(p2.x, p2.y);
+      context.stroke();
+    }
+    function quickVec2ScreenSquare(p, width=4, color=colors.yellow) {
+      context.fillStyle=color.rgb() || color;
+      var e=p.screen();
+      context.fillRect(e.x-width/2, e.y-width/2, width, width);
+    }
+    function quickVec2Square(p, width=4, color=colors.yellow) {
+      context.fillStyle=color.rgb() || color;
+      context.fillRect(p.x-width/2, p.y-width/2, width, width);
+    }
+    function quickVec2ScreenCircle(p, radius=2, color=colors.yellow) {
+      context.fillStyle=color.rgb() || color;
+      var e=p.screen();
+      context.beginPath();
+      context.ellipse(e.x, e.y, radius, radius, 0, 0, TAU);
+      context.fill();
+    }
+
+    function Car(pos, color) {
+      this.pos=pos;
+      this.vel=new Vec2();
+      this.ang=rand(TAU);
+      // this.ang=0;
+      this.angVel=0;
+      this.len=0.08;
+      this.wid=0.03;
+      // this.color=color;
+      this.screen= function(i, j=0) {
+        // console.log(this);
+        return this.pos.add(polarVec2(this.ang).iHatLanding(new Vec2(i, j)));
+      }
+      this.draw=function() {
+        var unitAng=polarVec2(this.ang);
+        context.lineCap="butt";
+        // context.lineWidth=7;
+        // context.fillStyle=this.color.rgb();
+        // var curSize=10;
+        var windowWid=0.019;
+        quickVec2ScreenLine(this.screen(this.len/2), this.screen(-this.len/2), this.wid*HEIGHT, colors.car1);//car overall
+        quickVec2ScreenLine(this.screen(this.len*0.125), this.screen(-this.len*0.4), this.wid*HEIGHT*0.78, colors.car2);//car roof
+        quickVec2ScreenLine(this.screen(this.len*0.125, windowWid/2), this.screen(this.len*0.125, -windowWid/2), this.wid*HEIGHT*0.3, colors.black);//front window
+        quickVec2ScreenLine(this.screen(-this.len*0.35, windowWid/2), this.screen(-this.len*0.35, -windowWid/2), this.wid*HEIGHT*0.3, colors.black);//back window
+        // context.fillRect(e.x-curSize/2, e.y-curSize/2, curSize, curSize);
+        // quickVec2ScreenSquare(this.pos.add(polarVec2(this.ang, 0.04)));
+        quickVec2ScreenCircle(this.screen(0.04, -0.01), 2, colors.yellow);//headlights
+        quickVec2ScreenCircle(this.screen(0.04, 0.01), 2, colors.yellow);
+        quickVec2ScreenCircle(this.screen(-0.04, -0.01), 2, colors.orange);//taillights
+        quickVec2ScreenCircle(this.screen(-0.04, 0.01), 2, colors.orange);
+      }
+      this.update=function() {
+        // var maxFriction=0.4;
+        // var minFriction=0.95;
+        // var maxFriction=1;
+        // var minFriction=1;
+        var driftAng=Math.atan2(this.vel.y, this.vel.x)-this.ang;
+        // var friction=Math.cos(driftAng)**2*(minFriction-maxFriction)+maxFriction;
+        var friction=0.99;
+        this.vel=this.vel.mult(friction).add(new Vec2(0, g));
+        this.pos=this.pos.add(this.vel);
+        this.ang=(this.ang+this.angVel)%TAU;
+        this.angVel*=0.5;
+        this.checkCollisions();
+        // TODO: rewind to smooth collisions
+      }
+      this.pointInside=function(p) {
+        // var unitAng=polarVec2(this.ang);
+        var p=p.sub(this.pos)
+        var fake=polarVec2(this.ang);
+
+        // var a=this.len*unitAng.x;
+        // var b=this.len*unitAng.y;
+        // var c=-this.wid*unitAng.y;
+        // var d=this.wid*unitAng.x;
+
+        var l=this.len/2;
+        var w=this.wid/2;
+        // var l=3;
+        // var w=1;
+
+        // var a=l*fake.x;
+        // var b=-w*fake.y;
+        // var c=l*fake.y;
+        // var d=w*fake.x;
+
+        // console.table([[a, b], [c, d]]);
+        // console.log(det);
+        // var actual=[[this.wid*unitAng.x, -this.len*unitAng.y], [this.wid*unitAng.y, this.len*unitAng.x]];
+        var actual=[w*fake.x, w*fake.y, -l*fake.y, l*fake.x];//a, b, c, d
+        var det=1/(actual[3]*actual[0]-actual[1]*actual[2]);
+        // console.table(actual);
+        for (var i = 0; i < actual.length; i++) {
+          actual[i]*=det;
+        }
+        // console.table(actual);
+
+        var pTrans=new Vec2(p.x*actual[0]+p.y*actual[1], p.x*actual[2]+p.y*actual[3]);
+
+        // console.table(pTrans);
+
+        if (pTrans.x<=1 && pTrans.x>=-1 && pTrans.y<=1 && pTrans.y>=-1) {
+          return true;
+        }
+        return false;
+
+      }
+      this.checkCollisions=function() {
+        var unitAng=polarVec2(this.ang);
+        var corners=[
+          this.pos.add(unitAng.iHatLanding(new Vec2(this.len/2, this.wid/2))),
+          this.pos.add(unitAng.iHatLanding(new Vec2(this.len/2, -this.wid/2))),
+          this.pos.add(unitAng.iHatLanding(new Vec2(-this.len/2, -this.wid/2))),
+          this.pos.add(unitAng.iHatLanding(new Vec2(-this.len/2, this.wid/2))),
+        ]
+        for (var i = 0; i < corners.length; i++) {// TODO: can be better
+          if (corners[i].x<0 || corners[i].x>RATIO || corners[i].y<0 || corners[i].y>1) {
+            var hitWallAng=0;
+            if (corners[i].x<0) {
+              hitWallAng=0.75*TAU;
+            }
+            if (corners[i].x>RATIO) {
+              hitWallAng=0.25*TAU;
+            }
+            if (corners[i].y<0) {
+              hitWallAng=0;
+            }
+            if (corners[i].y>1) {
+              hitWallAng=0.5*TAU;
+            }
+            // console.log(round(this.vel.dir())+"+"+round(hitWallAng)+"="+round((this.vel.dir()+hitWallAng)%TAU));
+            // var newVelAng=this.vel.dir()-hitWallAng;
+            // var newVelAng=this.vel.dir()+hitWallAng;
+            var newVelAng=2*hitWallAng-this.vel.dir();
+            var newVel=this.vel.len();
+            this.pos=this.pos.add(polarVec2(hitWallAng+HPI, newVel));
+            this.vel=polarVec2(newVelAng, newVel*0.9);
+            // this.vel=this.vel.mult(-1);
+            // console.log("Collision!");
+            break;
+          }
+        }
+      }
+    }
+
+    // function tempFunc() {
+    //   var car=new Car(new Vec2(0.5, 0.5), colors.black);
+    //   car.ang=PI/4;
+    //   // var p=new Vec2(0.6, 0.7)
+    //   var res=car.pointInside(p, new Vec2(2, 1));// TODO: make sure it works (maybe make test file, loop through all pixels)
+    //   console.log("res: "+res);
+    // }
+    // tempFunc();
+
+    for (var i = 0; i < 25; i++) {
+      cars.push(new Car(new Vec2(randRange(0.2, 0.8), randRange(0.2, RATIO-0.2)), randColor()));
+    }
+
+
+    var moveSpeed=0.002;
+    var turnSpeed=0.05;
+    var move={
+      left: function() {
+        for (var i = 0; i < cars.length; i++) {
+          cars[i].angVel-=turnSpeed;
+        }
+      },
+      right: function() {
+        for (var i = 0; i < cars.length; i++) {
+          cars[i].angVel+=turnSpeed;
+        }
+      },
+      up: function() {
+        for (var i = 0; i < cars.length; i++) {
+          var c=cars[i];
+          c.vel=c.vel.add(new Vec2(Math.cos(c.ang)*moveSpeed, Math.sin(c.ang)*moveSpeed));
+        }
+      },
+      down: function() {
+        for (var i = 0; i < cars.length; i++) {
+          var c=cars[i];
+          c.vel=c.vel.add(new Vec2(-Math.cos(c.ang)*moveSpeed, -Math.sin(c.ang)*moveSpeed));
+        }
+      }
+
+    }
+
+    function draw() {
+      if (!paused) {
+        if (true) {//controls and physics
+          function inputMove(i, func) { //if input code i is positive, do method func of move
+            if (keys[i]) move[func]();
+          }
+          inputMove(37, "left");
+          inputMove(38, "up");
+          inputMove(39, "right");
+          inputMove(40, "down");
+
+          for (var i = 0; i < cars.length; i++) {
+            cars[i].update();
+          }
+        }
+        if (loops% frameskip <1) {//animation
+          context.clearRect(0, 0, canvas.width, HEIGHT);
+          for (var i = 0; i < cars.length; i++) {//draw each car
+            cars[i].draw();
+          }
+
+          if (false) {//draw grid with car collisions
+            var pixSize=0.006;
+            // console.log(cars[0]);
+            for (var i = 0; i < RATIO; i+=pixSize) {
+              for (var j = 0; j < 1; j+=pixSize) {
+                var p=new Vec2(i, j);
+                var anyContains=false;
+                for (var k = 0; k < cars.length; k++) {
+                  if (cars[k].pointInside(p.add(new Vec2(pixSize/2, pixSize/2)))) {
+                    anyContains=true;
+                    break;
+                  }
+                }
+                // anyContains ? context.fillStyle=colors.blue.rgb() : context.fillStyle=colors.gray.rgb();
+                anyContains ? context.fillStyle="rgba(0,0,150,0.4)" : context.fillStyle="rgba(150,150,150,0.4)";
+                var e=p.screen();
+                var w=Math.round(pixSize*HEIGHT);
+                context.fillRect(Math.round(e.x), Math.round(e.y), w, w);
+              }
+            }
+          }
+        }
+        loops++;
+        window.requestAnimationFrame(draw);
+      }
+    }
+
+
+    function restart() {
+      loops=0;
+    }
+    function resize() {
+      canvas.width=window.innerWidth;
+      HEIGHT=canvas.height=window.innerHeight;
+      RATIO=canvas.width/canvas.height;
+      restart();
+    }
+    resize();
+    draw();
+
+    // canvas.addEventListener("mousemove",function(){
+    //   // lastx=event.clientX;
+    //   // lasty=event.clientY;
+    //   var n=1;
+    //   lastx=(event.clientX+lastx*n)/(n+1);
+    //   lasty=(event.clientY+lasty*n)/(n+1);
+    // });
+    window.addEventListener("dblclick",function(){location.reload();});
+    window.addEventListener("keyup",function(){
+      var curKey=event.keyCode;
+      keys[curKey]=false;
+      // console.log(keys);
+    });
+    window.addEventListener("keydown",function(){
+      var curKey=event.keyCode;
+      keys[curKey]=true;
+      // console.log(keys);
+      // console.log(curKey);
+      switch (curKey) {
+        case 32://space
+          paused=!paused;
+          console.log(paused?"Paused":"Unpaused");
+          draw();
+          break;
+        // case 37://left
+        //   move.left();
+        //   break;
+      }
+    });
+    // window.addEventListener("resize",function(){resize();})
+  </script>
+</body>
+</html>

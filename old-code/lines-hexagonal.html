@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>lines</title>
+  <style media="screen">
+    body{
+      /* background-color: rgb(10,50,40); */
+      background-color: white;
+      color: rgb(200, 200, 200);
+      font-size: 40px;
+      overflow: hidden;
+      font-size: 300%;
+    }
+    canvas{
+      position: absolute;
+      left: 0;
+      top: 0;
+      outline: 2px dashed navy;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="300" height="300"></canvas>
+  <script type="text/javascript">
+    "use strict";
+    function rand(max=1) {
+      return Math.random()*max;
+    }
+    function rand0(max=1) {
+      return (Math.random()-0.5)*max;
+    }
+    function randInt(max=2) {
+      return Math.floor(Math.random()*max);
+    }
+    function randProb(p=0.5) {
+      return p>Math.random();
+    }
+    function randRange(a, b) {
+      return Math.random()*(b-a)+a;
+    }
+    function clamp(num, val=1) {//num to clamp, special value
+      return 1+(val/(num+val));
+    }
+    function collerp(x, n1, n2) {
+      return n2.sub(n1).mult(x).add(n1);
+    }
+    function cutoff(x, min, max) {
+      if (min && x<min) {
+        return min;
+      }
+      if (max && x>max) {
+        return max;
+      }
+      return x;
+    }
+    function mod(v, m) {
+      return (v%m+m)%m;
+    }
+    function round(num, p=2) {
+      return Math.round((num + Number.EPSILON) * 10**p) / 10**p;
+    }
+
+    var canvas=document.getElementById("canvas");
+    var context=canvas.getContext("2d");
+    var TAU=2*Math.PI;
+    var PI=Math.PI;
+    var HPI=Math.PI/2;
+    var loops=0;
+    var k=0;
+    // var lastx=window.innerWidth/2;
+    var paused=false;
+    var frameskip=30;
+    var lineAngleShift=0;
+    // var lineAngleShift=HPI*3;
+    var dotNum=6006;
+    var tableMult=1;
+    // var tableMultInc= 0.01 ;
+    var tableMultInc= 6 ;
+    // var shapeFraction= 0.48 ;
+    var shapeFraction= 4 ;
+    var shapeSize=100;
+    
+    
+
+
+    function Color(r=255, g=0, b=255, a=1) {
+      this.r=r;
+      this.g=g;
+      this.b=b;
+      this.a=a;
+      this.each=function(f) {
+        return new Color(f(this.r), f(this.g), f(this.b));
+      }
+      this.modify=function(amp) {
+        return this.each(function(n) {
+          var x=n+rand0(amp);
+          if (x>255) {
+            return 255;
+          }
+          else if (x<0) {
+            return 0;
+          }
+          else {
+            return x;
+          }
+        });
+      }
+      this.add=function(v) {
+        return new Color(this.r+v.r, this.g+v.g, this.b+v.b);
+      }
+      this.sub=function(v) {
+        return new Color(this.r-v.r, this.g-v.g, this.b-v.b);
+      }
+      this.mult=function(v) {
+        return new Color(this.r*v, this.g*v, this.b*v);
+      }
+      this.rgb=function() {
+        return "rgb("+this.r+","+this.g+","+this.b+")";
+      }
+    }
+    function randColor(v=255) {
+      return new Color(randInt(v), randInt(v), randInt(v));
+    }
+
+    function Vec2(x=0, y=0) {
+      this.x=x;
+      this.y=y;
+      this.copy=function() {
+        return new Vec2(this.x, this.y);
+      }
+      this.add=function(v) {
+        return new Vec2(this.x+v.x, this.y+v.y);
+      }
+      this.sub=function(v) {
+        return new Vec2(this.x-v.x, this.y-v.y);
+      }
+      this.mult=function(n) {
+        return new Vec2(this.x*n, this.y*n);
+      }
+      this.div=function(n) {
+        return new Vec2(this.x/n, this.y/n);
+      }
+      this.avg=function(v) {
+        return new Vec2((this.x+v.x)/2, (this.y+v.y)/2);
+      }
+      this.dir=function() {
+        return Math.atan2(this.y, this.x);
+      }
+      this.len=function() {
+        return Math.sqrt(this.x**2+this.y**2);
+      }
+      this.total=function() {
+        return this.x+this.y;
+      }
+      this.screen=function() {
+        return new Vec2((this.x+1)*canvas.width/2, (1-this.y)*canvas.height);
+      }
+    }
+    function rand0Vec2(v=1) {
+      return new Vec2(rand0(v), rand0(v));
+    }
+    function polarVec2(d, m=1) {//cartesian vector from polar coordinates
+      return new Vec2(Math.cos(d)*m, Math.sin(d)*m);
+    }
+
+    var pointCoords={//functions to get coordinates on screen from point number
+      screenCircle: function(p, angle=0) {
+        return {
+          x: canvas.width/2+canvas.height*shapeFraction*Math.cos(TAU*p/dotNum+angle),
+          y: canvas.height/2+canvas.height*shapeFraction*Math.sin(TAU*p/dotNum+angle)
+        }
+      },
+      line: function (i, p1, p2, i1=0, i2=dotNum) {
+        return p2.sub(p1).mult(i/(i2-i1)).add(p1);
+      },
+      screenSquare: function (i) {
+        i=i%dotNum;
+        var corners=[
+          new Vec2(canvas.width/2-shapeSize, canvas.height/2-shapeSize),
+          new Vec2(canvas.width/2-shapeSize, canvas.height/2+shapeSize),
+          new Vec2(canvas.width/2+shapeSize, canvas.height/2+shapeSize),
+          new Vec2(canvas.width/2+shapeSize, canvas.height/2-shapeSize)
+        ]
+        var side=dotNum/4;
+        if (i<side) {
+          return pointCoords.line(i, corners[0], corners[1], 0, side);
+        }
+        else if (i<2*side) {
+          return pointCoords.line(i-side, corners[1], corners[2], 0, side);
+        }
+        else if (i<3*side) {
+          return pointCoords.line(i-2*side, corners[2], corners[3], 0, side);
+        }
+        else {
+          return pointCoords.line(i-3*side, corners[3], corners[0], 0, side);
+        }
+      }
+    }
+    function drawPointFunction(i1, i2, pf1, pf2=pf1) {
+      context.beginPath();
+      var e=pf1(i1, lineAngleShift);
+      context.moveTo(e.x, e.y);
+      var e=pf2(i2, lineAngleShift);
+      context.lineTo(e.x, e.y);
+      context.stroke();
+    }
+    function timeInc() {
+      tableMult+=tableMultInc;
+      // dotNum+=0.05;
+      // dotNum*=1.01;
+    }
+    function timeDec() {
+      tableMult-=tableMultInc;
+      // dotNum-=0.05;
+      // dotNum/=1.1;
+    }
+
+    function loop() {
+      if (!paused) {
+        if (loops% frameskip <1) {
+          draw();
+          timeInc();
+        }
+        loops=(loops+1)%frameskip;
+        window.requestAnimationFrame(loop);
+      }
+    }
+    function draw() {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        context.lineCap="round";
+        // context.fillStyle="rgba(30, 80, 200, 0.3)";
+        if (false) {//draw circle
+          context.strokeStyle="rgba(250,250,250,0.5)";
+          context.lineWidth=2;
+          context.beginPath();
+          context.arc(canvas.width/2, canvas.height/2, canvas.height*shapeFraction, 0, TAU);
+          // context.fill();
+          context.stroke();
+        }
+
+        context.strokeStyle="rgba(250,50,50,1)";//red
+        context.strokeStyle="blue";//blue
+        context.lineWidth=1;
+        for (var i = 0; i < dotNum; i++) {
+          // drawPointFunction(i, i*tableMult, pointCoords.screenSquare);
+          drawPointFunction(i, i*tableMult, pointCoords.screenCircle);
+        }
+
+        // context.fillStyle="rgba(200, 80, 200, 1)";
+        // context.font = "30px Comic Sans MS";
+        // context.fillText(round(tableMult, 4), 10, 40);
+        // context.fillText(round(dotNum, 4), 10, 80);
+    }
+
+
+    function restart() {
+      loops=0;
+    }
+    function resize() {
+      canvas.width=window.innerWidth;
+      canvas.height=window.innerHeight;
+      context.lineJoin="round";
+      context.lineCap="round";
+      shapeSize=shapeFraction*canvas.height;
+      restart();
+    }
+    resize();
+    loop();
+    // canvas.addEventListener("mousemove",function(){
+    //   // lastx=event.clientX;
+    //   // lasty=event.clientY;
+    //   var n=1;
+    //   lastx=(event.clientX+lastx*n)/(n+1);
+    //   lasty=(event.clientY+lasty*n)/(n+1);
+    // });
+    // window.addEventListener("click",function(){
+    //   // mid=new Vec2(event.clientX, event.clientY);
+    // });
+    window.addEventListener("dblclick",function(){location.reload();});
+    window.addEventListener("keyup",function(){
+      k=0;
+    });
+    window.addEventListener("keydown",function(){
+      k=event.keyCode;
+      // console.log(k);
+      switch (k) {
+        case 32://space
+          paused=!paused;
+          console.log(paused?"Paused":"Unpaused");
+          if (!paused) loop();
+          break;
+        case 37://left
+          timeDec();
+          paused=true;
+          // loops=0;
+          draw();
+          break;
+        case 39://right
+          timeInc();
+          paused=true;
+          // loops=0;
+          draw();
+          break;
+      }
+    });
+    // window.addEventListener("resize",function(){resize();})
+  </script>
+</body>
+</html>

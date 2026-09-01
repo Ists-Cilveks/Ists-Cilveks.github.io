@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Raycasting</title>
+    <style media="screen">
+      body{
+        background-color: rgb(20,20,20);
+        color: rgb(200, 200, 200);
+        font-size: 40px;
+        overflow: hidden;
+        font-size: 300%;
+      }
+      canvas{
+        position: absolute;
+        left: 0;
+        top: 0;
+        outline: 2px dashed navy;
+        z-index: 1;
+      }
+      .panel{
+        position:absolute;
+        background-color: rgba(150,0,0,1);
+        z-index: 2;
+        width: 2vmin;
+        height: 6vmin;
+        display: none;
+      }
+      #p1{
+        left: 1vmin;
+        top: 1vmin;
+      }
+      #p2{
+        left: 5vmin;
+        top: 1vmin;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="300" height="300"></canvas>
+    <div class="panel" id="p1"></div><div class="panel" id="p2"></div>
+    <script type="text/javascript">
+      "use strict";
+
+      function classels(classname) {//get all HTML elements with given class name
+        var a = [];
+        var re = new RegExp('(^| )'+classname+'( |$)');
+        var els = document.body.getElementsByTagName("*");
+        for (var i=0, j=els.length; i<j; i++)
+          if(re.test(els[i].className))a.push(els[i]);
+        return a;
+      }
+      function rand(max=1) {//random number in range [0, max)
+        return Math.random()*max;
+      }
+      function randInt(max=2) {//random integer in range [0, max)
+        return Math.floor(Math.random()*max);
+      }
+      function rand0(n=1) {//random number in range (-n, n)
+        return (Math.random()*2-1)*n;
+      }
+      function randProb(p=0.5) {//bool with probability p of being true
+        return p>Math.random();
+      }
+      function randRange(a, b) {//random number in range [a, b)
+        return Math.random()*(b-a)+a;
+      }
+      function clamp(num, val) {//number to clamp in range [0, inf), special value, return range [0, 1)
+        return 1+(val/(num+val));
+      }
+      function colorLerp(x, n1, n2) {//lerp for objects (originally colors)
+        return n2.sub(n1).mult(x).add(n1);
+      }
+      function dot(a, b) {//dot product of two arrays
+        var res=0;
+        for (var i = 0; i < a.length; i++) {
+          res+=a[i]*b[i];
+        }
+        return res;
+      }
+      function atan4(x1, y1, x2, y2) {//get the angle of the x-axis and the line made by two points 1 and 2
+        return Math.atan2(y2-y1, x2-x1);
+      }
+      function modify(obj, prop, val) {//return obj with the property obj[prop] changed to val (shorthand for single line actions)
+        obj[prop]=val;
+        return obj;
+      }
+      function round(v, p=2) {//return v rounded to p decimal places
+        return Math.round(v*10**p+Number.EPSILON)/10**p;
+      }
+      function roughEquals(v1, v2, prec=0.01) {
+        return Math.abs(v2-v1)<prec;
+      }
+      function arrayContains(arr, val) {
+        for (var i = 0; i < arr.length; i++) {
+          if (arr[i]==val) return true;
+        }
+        return false;
+      }
+      function map(v, a1, a2, b1, b2) {//input: v in range [a1, a2], output: range [b1, b2];
+        return (v-a1)/(a2-a1)*(b2-b1)+b1;
+      }
+      // function bucketedTableLog(arr, bSize, minBucket=0) {//supposed to be a console.table command returning values of arr split into groups of size bSize
+      //   var raw=[];
+      //   for (var i = 0; i < arr.length; i++) {
+      //     // var curB=(i%bSize+bSize)%bSize;
+      //     var curB=Math.floor(i/bSize)-minBucket;
+      //     // console.log(curB);
+      //     raw[curB]=raw[curB]+1||1;
+      //
+      //   }
+      //   var res=[];
+      //   for (var i = 0; i < raw.length; i++) {
+      //     res.push([round((i+minBucket)*bSize), raw[i]||0])
+      //   }
+      //   console.table(res);
+      // }
+      //
+      // var asdf=[]
+      // for (var i = 0; i < 20; i++) {
+      //   asdf[i]=randRange(-20, 50);
+      // }
+      // console.log(asdf);
+      //
+      // bucketedTableLog(asdf, 1, -20);
+
+      /*// TODO:
+        check to-do's
+        add drawing of
+          polgons
+          cylinders (lines)
+          spheres
+        more and better textures
+        proper light transport
+          transparent objects with refractive index
+          follow light rays more than the first object
+          actual rangle
+        orientation helper while dragging
+      */
+
+      var canvas=document.getElementById("canvas");//html canvas element
+        var context=canvas.getContext("2d");//drawing context of canvas
+        var loops=0;//how many rays have been shot since last clear() call
+        var TAU=Math.PI*2;//math constant declaration (shorthand)
+          var PI=Math.PI;
+          var HPI=Math.PI/2;
+          var PHI=Math.sqrt(5)/2+0.5;
+          var PHIBAR=1/(Math.sqrt(5)/2+0.5);
+        var raysPerFrame=80;//how many rays to shoot out at each update() call
+        var pixsize=16;//how many actual pixels across each "pixel" making up the image is
+
+        if (true) {//boring empty declarations
+          var camAng=0; var camVertAng=0; //direction the middle of the virtual camera, in spherical coordinates
+          var preDragAng=0; var preDragVertAng=0; //like camAng and camVertAng but saved at the start of a drag
+
+          var usew=10; var useh=10;//how many "pixels" wide and tall is the screen
+          var keys=[];//which keys are currently being pressed ( keys[keyID]= true or false )
+          var arr=[];//pixel information (2d array, each element is an array [r, g, b, weight])
+          var things=[];//list of objects getting drawn
+
+          var paused=false;
+          var layering=false;//do or don't go over the same pixels multiple times to get supersampling
+
+          var lastMouse=new Vec2();//mouse position in pixels last time it was moved
+          var mousePressed=0;//which mouse button was pressed last time it was moved
+          var mouseDragging=false;//is mouse currently dragging
+          var mouseDragStart=new Vec2();//where the drag began
+
+          var colPass=new Color();
+          var colRes=new Color();
+
+          var updateNum=0;//update() calls while not paused
+        }
+
+        var minColorCast=0.005;//minimum color value to render, stop if all colors are less than it
+        // var colors=32;
+        // var fogBase=0.96;
+        var fogBase=1;
+        var globalLightDirection=new Vec3(-0.2, -0.5, -1).unit();
+
+        // var sphereRadius=PHIBAR-0.01;
+        // var sphereRadius=PHI;
+        // var edgeWidth=0.1;
+        // var startpos=new Vec3(0, 0, 0);
+        var startpos=new Vec3(-10.5, 0, 0);
+        // var startpos=new Vec3(-30, 0, 0);
+
+        if (true) {//calculations about real life sizes (assuming square pixels) */
+          var interocularDistance=7;//irl distance between eyes (cm)
+          var eyesToMonitor=60;//irl distance from eyes to monitor (cm)
+          // var eyesToMonitor=120;//irl distance from eyes to monitor (cm)
+          var monitorWidth=34.15;//irl monitor width (cm)
+          var monitorPixelWidth=screen.width;
+          var monitorPixelHeight=screen.height;
+          var monitorHeight=monitorWidth*monitorPixelHeight/monitorPixelWidth;
+        }
+
+      function Color(r, g, b) {
+        if (g!=undefined) {//all colors defined, set as those
+          this.r=r;
+          this.g=g;
+          this.b=b;
+        }
+        else {//one color defined, set to that gray
+          this.r=r;
+          this.g=r;
+          this.b=r;
+        }
+        this.each=function(f) {
+          return new Color(f(this.r), f(this.g), f(this.b));
+        }
+        this.mult=function (c) {
+          if (typeof c=="number") {
+            return new Color(this.r*c, this.g*c, this.b*c);
+          }
+          else {
+            return new Color(this.r*c.r, this.g*c.g, this.b*c.b);
+          }
+        }
+        this.div=function(v) {
+          return new Color(this.r/v, this.g/v, this.b/v);
+        }
+        this.add=function(v) {
+          if (typeof v=="number") {
+            return new Color(this.r+v, this.g+v, this.b+v);
+          }
+          else {
+            return new Color(this.r+v.r, this.g+v.g, this.b+v.b);
+          }
+        }
+        this.sub=function(v) {
+          if (typeof v=="number") {
+            return new Color(this.r-v, this.g-v, this.b-v);
+          }
+          else {
+            return new Color(this.r-v.r, this.g-v.g, this.b-v.b);
+          }
+        }
+        this.lighten=function(v) {
+          return new Color(v*(256-this.r)+this.r, v*(256-this.g)+this.g, v*(256-this.b)+this.b);
+        }
+        this.lerp=function(x, c) {
+          return c.sub(this).mult(x).add(this);
+        }
+        this.modify=function(amp) {
+          return this.each(function(n) {
+            var x=n+rand0(amp);
+            if (x>255) {
+              return 255;
+            }
+            else if (x<0) {
+              return 0;
+            }
+            else {
+              return x;
+            }
+          });
+        }
+        this.rgb=function() {
+          return "rgb("+this.r+","+this.g+","+this.b+")";
+        }
+        this.log=function() {
+          return "r: "+round(this.r)+",  g: "+round(this.g)+",  b: "+round(this.b);
+        }
+      }
+      function colorFromHSL(h, s, l) {
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        var p = 2 * l - q;
+        function hue2rgb(t){
+          if (t < 0) t += 1;
+          else if (t > 1) t -= 1;
+          if (t < 1/6) return p + (q - p) * 6 * t;
+          if (t < 1/2) return q;
+          if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+          return p;
+        }
+        return new Color(hue2rgb(h + 1/3), hue2rgb(h), hue2rgb(h - 1/3));
+      }
+      var colors={
+        mist: new Color(110, 130, 210),
+        sky: new Color(50, 150, 210),
+        darkBrown: new Color(40, 17, 2),
+        lightBrown: new Color(200, 160, 60),
+        granite: new Color(200, 140, 130),
+        // sand: new Color(200, 170, 120),
+
+        white: new Color(255, 255, 255),
+        black: new Color(0, 0, 0),
+        red: new Color(255, 0, 0),
+        green: new Color(0, 255, 0),
+        blue: new Color(0, 0, 255),
+        yellow: new Color(255, 255, 0),
+        magenta: new Color(255, 0, 255),
+        cyan: new Color(0, 255, 255),
+
+        darkRed: new Color(127, 0, 0),
+        orange: new Color(255, 127, 0),
+        gray: new Color(127, 127, 127),
+        slate: new Color(50, 67, 127)
+        // brown: new Color(64, 32, 0)
+      }
+      function Vec2(x=0, y=0) {
+        this.x=x;
+        this.y=y;
+        this.copy=function() {
+          return new Vec2(this.x, this.y);
+        }
+        this.add=function(v) {
+          return new Vec2(this.x+v.x, this.y+v.y);
+        }
+        this.sub=function(v) {
+          return new Vec2(this.x-v.x, this.y-v.y);
+        }
+        this.mult=function(n) {
+          return new Vec2(this.x*n, this.y*n);
+        }
+        this.draw=function(col="rgb(155, 255, 10)", size=3) {
+          if (typeof col=="string") {
+            context.fillStyle=col;
+          }
+          else if (typeof col=="object") {
+            context.fillStyle=col.rgb();
+          }
+          context.fillRect(this.x, this.y, size, size);
+        }
+      }
+      function Vec3(x=0, y=0, z=0) {
+        if (typeof x=="number") {
+          this.x=x;
+          this.y=y;
+          this.z=z;
+        }
+        else {
+          this.x=x[0];
+          this.y=x[1];
+          this.z=x[2];
+        }
+        this.copy=function() {
+          return new Vec3(this.x, this.y, this.z);
+        }
+        this.neg=function() {
+          return new Vec3(-this.x, -this.y, -this.z);
+        }
+        this.sub=function(v) {
+          return new Vec3(this.x-v.x, this.y-v.y, this.z-v.z);
+        }
+        this.add=function(v) {
+          return new Vec3(this.x+v.x, this.y+v.y, this.z+v.z);
+        }
+        this.mult=function(sc) {
+          return new Vec3(this.x*sc, this.y*sc, this.z*sc);
+        }
+        this.len=function() {
+          return Math.sqrt(this.x**2+this.y**2+this.z**2);
+        }
+        this.unit=function(sc) {
+          var len=this.len();
+          return new Vec3(this.x/len, this.y/len, this.z/len);
+        }
+        this.div=function(sc) {
+          return new Vec3(this.x/sc, this.y/sc, this.z/sc);
+        }
+        this.cross=function(v) {
+          return new Vec3(this.y*v.z-this.z*v.y, -(this.x*v.z-this.z*v.x), this.x*v.y-this.y*v.x);
+        }
+        this.dot=function(v) {
+          return this.x*v.x+this.y*v.y+this.z*v.z;
+        }
+        this.dist=function(v) {
+          return Math.sqrt((this.x-v.x)**2+(this.y-v.y)**2+(this.z-v.z)**2);
+        }
+        this.rotateY=function(a) {
+          return new Vec3(this.z*Math.sin(a)+this.x*Math.cos(a), this.y, this.z*Math.cos(a)-this.x*Math.sin(a));
+        }
+        this.rotateZ=function(a) {
+          return new Vec3(this.x*Math.cos(a)-this.y*Math.sin(a), this.x*Math.sin(a)+this.y*Math.cos(a), this.z);
+        }
+        this.randNudge=function(a) {
+          return new Vec3(this.x+rand0(a), this.y+rand0(a), this.z+rand0(a));
+        }
+      }
+      function sphericalToVec3(hor, ver, mag=1) {
+        return new Vec3(Math.cos(ver)*Math.cos(hor)*mag, Math.cos(ver)*Math.sin(hor)*mag, Math.sin(ver)*mag);
+      }
+      function Material(color, light, gloss=0) {
+        if (true) {//defining this.color
+          if (typeof color=="number") {
+            this.color=new Color(color, color, color);
+          }
+          else if (Array.isArray(color)) {
+            this.color=new Color(color[0], color[1], color[2]);
+          }
+          else {
+            this.color=color;
+          }
+        }
+        if (true) {//defining this.light
+          if (light==undefined) {
+            this.light=new Color(this.color.r, this.color.g, this.color.b);
+          }
+          else if (typeof light=="number") {
+            this.light=new Color(light, light, light);
+          }
+          else if (Array.isArray(light)) {
+            this.light=new Color(light[0], light[1], light[2]);
+          }
+          else {
+            this.light=light;
+          }
+        }
+        this.gloss=gloss;
+        // this.hit=function() {
+        //   colRes=colRes.add(colPass.mult(this.light));
+        //   colPass=colPass.mult(this.color);
+        //   if (this.rang) {
+        //     rangle();
+        //   }
+        // }
+      }
+      var m={//list of materials
+        wall: new Material([0.7, 0.1, 0.5], 0),
+        sun: new Material(0, 0.9),
+        floor: new Material([0.1, 0.7, 0.5], 0),
+        // mirror: new Material([0.1, 0.7, 0.5], 0.1, 0.9),
+        // mirror: new Material([0.7, 0.9, 0.8], 0, 0.8),
+        mirror: new Material(0.8, 0, 0.86),
+        collumn: new Material([0.05, 0.85, 0.95]),
+        white: new Material(0.95, 0),
+        black: new Material(0, 0),
+        fire: new Material([0.9, 0.7, 0.2]),
+        green: new Material([0.1, 0.95, 0.2], 0),
+        lamp: new Material(0.9)
+      }
+      function Thing(type, material, p0, p1, p2, texP0, texIHat, texJHat, texSeed, texType) {// TODO: maybe remove texP0?
+        this.type=typeof type=="string" ? [type] : type;
+        this.material=material;
+        this.p0=p0;
+        this.p1=p1;
+        this.p2=p2;
+        this.texP0=texP0 || p0;
+        this.texIHat=texIHat || p1.sub(p0).unit();
+        this.texJHat=texJHat || this.texIHat.cross(p2.sub(p0)).cross(this.texIHat).unit();
+        this.texSeed=texSeed || rand(100);
+        this.normal=p1.sub(p0).cross(p2.sub(p0)).unit();
+        if (this.normal.dot(this.p0)<0) this.normal=this.normal.neg();//face away from the origin
+        this.shift=function(v) {
+          this.p0=this.p0.add(v);
+          this.p1=this.p1.add(v);
+          this.p2=this.p2.add(v);
+          this.texP0=this.texP0.add(v);
+        }
+        this.texType=texType || "strongGranite";
+      }
+
+      resize();
+
+      if (true) {//shape definition
+        var d20Points=[
+          [PHI, 1, 0],
+          [PHI, -1, 0],
+          [-PHI, 1, 0],
+          [-PHI, -1, 0],
+          [1, 0, PHI],
+          [-1, 0, PHI],
+          [1, 0, -PHI],
+          [-1, 0, -PHI],
+          [0, PHI, 1],
+          [0, PHI, -1],
+          [0, -PHI, 1],
+          [0, -PHI, -1]
+        ]
+        var d12Points=[
+          [PHI, PHIBAR, 0],//0
+          [PHI, -PHIBAR, 0],
+          [-PHI, PHIBAR, 0],
+          [-PHI, -PHIBAR, 0],
+          [PHIBAR, 0, PHI],//4
+          [-PHIBAR, 0, PHI],
+          [PHIBAR, 0, -PHI],
+          [-PHIBAR, 0, -PHI],
+          [0, PHI, PHIBAR],//8
+          [0, PHI, -PHIBAR],
+          [0, -PHI, PHIBAR],
+          [0, -PHI, -PHIBAR],
+          [1, 1, 1],//12
+          [1, 1, -1],
+          [1, -1, 1],
+          [1, -1, -1],
+          [-1, 1, 1],//16
+          [-1, 1, -1],
+          [-1, -1, 1],
+          [-1, -1, -1]
+        ]
+        var icoDodPoints=[
+          [1/2, PHI/2, PHI**2/2],//0
+          [1/2, PHI/2, -(PHI**2)/2],
+          [1/2, -PHI/2, PHI**2/2],
+          [1/2, -PHI/2, -(PHI**2)/2],
+          [-1/2, PHI/2, PHI**2/2],
+          [-1/2, PHI/2, -(PHI**2)/2],
+          [-1/2, -PHI/2, PHI**2/2],
+          [-1/2, -PHI/2, -(PHI**2)/2],
+          [PHI**2/2, 1/2, PHI/2],//8
+          [-(PHI**2)/2, 1/2, PHI/2],
+          [PHI**2/2, 1/2, -PHI/2],
+          [-(PHI**2)/2, 1/2, -PHI/2],
+          [PHI**2/2, -1/2, PHI/2],
+          [-(PHI**2)/2, -1/2, PHI/2],
+          [PHI**2/2, -1/2, -PHI/2],
+          [-(PHI**2)/2, -1/2, -PHI/2],
+          [PHI/2, PHI**2/2, 1/2],//16
+          [PHI/2, -(PHI**2)/2, 1/2],
+          [-PHI/2, PHI**2/2, 1/2],
+          [-PHI/2, -(PHI**2)/2, 1/2],
+          [PHI/2, PHI**2/2, -1/2],
+          [PHI/2, -(PHI**2)/2, -1/2],
+          [-PHI/2, PHI**2/2, -1/2],
+          [-PHI/2, -(PHI**2)/2, -1/2],
+          [0, 0, PHI],//24
+          [0, 0, -PHI],
+          [0, PHI, 0],
+          [0, -PHI, 0],
+          [PHI, 0, 0],
+          [-PHI, 0, 0]
+        ]
+        var rhombicTriacontahedronPoints=[];
+        for (var i = 0; i < d20Points.length; i++) {
+          // d20Points[i]=new Vec3(d20Points[i]);
+          d20Points[i]=new Vec3(d20Points[i][1], d20Points[i][0], d20Points[i][2]);//flip diagonally along x=y
+        }
+        for (var i = 0; i < d12Points.length; i++) {
+          d12Points[i]=new Vec3(d12Points[i]);
+          // d12Points[i]=new Vec3(d12Points[i]).mult(1.004);// TODO: // FIXME:  not working, edge length search breaks
+          // d12Points[i]=new Vec3(d12Points[i]).randNudge(0.001);
+        }
+        for (var i = 0; i < icoDodPoints.length; i++) {
+          icoDodPoints[i]=new Vec3(icoDodPoints[i]);
+        }
+        if (true) {//rhombicTriacontahedronPoints definition
+          for (var i = 0; i < d20Points.length; i++) {
+            // rhombicTriacontahedronPoints.push(d20Points[i].unit())
+            rhombicTriacontahedronPoints.push(d20Points[i])
+          }
+          for (var i = 0; i < d12Points.length; i++) {
+            // rhombicTriacontahedronPoints.push(d12Points[i].unit())
+            rhombicTriacontahedronPoints.push(d12Points[i])
+          }
+        }
+
+        // TODO: (not here specifically) reject working with NaN points
+
+        function getEdges(arr, len) {//find edges with length len between all pairs of points in arr
+          var edges=[];
+          for (var i = 0; i < arr.length-1; i++) {
+            for (var j = i+1; j < arr.length; j++) {
+              // console.log(arr[i].dist(arr[j]));
+              if (roughEquals(arr[i].dist(arr[j]), len)) edges.push([i, j]);
+            }
+          }
+          return edges;
+        }
+        function convexHull(points) {//returns an array of polygons (as an array of vertice IDs) comprising the convex hull of the inputted array of points
+          var edgeSearchPoints=points;
+
+          for (var i = 0; i < edgeSearchPoints.length-2; i++) {//make planes of points
+            for (var j = i+1; j < edgeSearchPoints.length-1; j++) {
+              for (var k = j+1; k < edgeSearchPoints.length; k++) {
+                if (true) {//if all 3 current points are already in a previously looked at plane, go to the next 3 points
+                  var curPlaneDone=false;
+                  for (var pl = 0; pl < planes.length; pl++) {
+                    if (arrayContains(planes[pl], i) && arrayContains(planes[pl], j) && arrayContains(planes[pl], k)) {
+                      curPlaneDone=true;
+                      break;
+                    }
+                  }
+                  if (curPlaneDone) {
+                    continue;
+                  }
+                }
+                var dotPositive=undefined;
+                var outerPlane=true;
+                var curPlane=[i, j, k];
+                var curNormal=edgeSearchPoints[j].sub(edgeSearchPoints[i]).cross(edgeSearchPoints[k].sub(edgeSearchPoints[i])).unit();
+
+                for (var cp = 0; cp < edgeSearchPoints.length; cp++) {//go through all points other than the original 3 to see if they're all on the same side or coplanar
+                  var curDist=curNormal.dot(edgeSearchPoints[cp].sub(edgeSearchPoints[i]));
+                  // console.log(edgeSearchPoints[i].dist(edgeSearchPoints[j]));
+                  if (!arrayContains([i, j, k], cp)) {
+                    if (roughEquals(curDist, 0)) {//plane adds point roughly on it
+                      curPlane.push(cp);
+                    }
+                    else if (dotPositive==undefined) {//the direction of no points has been calculated, save which direction this point is
+                      dotPositive=curDist>0;
+                      // curPlane.push(cp);
+                      // if (randProb(0.01)) {
+                      //   console.log(dotPositive);
+                      // }
+                    }
+                    else if (dotPositive!=curDist>0) {//if the direction of the current point isn't the same as the others, this plane isn't on the outside
+                      outerPlane=false;
+                      // console.log("dotPositive different");
+                      break;
+                    }
+                  }
+                }
+
+                if (outerPlane) {
+                  planes.push(curPlane)
+                }
+              }
+            }
+          }
+
+          // for (var i = 0; i < planes.length; i++) {//make triangles from planes if all the edges are in the edges array
+          //   var curEdges=[];
+          //   for (var j = 0; j < edges.length; j++) {
+          //     if (arrayContains(planes[i], edges[j][0]) && arrayContains(planes[i], edges[j][1])) curEdges.push(edges[j]);
+          //   }
+          //   if (curEdges.length>=3) {// TODO: // FIXME: also check for connectivity
+          //     // console.log(i, curEdges.length);
+          //     // triangles.push([planes[i][0], planes[i][1], planes[i][2]])
+          //     if (true) {//make triangles where 3 edges connect
+          //       // function nwThng(a, b, c) {
+          //       //   // things.push(["tri", new Material([rand(), rand(), rand()]), pRect[a], pRect[b], pRect[c]])
+          //       //   // things.push(new Thing("tri", new Material([rand(), rand(), rand()]), d12Points[a], d12Points[b], d12Points[c]))
+          //       //   triangles.push([a, b, c]);
+          //       //   // things.push(new Thing("tri", new Material([rand(), rand(), rand()]), d20Points[a], d20Points[b], d20Points[c]))
+          //       //   // things.push(["hs", m.mirror, pRect[a], pRect[b], pRect[c]])
+          //       // }
+          //
+          //       for (var e1 = 0; e1 < curEdges.length-2; e1++) {
+          //         for (var e2 = e1+1; e2 < curEdges.length-1; e2++) {
+          //           var needVertices=[];
+          //           if (curEdges[e2][0]==curEdges[e1][0] || curEdges[e2][1]==curEdges[e1][0]) {
+          //             needVertices.push(curEdges[e1][1])
+          //           }
+          //           else if (curEdges[e2][0]==curEdges[e1][1] || curEdges[e2][1]==curEdges[e1][1]) {
+          //             needVertices.push(curEdges[e1][0])
+          //           }
+          //           if (curEdges[e2][0]==curEdges[e1][0] || curEdges[e2][0]==curEdges[e1][1]) {
+          //             needVertices.push(curEdges[e2][1])
+          //           }
+          //           else if (curEdges[e2][1]==curEdges[e1][0] || curEdges[e2][1]==curEdges[e1][1]) {
+          //             needVertices.push(curEdges[e2][0])
+          //           }
+          //           if (needVertices.length==2) {
+          //             for (var e3 = e2+1; e3 < curEdges.length; e3++) {
+          //               if ((curEdges[e3][0]==needVertices[0] && curEdges[e3][1]==needVertices[1]) || (curEdges[e3][0]==needVertices[1] && curEdges[e3][1]==needVertices[0])) {
+          //                 triangles.push([curEdges[e1][0], curEdges[e1][1], needVertices[1]]);
+          //               }
+          //             }
+          //           }
+          //         }
+          //       }
+          //     }
+          //   }
+          // }
+
+          for (var i = 0; i < planes.length; i++) {
+            var plane=planes[i];
+            // TODO: first get rid of interior points
+            var asdfgh=[];
+            var records=[Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity]; //min x, max x, min y, max y, min z, max z
+            for (var j = 0; j < plane.length; j++) {//set records
+              if (edgeSearchPoints[plane[j]].x < records[0]) records[0]=edgeSearchPoints[plane[j]].x
+              if (edgeSearchPoints[plane[j]].x > records[1]) records[1]=edgeSearchPoints[plane[j]].x
+              if (edgeSearchPoints[plane[j]].y < records[2]) records[2]=edgeSearchPoints[plane[j]].y
+              if (edgeSearchPoints[plane[j]].y > records[3]) records[3]=edgeSearchPoints[plane[j]].y
+              if (edgeSearchPoints[plane[j]].z < records[4]) records[4]=edgeSearchPoints[plane[j]].z
+              if (edgeSearchPoints[plane[j]].z > records[5]) records[5]=edgeSearchPoints[plane[j]].z
+            }
+            var amplitudes=[records[1]-records[0], records[3]-records[2], records[5]-records[4]];
+            var dimensions=["x", "y"];
+            if (amplitudes[0]<amplitudes[1] && amplitudes[0]<amplitudes[2]) dimensions=["y", "z"];
+            else if (amplitudes[1]<amplitudes[0] && amplitudes[1]<amplitudes[2]) dimensions=["x", "z"];
+            var center=new Vec3();//average of all points
+            // TODO: replace asdfgh with plane
+            for (var j = 0; j < plane.length; j++) {
+              center=center.add(edgeSearchPoints[plane[j]]);
+            }
+            center=center.div(plane.length)
+            for (var j = 0; j < plane.length; j++) {
+              // var p01=edgeSearchPoints[plane[0]].sub(edgeSearchPoints[plane[1]]);//originally outside of for loop
+              // var p02=edgeSearchPoints[plane[0]].sub(edgeSearchPoints[plane[2]]);
+
+              var curP=center.sub(edgeSearchPoints[plane[j]]);
+              // var u=curP.dot(p01);
+              // var v=curP.dot(p02);
+              // asdfgh.push([Math.atan2(v, u), plane[j]])
+              // asdfgh.push([Math.atan2(edgeSearchPoints[plane[j]].y, edgeSearchPoints[plane[j]].x), plane[j]])
+              // asdfgh.push([Math.atan2(edgeSearchPoints[plane[j]][dimensions[0]], edgeSearchPoints[plane[j]][dimensions[1]]), plane[j]])
+              asdfgh.push([Math.atan2(curP[dimensions[0]], curP[dimensions[1]]), plane[j]])
+            }
+            // if (i<=5) {// TODO: // TEMP:
+            //   console.log("##################################");
+            //   console.log(i, planes[i]);
+            //   console.log(amplitudes, dimensions);
+            //   console.log(asdfgh);
+            // }
+            asdfgh.sort(function(a, b) {
+              return a[0]-b[0];
+            })
+            for (var j = 0; j < asdfgh.length; j++) {
+              plane[j]=asdfgh[j][1];
+            }
+          }
+          return planes;
+        }
+        function thingsFromPlanes(planes, edgeSearchPoints, offset, matFun) {
+          for (var i = 0; i < planes.length; i++) {
+            var plane=planes[i];
+
+
+            var matFun=matFun || function(plane) {
+              if (plane.length==5) {//pentagons have dark unchanging material
+                // var curMaterial=new Material(new Color(0.8, 0, 0.2).modify(0.2));
+                this.material=new Material(new Color(0.07, 0.07, 0.07));
+                this.texType="weakGranite";
+                // this.texType="solidColor";
+              }
+              else {//triangles have bright material
+                this.material=new Material(new Color(0, 0.9, 0.7).modify(0.3));
+                this.texType="strongGranite";
+              }
+            }
+
+            var texture=new matFun(plane)
+
+
+            // var curMaterial=new Material(colorFromHSL(rand(), 1, 0.5));
+            var texP0=edgeSearchPoints[plane[0]];
+            var texIHat=edgeSearchPoints[plane[1]].sub(texP0).unit();
+            var texJHat=texIHat.cross(edgeSearchPoints[plane[2]].sub(texP0)).cross(texIHat).unit();
+            var texSeed=rand(100);
+
+            // for (var j = 2; j < planes[i].length; j++) {//make triangles from correctly ordered planes
+            //   triangles.push([planes[i][0], planes[i][j-1], planes[i][j]]);
+            // }
+            for (var j = 2; j < planes[i].length; j++) {//make triangles from correctly ordered planes
+              // triangles.push([planes[i][0], planes[i][j-1], planes[i][j]]);
+              // console.log(i, curMaterial.color);
+              // var curMaterial=new Material(new Color(1));
+              // var curShapeOffset=new Vec3(1.2, -1.1, -0.4);
+              // var curShapeOffset=new Vec3(0, 0, 0);
+              // console.log(edgeSearchPoints.length);
+              things.push(new Thing(
+                "tri",
+                // curMaterial,
+                texture.material,
+                edgeSearchPoints[plane[0]].mult(scaleMult),
+                edgeSearchPoints[plane[j-1]].mult(scaleMult),
+                edgeSearchPoints[plane[j]].mult(scaleMult),
+                texP0,
+                texIHat,
+                texJHat,
+                texSeed,
+                // curTexType
+                texture.texType
+              ))
+              things[things.length-1].shift(offset);
+            }
+          }
+        }
+        function randomRotate(arr) {//rotate all points in arr the same random way
+          var rotY=rand0(1.5);
+          var rotZ=rand0(1.5);
+          for (var i = 0; i < arr.length; i++) {
+            arr[i]=arr[i].rotateY(rotY).rotateZ(rotZ);
+          }
+        }
+
+        if (true) {//10 tet definition
+          randomRotate(d12Points);
+          var scaleMult=0.6;
+          var edges=[];
+          var triangles=[];
+          var planes=[];
+
+          var edgeSearchPoints=d12Points;// TODO: dodecahedron, not icoDod
+          var edgeLength=Math.sqrt(8);
+
+          for (var i = 0; i < edgeSearchPoints.length-2; i++) {//make all planes of points
+            for (var j = i+1; j < edgeSearchPoints.length-1; j++) {
+              for (var k = j+1; k < edgeSearchPoints.length; k++) {
+                if (true) {//if all 3 current points are already in a previously looked at plane, go to the next 3 points
+                  var curPlaneDone=false;
+                  for (var pl = 0; pl < planes.length; pl++) {
+                    if (arrayContains(planes[pl], i) && arrayContains(planes[pl], j) && arrayContains(planes[pl], k)) {
+                      curPlaneDone=true;
+                      break;
+                    }
+                  }
+                  if (curPlaneDone) {
+                    continue;
+                  }
+                }
+                var curPlane=[i, j, k];
+                var curNormal=edgeSearchPoints[j].sub(edgeSearchPoints[i]).cross(edgeSearchPoints[k].sub(edgeSearchPoints[i])).unit();
+
+                for (var cp = k+1; cp < edgeSearchPoints.length; cp++) {
+                  var curDist=curNormal.dot(edgeSearchPoints[cp].sub(edgeSearchPoints[i]));
+                  // console.log(edgeSearchPoints[i].dist(edgeSearchPoints[j]));
+                  if (roughEquals(curDist, 0)) curPlane.push(cp);
+                }
+                planes.push(curPlane)
+              }
+            }
+          }
+
+          edges=getEdges(edgeSearchPoints, edgeLength);
+
+          for (var i = 0; i < planes.length; i++) {//look for triangles formed by edges in the edges array
+            var curEdges=[];//all edges contained in the current plane
+            for (var j = 0; j < edges.length; j++) {
+              if (arrayContains(planes[i], edges[j][0]) && arrayContains(planes[i], edges[j][1])) curEdges.push(edges[j]);
+            }
+
+            if (curEdges.length>=3) {//if the current edges are able to make a triangle// TODO: // FIXME: also check for connectivity (too bad)
+              if (true) {//make triangles where 3 edges connect
+                for (var e1 = 0; e1 < curEdges.length-2; e1++) {
+                  for (var e2 = e1+1; e2 < curEdges.length-1; e2++) {
+                    var needVertices=[];
+                    if (curEdges[e2][0]==curEdges[e1][0] || curEdges[e2][1]==curEdges[e1][0]) {
+                      needVertices.push(curEdges[e1][1])
+                    }
+                    else if (curEdges[e2][0]==curEdges[e1][1] || curEdges[e2][1]==curEdges[e1][1]) {
+                      needVertices.push(curEdges[e1][0])
+                    }
+                    if (curEdges[e2][0]==curEdges[e1][0] || curEdges[e2][0]==curEdges[e1][1]) {
+                      needVertices.push(curEdges[e2][1])
+                    }
+                    else if (curEdges[e2][1]==curEdges[e1][0] || curEdges[e2][1]==curEdges[e1][1]) {
+                      needVertices.push(curEdges[e2][0])
+                    }
+                    if (needVertices.length==2) {
+                      for (var e3 = e2+1; e3 < curEdges.length; e3++) {
+                        if ((curEdges[e3][0]==needVertices[0] && curEdges[e3][1]==needVertices[1]) || (curEdges[e3][0]==needVertices[1] && curEdges[e3][1]==needVertices[0])) {
+                          triangles.push([curEdges[e1][0], curEdges[e1][1], needVertices[1]]);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          for (var i = 0; i < triangles.length; i++) {//make triangles   into Things
+            // var curMaterial=new Material(colorFromHSL(rand(), 1, 0.5));
+            var curMaterial=new Material(new Color(1));
+            var curShapeOffset=new Vec3(-0.1, -0.2, 0.9);
+            // var curShapeOffset=new Vec3();
+            things.push(new Thing(
+              "tri",
+              curMaterial,
+              edgeSearchPoints[triangles[i][0]].mult(scaleMult),
+              edgeSearchPoints[triangles[i][1]].mult(scaleMult),
+              edgeSearchPoints[triangles[i][2]].mult(scaleMult)
+            ))
+            things[things.length-1].shift(curShapeOffset);
+          }
+        }
+
+        if (true) {//icosidodecahedron definition
+          randomRotate(icoDodPoints);
+          var scaleMult=0.6;
+
+          // var edges=[];
+          var triangles=[];
+          var planes=[];
+
+          var edgeSearchPoints=icoDodPoints;
+
+          planes=convexHull(edgeSearchPoints);
+
+          thingsFromPlanes(planes, edgeSearchPoints, new Vec3(1.2, -1.1, -0.4));
+
+          // for (var i = 0; i < planes.length; i++) {
+          //   var plane=planes[i];
+          //
+          //   if (plane.length==5) {//pentagons have dark unchanging material
+          //     // var curMaterial=new Material(new Color(0.8, 0, 0.2).modify(0.2));
+          //     var curMaterial=new Material(new Color(0.07, 0.07, 0.07));
+          //     var curTexType="weakGranite";
+          //     // var curTexType="solidColor";
+          //   }
+          //   else {//triangles have bright material
+          //     var curMaterial=new Material(new Color(0, 0.9, 0.7).modify(0.3));
+          //     var curTexType="strongGranite";
+          //   }
+          //   // var curMaterial=new Material(colorFromHSL(rand(), 1, 0.5));
+          //   var texP0=edgeSearchPoints[plane[0]];
+          //   var texIHat=edgeSearchPoints[plane[1]].sub(texP0).unit();
+          //   var texJHat=texIHat.cross(edgeSearchPoints[plane[2]].sub(texP0)).cross(texIHat).unit();
+          //   var texSeed=rand(100);
+          //
+          //   // for (var j = 2; j < planes[i].length; j++) {//make triangles from correctly ordered planes
+          //   //   triangles.push([planes[i][0], planes[i][j-1], planes[i][j]]);
+          //   // }
+          //   for (var j = 2; j < planes[i].length; j++) {//make triangles from correctly ordered planes
+          //     // triangles.push([planes[i][0], planes[i][j-1], planes[i][j]]);
+          //     // console.log(i, curMaterial.color);
+          //     // var curMaterial=new Material(new Color(1));
+          //     var curShapeOffset=new Vec3(1.2, -1.1, -0.4);
+          //     // var curShapeOffset=new Vec3(0, 0, 0);
+          //     things.push(new Thing(
+          //       "tri",
+          //       curMaterial,
+          //       edgeSearchPoints[plane[0]].mult(scaleMult),
+          //       edgeSearchPoints[plane[j-1]].mult(scaleMult),
+          //       edgeSearchPoints[plane[j]].mult(scaleMult),
+          //       texP0,
+          //       texIHat,
+          //       texJHat,
+          //       texSeed,
+          //       curTexType
+          //     ))
+          //     things[things.length-1].shift(curShapeOffset);
+          //   }
+          // }
+
+          // for (var i = 0; i < triangles.length; i++) {//make triangles into Things without finding higher shapes
+          //   var curMaterial=new Material(colorFromHSL(rand(), 1, 0.5));
+          //   // console.log(i, curMaterial.color);
+          //   // var curMaterial=new Material(new Color(1));
+          //   // var curShapeOffset=new Vec3(0, 0, 0.9);
+          //   var curShapeOffset=new Vec3(0, 0, 0);
+          //   things.push(new Thing(
+          //     "tri",
+          //     curMaterial,
+          //     edgeSearchPoints[triangles[i][0]].mult(scaleMult).add(curShapeOffset),
+          //     edgeSearchPoints[triangles[i][1]].mult(scaleMult).add(curShapeOffset),
+          //     edgeSearchPoints[triangles[i][2]].mult(scaleMult).add(curShapeOffset))
+          //   )
+          // }
+
+
+          // for (var i = 0; i < icoDodPoints.length; i++) {//draw all points on screen in orthographic projection
+          //   // var curPoint=icoDodPoints[i].rotateY(0.5).rotateZ(0.9).mult(100);
+          //   // var curPoint=icoDodPoints[i].rotateY(0.1).rotateZ(HPI).mult(100);
+          //   var curPoint=icoDodPoints[i].rotateZ(HPI).rotateY(0.1).mult(100).add(new Vec3(canvas.height/2, canvas.height/2, canvas.height/2));
+          //   // context.fillStyle="rgba(255, 0, 255, 0.8)";
+          //   // context.fillStyle="rgba("+(curPoint.z*0.6+120)+", 0, 50, 0.8)";
+          //   context.fillStyle="hsl("+(curPoint.z/3)+", 100%, 50%)";
+          //   context.fillRect(curPoint.x, curPoint.y, 4, 4);
+          //   context.font = "15px Arial";
+          //   context.fillText(i, curPoint.x, curPoint.y);
+          // }
+        }
+
+        if (true) {//rhombic triacontahedron definition
+          randomRotate(rhombicTriacontahedronPoints);
+          var scaleMult=0.3;
+
+          var triangles=[]; var planes=[];
+
+          var edgeSearchPoints=rhombicTriacontahedronPoints;
+
+          planes=convexHull(edgeSearchPoints);
+
+          thingsFromPlanes(
+            planes, edgeSearchPoints, new Vec3(1.5, 0.9, 0.5),
+            function (plane) {
+              this.material=new Material(new Color(0.9, 0, 0.05));
+              this.texType="weakGranite";
+            }
+          );
+
+          // for (var i = 0; i < planes.length; i++) {
+          //   var plane=planes[i];
+          //
+          //   // var curMaterial=new Material(colorFromHSL(rand(), 1, 0.5));
+          //   // var curMaterial=new Material(colors.white.div(255));
+          //   var curMaterial=new Material(new Color(0.8, 0, 0.05));
+          //   var texP0=edgeSearchPoints[plane[0]];
+          //   var texIHat=edgeSearchPoints[plane[1]].sub(texP0).unit();
+          //   var texJHat=texIHat.cross(edgeSearchPoints[plane[2]].sub(texP0)).cross(texIHat).unit();
+          //   var texSeed=rand(100);
+          //   var curTexType="weakGranite";
+          //
+          //   for (var j = 2; j < planes[i].length; j++) {//make Things (triangles) from correctly ordered planes
+          //     var curShapeOffset=new Vec3(1.5, 0.9, 0.5);
+          //     things.push(new Thing(
+          //       "tri",
+          //       curMaterial,
+          //       edgeSearchPoints[plane[0]].mult(scaleMult),
+          //       edgeSearchPoints[plane[j-1]].mult(scaleMult),
+          //       edgeSearchPoints[plane[j]].mult(scaleMult),
+          //       texP0,
+          //       texIHat,
+          //       texJHat,
+          //       texSeed,
+          //       curTexType
+          //     ))
+          //     things[things.length-1].shift(curShapeOffset);
+          //   }
+          // }
+        }
+
+        if (true) {//dodecahedron definition
+          randomRotate(d12Points);
+          var scaleMult=0.24;
+          var triangles=[]; var planes=[];
+
+          var edgeSearchPoints=d12Points;
+          planes=convexHull(edgeSearchPoints);
+
+          thingsFromPlanes(
+            planes, edgeSearchPoints, new Vec3(1.1, 0.7, -0.3),
+            function (plane) {
+              this.material=new Material(new Color(0, 0.15, 0.7));
+              this.texType="weakGranite";
+            }
+          );
+        }
+
+        if (true) {//5 tet definition
+          randomRotate(d12Points);
+          var scaleMult=0.5;
+
+          var edges=[];
+          var triangles=[];
+          var tetrahedra=[];
+
+          var edgeSearchPoints=d12Points;
+          var edgeLength=2.82;
+
+          edges=getEdges(edgeSearchPoints, edgeLength);
+
+          if (true) {//find triangles where 3 edges connect
+            function nwThng(a, b, c) {
+              // things.push(["tri", new Material([rand(), rand(), rand()]), pRect[a], pRect[b], pRect[c]])
+              // things.push(new Thing("tri", new Material([rand(), rand(), rand()]), d12Points[a], d12Points[b], d12Points[c]))
+              triangles.push([a, b, c]);
+              // things.push(new Thing("tri", new Material([rand(), rand(), rand()]), d20Points[a], d20Points[b], d20Points[c]))
+              // things.push(["hs", m.mirror, pRect[a], pRect[b], pRect[c]])
+            }
+
+            for (var i = 0; i < edges.length-2; i++) {
+              for (var j = i+1; j < edges.length-1; j++) {
+                var needVertices=[];
+                if (edges[j][0]==edges[i][0] || edges[j][1]==edges[i][0]) {
+                  needVertices.push(edges[i][1])
+                }
+                else if (edges[j][0]==edges[i][1] || edges[j][1]==edges[i][1]) {
+                  needVertices.push(edges[i][0])
+                }
+                if (edges[j][0]==edges[i][0] || edges[j][0]==edges[i][1]) {
+                  needVertices.push(edges[j][1])
+                }
+                else if (edges[j][1]==edges[i][0] || edges[j][1]==edges[i][1]) {
+                  needVertices.push(edges[j][0])
+                }
+                if (needVertices.length==2) {
+                  for (var k = j+1; k < edges.length; k++) {
+                    if ((edges[k][0]==needVertices[0] && edges[k][1]==needVertices[1]) || (edges[k][0]==needVertices[1] && edges[k][1]==needVertices[0])) {
+                      nwThng(edges[i][0], edges[i][1], needVertices[1]);
+                    }
+                  }
+                }
+              }
+            }
+
+            // nwThng(0, 1, 4);
+            // nwThng(0, 1, 6);
+            // nwThng(2, 3, 5);
+            // nwThng(2, 3, 7);
+            // nwThng(4, 5, 8);
+            // nwThng(4, 5, 10);
+            // nwThng(6, 7, 9);
+            // nwThng(6, 7, 11);
+            // nwThng(8, 9, 0);
+            // nwThng(8, 9, 2);
+            // nwThng(10, 11, 1);
+            // nwThng(10, 11, 3);
+            //
+            // nwThng(0, 4, 8);
+            // nwThng(0, 6, 9);
+            // nwThng(1, 4, 10);
+            // nwThng(1, 6, 11);
+            // nwThng(2, 5, 8);
+            // nwThng(2, 7, 9);
+            // nwThng(3, 5, 10);
+            // nwThng(3, 7, 11);
+          }
+
+          if (true) {//find tetrahedra where 4 triangles connect
+            function triContains(t, v) {
+              return t[0]==v || t[1]==v || t[2]==v;
+            }
+            function triMeet(a, b) {
+              a=triangles[a]; b=triangles[b];
+              var containNum=0;
+              if (triContains(a, b[0])) {
+                containNum++;
+              }
+              if (triContains(a, b[1])) {
+                containNum++;
+              }
+              if (triContains(a, b[2])) {
+                containNum++;
+              }
+              return containNum>=2;
+            }
+            for (var i = 0; i < triangles.length-3; i++) {
+              for (var j = i+1; j < triangles.length-2; j++) {
+                if (triMeet(i, j)) {
+                  for (var k = j+1; k < triangles.length-1; k++) {
+                    if (triMeet(i, k) && triMeet(j, k)) {
+                      for (var l = k+1; l < triangles.length; l++) {
+                        if (triMeet(i, l) && triMeet(j, l) && triMeet(k, l)) {
+                          tetrahedra.push([i, j, k, l]);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          for (var i = 0; i < tetrahedra.length; i++) {//make each face of each tetrahedron into a Thing
+            if (arrayContains([0, 3, 5, 6, 9], i)) {
+              // if (arrayContains([1, 2, 4, 7, 8], i)) {
+              // if (true) {
+              var curTet=tetrahedra[i];
+              // var curMaterial=new Material([rand(), rand(), rand()]);
+              // var curMaterial=new Material(colorFromHSL(rand(), 1, 0.5));
+              // var curMaterial=new Material(colorFromHSL(rand(), 1, 0.5));
+              // var curHue=i/12;
+              var curHue=0.9;
+              switch (i) {
+                case 0:
+                curHue=0;
+                break;
+                case 3:
+                curHue=0.08;
+                break;
+                case 5:
+                curHue=0.55;
+                break;
+                case 6:
+                curHue=0.26;
+                break;
+                case 9:
+                curHue=0.17;
+                break;
+              }
+              var curMaterial=new Material(colorFromHSL(curHue, 1, 0.5));
+              for (var j = 0; j < curTet.length; j++) {
+                var curTri=curTet[j];
+                var curShapeOffset=new Vec3(0, 0, -0.9);
+                things.push(new Thing(
+                  ["tri", "cutOutTri"],
+                  curMaterial,
+                  edgeSearchPoints[triangles[curTri][0]].mult(scaleMult),
+                  edgeSearchPoints[triangles[curTri][1]].mult(scaleMult),
+                  edgeSearchPoints[triangles[curTri][2]].mult(scaleMult)
+                ))
+                things[things.length-1].shift(curShapeOffset);
+              }
+            }
+          }
+        }
+      }
+      if (true) {//noise functions
+        var getSmoothWeightedAverage= function(x, v1=0, v2=1) {//interpolation with smootherStep
+          return x * x * x * (x * (x * 6 - 15) + 10)*(v2-v1)+v1;
+        }
+
+        var getWeightedSquareAverage= function(x, y, v1, v2, v3, v4) {//smooth interpolation of square vertices
+          return getSmoothWeightedAverage(y, getSmoothWeightedAverage(x, v1, v2), getSmoothWeightedAverage(x, v3, v4));
+        }
+        var getWeightedCubeAverage= function(x, y, z, v) {//smooth interpolation of square vertices
+          return getSmoothWeightedAverage(z,
+            getSmoothWeightedAverage(y, getSmoothWeightedAverage(x, v[0], v[1]), getSmoothWeightedAverage(x, v[2], v[3])),
+            getSmoothWeightedAverage(y, getSmoothWeightedAverage(x, v[4], v[5]), getSmoothWeightedAverage(x, v[6], v[7]))
+          );
+        }
+
+        var getNoise= function(i, j, seed=0) {//perlin noise (with particular 2d PRNG)
+          var fi=Math.floor(i);
+          var fj=Math.floor(j);
+          var reli=i-fi;
+          var relj=j-fj;
+          function getCurrentDot(iOff, jOff) {
+            var ang=((fi+iOff)*2+((fj+jOff+seed)*(seed+1))**2)**2;
+            return Math.cos(ang)*(reli-iOff)+Math.sin(ang)*(relj-jOff);
+          }
+          return getWeightedSquareAverage(reli, relj, getCurrentDot(0, 0), getCurrentDot(1, 0), getCurrentDot(0, 1), getCurrentDot(1, 1))*0.8591+0.5;// TODO: values appear to be out of range
+        }
+        var getNoise3d= function(i, j, k, seed=0) {//perlin noise (with particular 3d PRNG) // TODO:
+          var fi=Math.floor(i);
+          var fj=Math.floor(j);
+          var fk=Math.floor(k);
+          var reli=i-fi;
+          var relj=j-fj;
+          var relk=k-fk;
+          function getCurrentDot(iOff, jOff, kOff) {
+            var h=((fi+iOff+2)*11+(fj+jOff+seed)*TAU+(fk+kOff+31)*(seed+1)*13)**2*5+1;
+            var v=((fi+iOff+7)*23+(fj+jOff+9)*PHI*29+(fk+kOff+seed+14)*(seed+2)*3)**2*Math.E+1;
+            var dotWith=sphericalToVec3(h, v);
+            return dotWith.x*(reli-iOff)+dotWith.y*(relj-jOff)+dotWith.z*(relk-kOff);
+          }
+          return getWeightedCubeAverage(
+            reli, relj, relk,
+            [getCurrentDot(0, 0, 0), getCurrentDot(1, 0, 0), getCurrentDot(0, 1, 0), getCurrentDot(1, 1, 0), getCurrentDot(0, 0, 1), getCurrentDot(1, 0, 1), getCurrentDot(0, 1, 1), getCurrentDot(1, 1, 1)]
+          )*0.8591+0.5;// TODO: different range
+        }
+
+        var getGranite= function(i, j, seed, color) {//get color of granite texture from UV coordinates
+          var seed=seed || 0;
+
+          var granite2Color=color || new Color(200, 140, 130);
+          // var granite1Color=new Color(granite2Color.r/1.12, granite2Color.g/1.08, granite2Color.b/1.63);
+          var granite1Color=new Color(granite2Color.r/1.254, granite2Color.g/1.166, granite2Color.b/2.657);
+
+          var multipliers=[0.028, 0.0442, 0.043, 0.029, 0.12, 0.074, 0.2, 0.09, 0.05, 0.1242, 0.073, 0.028];
+
+          var noises=[];
+          for (var m = 0; m < multipliers.length; m++) {
+            noises[m]=getNoise(i*multipliers[m], j*multipliers[m], seed+m);
+          }
+
+          var c=new Color();
+          var v1=(noises[0]+noises[1]*2+noises[9]/2)/3.5;
+          // var th1=0.4;
+          // if (v1>0.4) {
+            c=colorLerp(noises[2], granite1Color, granite2Color);
+            // if (noises[4]>0.8/* && noises[3]>0.8*/)c=c.lighten(1/2);
+            if (noises[4]>0.7/* && noises[3]>0.8*/)c=c.lighten((noises[4]-0.7)*1.5);
+            if (noises[5]>0.7/* && noises[3]>0.8*/)c=c.lighten((noises[5]-0.7)*1);
+            if (noises[11]>0.5/* && noises[3]>0.8*/)c=c.lighten((noises[11]-0.5)*1);
+          // }
+          // else if (v1) {
+          //
+          // }
+          // else {
+          if (v1<0.5) {
+            // c=colors.gray;
+            var c1=colorLerp((noises[6]+noises[7])/3, new Color(127, 127, 127), new Color(255, 255, 255));
+            c1=c1.mult(noises[8]/2+0.5);
+            // c1=c1.mult((noises[8]+noises[10])/3+0.1);
+            c=colorLerp((v1/0.5)**2, c1, c);
+          }
+          // c=colorLerp(getNoise(i*0.02, j*0.02, globSeed), colors.black, colors.white);
+
+          return c;
+        }
+        var getGranite3d= function(i, j, k, seed, color) {//get color of granite texture from XYZ coordinates
+          var seed=seed || 0;
+
+          var granite2Color=color || new Color(200, 140, 130);
+          // var granite1Color=new Color(granite2Color.r/1.12, granite2Color.g/1.08, granite2Color.b/1.63);
+          var granite1Color=new Color(granite2Color.r/1.254, granite2Color.g/1.166, granite2Color.b/2.657);
+
+          var multipliers=[0.028, 0.0442, 0.043, 0.029, 0.12, 0.074, 0.2, 0.09, 0.05, 0.1242, 0.073, 0.028];
+
+          var noises=[];
+          for (var m = 0; m < multipliers.length; m++) {
+            noises[m]=getNoise3d(i*multipliers[m], j*multipliers[m], k*multipliers[m], seed+m);
+          }
+
+          var c=new Color();
+          var v1=(noises[0]+noises[1]*2+noises[9]/2)/3.5;
+          // var th1=0.4;
+          // if (v1>0.4) {
+            c=colorLerp(noises[2], granite1Color, granite2Color);
+            // if (noises[4]>0.8/* && noises[3]>0.8*/)c=c.lighten(1/2);
+            if (noises[4]>0.7/* && noises[3]>0.8*/)c=c.lighten((noises[4]-0.7)*1.5);
+            if (noises[5]>0.7/* && noises[3]>0.8*/)c=c.lighten((noises[5]-0.7)*1);
+            if (noises[11]>0.5/* && noises[3]>0.8*/)c=c.lighten((noises[11]-0.5)*1);
+          // }
+          // else if (v1) {
+          //
+          // }
+          // else {
+          if (v1<0.5) {
+            // c=colors.gray;
+            var c1=colorLerp((noises[6]+noises[7])/3, new Color(127, 127, 127), new Color(255, 255, 255));
+            c1=c1.mult(noises[8]/2+0.5);
+            // c1=c1.mult((noises[8]+noises[10])/3+0.1);
+            c=colorLerp((v1/0.5)**2, c1, c);
+          }
+          // c=colorLerp(getNoise(i*0.02, j*0.02, globSeed), colors.black, colors.white);
+
+          return c;
+        }
+      }
+
+      function draw() {//draw all of the pixels (they get drawn during rendering)
+        for (var i = 0; i < usew; i++) {
+          for (var j = 0; j < useh; j++) {
+            var e=arr[i][j];
+            context.fillStyle="rgb("+e[0]/e[3]*256+","+e[1]/e[3]*256+","+e[2]/e[3]*256+")";
+            context.fillRect(i*pixsize,j*pixsize,pixsize,pixsize);
+          }
+        }
+      }
+      function update() {
+        if (!paused) {
+          if (true) {//controls
+            if (true) {//keyboard controls
+              if(keys[87]){//w - forward
+                startpos.x+=Math.cos(camAng)*0.03;
+                startpos.y+=Math.sin(camAng)*0.03;
+                clear();
+              }
+              if(keys[65]){//a - left
+                startpos.x+=Math.sin(camAng)*0.03;
+                startpos.y-=Math.cos(camAng)*0.03;
+                clear();
+              }
+              if(keys[83]){//s - back
+                startpos.x-=Math.cos(camAng)*0.03;
+                startpos.y-=Math.sin(camAng)*0.03;
+                clear();
+              }
+              if(keys[68]){//d - right
+                startpos.x-=Math.sin(camAng)*0.03;
+                startpos.y+=Math.cos(camAng)*0.03;
+                clear();
+              }
+              if(keys[219]){//[ - down
+                startpos.z-=0.03;
+                clear();
+              }
+              if(keys[221]){//] - up
+                startpos.z+=0.03;
+                clear();
+              }
+              // if(keys[221]){//] - up
+              //   startpos.z+=0.01;
+              //   clear();
+              // }
+            }
+            if (true) {//mouse controls
+              if (mousePressed==1) {//is dragging
+                if (!mouseDragging) {//begin drag
+                  mouseDragging=true;
+                  mouseDragStart=lastMouse;
+                  preDragAng=camAng;
+                  preDragVertAng=camVertAng;
+                }
+                camAng=((preDragAng-(lastMouse.x-mouseDragStart.x)/canvas.width*3)+TAU)%TAU;
+                camVertAng=preDragVertAng+(lastMouse.y-mouseDragStart.y)/canvas.height*2;
+                if (camVertAng>HPI) camVertAng=HPI;
+                else if (camVertAng<-HPI) camVertAng=-HPI;
+                clear();
+                // lastMouse.draw("rgb(255, 0, 30)", 6);
+              }
+              else {//isn't dragging
+                if (mouseDragging) {//end drag
+                  mouseDragging=false;
+                }
+                // lastMouse.draw();
+              }
+              // if (mouseDragging) {
+              //   // context.fillStyle="rgba("+rand(255)+","+rand(255)+","+rand(255)+", 0.2)";
+              //   // var curRectSizes=lastMouse.sub(mouseDragStart);
+              //   // context.fillRect(mouseDragStart.x, mouseDragStart.y, curRectSizes.x, curRectSizes.y);
+              // }
+            }
+          }
+
+      		for(var n=0; n<raysPerFrame; n++){//calculate ray paths
+            if (!layering) {//stop calculations if layering is disabled
+              if (loops>useh*usew) {
+                break;
+              }
+            }
+
+            colPass=new Color(1);//how much emitted light gets from current position to camera (lessen this during path)
+            colRes=new Color(0);//what light is sensed (add to this during path)
+            var collisionNum=0;//how many objects have been collided with
+
+            // TODO: instead of commenting and uncommenting, randomness depends on layering
+            // i=loops%usew+Math.random();
+            // j=(Math.floor(loops/usew))%useh+Math.random();
+            var i=loops%usew;
+            var j=(Math.floor(loops/usew))%useh;
+
+            var screenRealWidth=monitorWidth*canvas.width/monitorPixelWidth;
+            var screenRealHeight=screenRealWidth*canvas.height/canvas.width;
+
+            /* One image */
+            // var ray=startpos.copy();
+            // var step=new Vec3(
+            //   eyesToMonitor,
+            //   map(i, 0, usew, -screenRealWidth/2, screenRealWidth/2),
+            //   ((j+1)/useh-0.5)*screenRealHeight
+            // ).unit().rotateY(camVertAng).rotateZ(camAng);
+
+            /* Stereo image pair */
+            var step=new Vec3(
+              eyesToMonitor,//x is constant
+              map(i, 0, usew, -screenRealWidth/2, screenRealWidth/2)+interocularDistance/2*(i<usew/2 ? 1 : -1),//y is complicated, splits screen
+              ((j+1)/useh-0.5)*screenRealHeight//z similar to y but same on both halves
+            ).unit().rotateY(camVertAng).rotateZ(camAng);
+            if (i<usew/2) {//cross eye images
+            // if (!(i<usew/2)) {//parralel eye images
+              var ray=startpos.add(new Vec3(0, interocularDistance/2, 0).unit().rotateY(camVertAng).rotateZ(camAng));
+            }
+            else {
+              var ray=startpos.add(new Vec3(0, -interocularDistance/2, 0).unit().rotateY(camVertAng).rotateZ(camAng));
+            }
+
+            /* Unrealistic view */
+            // // var anghor=TAU*(i+0.5)/usew+camang+PI;
+            // var anghor=TAU*(i+0.5)/usew+PI;
+            // var angver=PI*(j+0.5)/useh-PI/2;
+            // var step=new Vec3(
+            //   Math.cos(anghor)*Math.cos(angver),
+            //   Math.sin(anghor)*Math.cos(angver),
+            //   Math.sin(angver)
+            // )
+            // // var ray=startpos.copy();
+            // var ray=new Vec3();
+
+
+      			while(!(colPass.r<minColorCast && colPass.g<minColorCast && colPass.b<minColorCast) && collisionNum<50){//calculate one ray if we aren't stuck in a massive loop
+              var minDist=Infinity; var minObj=undefined; var minInd=undefined; //starting "records" easy to beat
+              for (var th = 0; th < things.length; th++) {//find closest object that gets hit
+                var p0=things[th].p0.copy(); var p1=things[th].p1.copy(); var p2=things[th].p2.copy();
+                var p01=p1.sub(p0); var p02=p2.sub(p0);
+                var la=ray.copy(); var labNeg=step.neg();
+
+                var dotWith=la.sub(p0).div(labNeg.dot(p01.cross(p02)));
+
+                var t=p01.cross(p02).dot(dotWith);
+
+                function attemptRecord() {
+                  if (t>0.00001 && t<minDist) {//object is in correct direction and is the closest yet
+                    minDist=t;
+                    minObj=things[th];
+                    minInd=th;
+                  }
+                }
+
+                var thingType=things[th].type;
+                if (arrayContains(thingType, "tri")) {
+                  var u=p02.cross(labNeg).dot(dotWith);
+                  var v=labNeg.cross(p01).dot(dotWith);
+                  var edgeWidth=0.093;
+                  if (u>=0 && v>=0 && u+v<=1) {//object is in correct direction and is the closest yet
+                  // if (u>=0 && v>=0 && u+v<=1 && !(u>=edgeWidth && v>=edgeWidth && u+v<=1-edgeWidth) && t>0.00001 && t<minDist) {//object is in correct direction (including hole) and is the closest yet
+                    if (!arrayContains(thingType, "cutOutTri") || !(u>=edgeWidth && v>=edgeWidth && u+v<=1-edgeWidth)) {
+                      attemptRecord();
+                    }
+                  }
+                }
+                else if (arrayContains(thingType, "hs")) {
+                  attemptRecord();
+                }
+              }
+
+              if (minObj!=undefined) {//a collision happened, do light calculations
+                colPass=colPass.mult(fogBase**minDist);//fogging
+                if (true) {//linear algebra surface calculations
+                  var p0=minObj.p0.copy(); var p1=minObj.p1.copy(); var p2=minObj.p2.copy();//each point defining the surface
+                  // var p01=p1.sub(p0); var p02=p2.sub(p0);
+                  // var p01=p1.sub(p0).unit(); var p02=p01.cross(p2.sub(p0)).cross(p01).unit();
+                  var p01=minObj.texIHat; var p02=minObj.texJHat;
+                  var la=ray.copy(); var labNeg=step.neg();
+                  // var norm=p01.cross(p02).unit();
+
+                  var dotWith=la.sub(p0).div(labNeg.dot(p01.cross(p02)));
+                  // var t=p01.cross(p02).dot(dotWith);
+                  var u=p02.cross(labNeg).dot(dotWith);
+                  var v=labNeg.cross(p01).dot(dotWith);
+                }
+                ray=ray.add(step.mult(minDist));//set ray position to collision place
+
+                if (true) {//find texture data at current UV coordinates
+                  if (true) {//variable texture between surfaces
+                    switch (minObj.texType) {
+                      case "strongGranite":
+                        var curTexture=getGranite3d(ray.x*300, ray.y*300, ray.z*300, 0, minObj.material.light.mult(256)).div(256);//specially colored granite
+                        break;
+                      case "weakGranite":
+                        var curTexture=getGranite3d(ray.x*300, ray.y*300, ray.z*300, 0, minObj.material.light.mult(256)).div(256).lerp(0.8, minObj.material.light);//specially colored granite
+                        break;
+                      case "solidColor":
+                        var curTexture=minObj.material.light;//flat color
+                        break;
+                      default:
+
+                    }
+                  }
+                  // if (true) {//all the same texture
+                  //   // var curTexture=minObj.material.light;//flat color
+                  //   // var curTexture=getGranite(u*300, v*300, minObj.texSeed, minObj.material.light.mult(256)).div(256);
+                  //   // var curTexture=getGranite(u*100, v*100, minObj.texSeed, colors.white).div(256);
+                  //   // var curTexture=getGranite3d(ray.x*300, ray.y*300, ray.z*300, 0, colors.white).div(256);//white granite
+                  //   // var curTexture=getGranite3d(ray.x*300, ray.y*300, ray.z*300, 0, colors.granite).div(256);//granite colored granite
+                  //   var curTexture=getGranite3d(ray.x*300, ray.y*300, ray.z*300, 0, minObj.material.light.mult(256)).div(256);//specially colored granite
+                  //   // var curTexture=colorLerp((((ray.x*4)%2+2)%2)^(((ray.y*4)%2+2)%2)^(((ray.z*4)%2+2)%2), minObj.material.light, colors.black);//3d shessboard
+                  //   // var curTexture=colors.red.lerp(u+0.5, colors.black);
+                  //   // var curTexture=colorLerp(getNoise(u*4, v*4, minInd/5), minObj.material.light, colors.black);
+                  //   // var curTexture=colorLerp(getNoise(u*4, v*4, minObj.texSeed), minObj.material.light, colors.black);
+                  //   // var curTexture=colorLerp((((u*4)%2+2)%2)^(((v*4)%2+2)%2), minObj.material.light, colors.black);
+                  //   // var curTexture=((((u*4)%2+2)%2)^(((v*4)%2+2)%2)) ? minObj.material.light.add(
+                  //   //   new Color(0, 1, 0).mult(Math.sin(u*4)/2+0.5)).add(
+                  //   //   new Color(1, 0, 0).mult(Math.sin(u*4)/2+0.5)).div(1+Math.sin(u*4)/2+0.5+Math.sin(v*4)/2+0.5) : colors.black;
+                  //   // var curTexture=new Color(u/2+0.3, v/2+0.3, 1);
+                  // }
+
+                  // var curLighting=(minObj.normal.x+2)/3;
+                  // var curLighting=((minObj.normal.dot(globalLightDirection.unit())+1)/2)**2;
+                  var curLighting=(minObj.normal.dot(globalLightDirection.unit())+1)/2;
+                  var curDiffusion=1-minObj.material.gloss;
+
+
+                  // colRes=colRes.add(curTexture.mult(1-minObj.material.gloss).mult(colPass));//add the color of currently collided object at current UV
+                  // colRes=colRes.add(colors.white.div(255).mult(curLighting));//lighting debug
+                  colRes=colRes.add(curTexture.mult(colPass).mult((curDiffusion)*(curLighting)));//add the color of currently collided object at current UV and current lighting
+                  colPass=colPass.mult(minObj.material.color);
+                }
+
+                if (minObj.material.gloss!=0) {//material is somewhat glossy // TODO: also from textures with varying gloss
+                  colPass=colPass.mult(minObj.material.gloss);
+                  var negStepDir=step.neg().unit();
+
+                  step=minObj.normal.mult(2*minObj.normal.dot(negStepDir)).sub(negStepDir);//specularly reflect off surface
+                }
+                else {//no gloss, // TODO: random angle, currently just stop
+                  break;
+                }
+
+              }
+              else {//no collisions happening now on, fly off to infinity and add dark gray to result
+                // colRes=colRes.add(new Color(0.05, 0.05, 0.05).mult(colPass));
+                colRes=colRes.add(new Color(0.02, 0.02, 0.02).mult(colPass));
+                // colRes=new Color(0, 0, 0);
+                break;
+              }
+              collisionNum++;
+            }
+
+            if (true) {//add to image array and draw current pixel
+              i=Math.floor(i);
+              j=Math.floor(j);
+              var e=1/ 2 ;//something to do with gamma
+              arr[i][j][0]+=Math.pow(colRes.r, e);
+              arr[i][j][1]+=Math.pow(colRes.g, e);
+              arr[i][j][2]+=Math.pow(colRes.b, e);
+              arr[i][j][3]++;
+              e=arr[i][j];
+              context.fillStyle="rgba(0,0,0,0)";
+              context.fillStyle="rgb("+e[0]/e[3]*256+","+e[1]/e[3]*256+","+e[2]/e[3]*256+")";
+              context.fillRect(i*pixsize,j*pixsize,pixsize,pixsize);
+            }
+            loops++;
+          }
+
+          updateNum++;
+          window.requestAnimationFrame(update);//loop
+        }
+      }
+
+      function clear() {
+        usew=Math.ceil(canvas.width/pixsize)+1;
+        useh=Math.ceil(canvas.height/pixsize)+1;
+        arr=new Array(usew);
+        for (var i = 0; i < arr.length; i++) {
+          arr[i]=new Array(useh);
+          for (var j = 0; j < arr[i].length; j++) {
+            arr[i][j]=[0,0,0,0];
+          }
+        }
+        loops=0;
+
+        // console.log("--------------------------------------------");
+      }
+      function restart() {
+        clear();
+        update();
+      }
+      function resize() {
+        canvas.width=window.innerWidth;
+        canvas.height=window.innerHeight;
+        restart();
+      }
+
+      // window.addEventListener("resize",function(){resize();});
+      // window.addEventListener("mousemove",function(){
+      //   // console.log("a");
+      //   lastMouse=new Vec2(event.clientX, event.clientY);
+      //   mousePressed=event.which;
+      // });
+      window.addEventListener("click",function(){});
+      // window.addEventListener("dblclick",function(){location.reload();});
+      window.addEventListener("keypress",function(){
+        var keys=event.keyCode;
+        //console.log(keys);
+        if (keys<58 && keys>48) {//numbers - pixsize
+          pixsize=2**(keys-49);
+          console.log(pixsize);
+          restart();
+        }
+        else {
+          switch (keys) {
+            case 114://r - resize and restart
+              console.log("Restart");
+              resize();
+              restart();
+              break;
+            case 32://space - pause
+              paused=!paused;
+              if (paused) {
+                var e=classels("panel")
+                for (var i=0; i<e.length; i++) {
+                  e[i].style.display="block";
+                }
+              }
+              if (!paused) {
+                var e=classels("panel")
+                for (var i=0; i<e.length; i++) {
+                  e[i].style.display="none";
+                }
+                update();
+              }
+              break;
+            // case 43://+ - stepsize++
+            //   stepsize*=1.1;
+            //   console.log("Step++");
+            //   restart();
+            //   break;
+            // case 45://- - stepsize--
+            //   stepsize*=0.9;
+            //   console.log("Step--");
+            //   restart();
+            //   break;
+            case 120://x - multilayering
+              layering=!layering;
+              break;
+            default:
+              // console.log("Key: "+keys);
+          }
+        }
+      });
+      window.addEventListener("keydown",function(){
+        keys[event.keyCode]=true;
+      });
+      window.addEventListener("keyup",function(){
+        keys[event.keyCode]=false;
+      });
+    </script>
+  </body>
+</html>

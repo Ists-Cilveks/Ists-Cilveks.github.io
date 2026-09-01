@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Old coding projects</title>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link href="/css/style.css" rel="stylesheet">
+
+		<style>
+			iframe {
+				width: 100%;
+				height: 100%;
+			}
+		</style>
+	</head>
+	<body style="overflow: hidden;">
+	
+	<script src="/js/Color.js"></script>
+	<script src="/css/palettize.js"></script>
+	<script src="/js/particles.js"></script>
+	<script src="/js/SVGRequests.js"></script>
+		
+	<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex;">
+		<a class="basic-btn home-btn" href="/" lang="en">home</a>
+    <a class="basic-btn home-btn" href="/index.html?l=lv" lang="lv">uz sākumu</a>
+    <a class="basic-btn home-btn ll" href="/index.html?l=tok" style="font-size: 250%;" lang="tok">lipu-open</a>
+
+		<div style="height: 100%; width: 15em; height: 100%; z-index: 2; background-color: var(--bg-color); padding: 0.5em; overflow: scroll;">
+			<header id="main-header">
+				<h1 lang="en">Programming projects</h1>
+				<h1 lang="tok">mi toki tawa ilo</h1>
+				<h1 lang="lv">Programmēšanas projekti</h1>
+			</header>
+			<script src="/js/themes.js"></script>
+			<script src="/js/languages.js" data-page-languages="en"></script>
+
+			<p lang="en">This is a list of old JS coding projects that I couldn't be arsed to integrate into a different page. Mostly just little animations.</p>
+
+			<nav>
+				<ul>
+					<li>
+						<a href="?file=planets">Multi body gravity simulation</a>
+						<template id="planets"><iframe src="planets.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=icosahedron">An icosahedron with pretty lighting</a>
+						<template id="icosahedron"><iframe src="icosahedron.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=3d-stars">View from inside a dodecahedron with mirror faces</a>
+						<template id="3d-stars"><iframe src="3d-stars.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=3d-stereo">A stereoscopic image pair with several objects</a>
+						<template id="3d-stereo"><iframe src="3d-stereo.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=cars">Some bouncy cars</a>
+						<template id="cars"><iframe src="cars.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=evolution">A little evolution simulator</a>
+						<template id="evolution"><iframe src="evolution.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=flowers">Drawing flowers</a>
+						<template id="flowers"><iframe src="flowers.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=tree">Spinny tree</a>
+						<template id="tree"><iframe src="tree.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=metasquares">Metasquares on a hyperbolic grid</a>
+						<template id="metasquares"><iframe src="metasquares.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=lines-circle">Modular multiplication on a circle</a>
+						<template id="lines-circle"><iframe src="lines-circle.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=lines-hexagonal">Modular multiplication with hexagonal symmetry</a>
+						<template id="lines-hexagonal"><iframe src="lines-hexagonal.html"></iframe></template>
+					</li>
+				</ul>
+			</nav>
+
+			Controls to try:
+			<ul class="no-bullets">
+				<li><kbd class="font-unset">space</kbd>: pause</li>
+				<li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><kbd>[</kbd><kbd>]</kbd>: move the camera</li>
+				<li><kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd>: move cars</li>
+				<li><kbd>←</kbd><kbd>→</kbd>: change multiplier</li>
+				<li><kbd>1</kbd>–<kbd>9</kbd>: change raster size</li>
+				<li><kbd>X</kbd>: toggle spinning or toggle antialiasing</li>
+				<li><kbd>R</kbd> or double click: reload</li>
+			</ul>
+		</div>
+
+		<div id="iframe-container" style="width: 100%; height: 100%; margin: 0; overflow: hidden;" class="main-content"></div>
+
+
+		<script>
+			// Based on https://stackoverflow.com/a/8726661/21616340
+			const container = document.getElementById("iframe-container")
+			const urlParams = new URLSearchParams(window.location.search)
+  		const templateId = urlParams.get('file') || "planets"
+			const template = document.getElementById(templateId);
+			const clone = document.importNode(template.content, true);
+			container.append(clone);
+		</script>
+	</div>
+	</body>
+</html>

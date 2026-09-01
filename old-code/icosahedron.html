@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>icosahedron render</title>
+  <style media="screen">
+    body{
+      background-color: rgb(0,10,5);
+      color: rgb(200, 200, 200);
+      font-size: 40px;
+      overflow: hidden;
+      font-size: 300%;
+    }
+    canvas{
+      position: absolute;
+      left: 0;
+      top: 0;
+      outline: 2px dashed navy;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="300" height="300"></canvas>
+  <script type="text/javascript">
+    function rand(max=1) {
+      return Math.random()*max;
+    }
+    function rand0(max=1) {
+      return (Math.random()-0.5)*max;
+    }
+    function randint(max=2) {
+      return Math.floor(Math.random()*max);
+    }
+    function clamp(num, val=1) {//num to clamp, special value
+      return 1+(val/(num+val));
+    }
+    function collerp(x, n1, n2) {//x==0 => n1; x==1 => n2
+      return n2.sub(n1).mult(x).add(n1);
+    }
+    function dot(a, b) {
+      var res=0;
+      for (var i = 0; i < a.length; i++) {
+        res+=a[i]*b[i];
+      }
+      return res;
+    }
+    function sub(a, b) {
+      var res=[];
+      for (var i = 0; i < a.length; i++) {
+        res.push(a[i]-b[i]);
+      }
+      return res;
+    }
+    function atan4(x1, y1, x2, y2) {
+      return Math.atan2(y2-y1, x2-x1);
+    }
+    function copyarr(a) {
+      var res=[]
+      for (var i = 0; i < a.length; i++) {
+        res[i]=a[i];
+      }
+      return res;
+    }
+
+    var canvas=document.getElementById("canvas");
+    var context=canvas.getContext("2d");
+    var TAU=6.2832;
+    var PI=3.1416;
+    var PHI=(1+Math.sqrt(5))/2;
+    var loops=e=n=v=anghor=angver=movex=movey=anghormod=angvermod=lasty=branatt=0;
+    var lastx=window.innerWidth/2;
+    var paused=false;
+    var zoom=1;
+    var brancharr=[];
+    var keys=[];
+    var tris=[];
+    var lights=[];
+    var w=h=500;
+
+    var controls=0;
+    var thick=2;
+    var angspeed=  0  ;
+    var begwid=  100  ;
+    var lenmax=1/begwid/  1.5  ;
+    var bailout=  10  ;
+    var frameskip=  1  ;
+    var D= 3 ;
+    var alpha=  1  ;
+
+    function Color(r=255, g, b, a=1) {
+      if (g != undefined) {//all colors set
+        this.r=r;
+        this.g=g;
+        this.b=b;
+      }
+      else {//only red (use as brightness)
+        // console.log("a");
+        this.r=r;
+        this.g=r;
+        this.b=r;
+      }
+      this.a=a || 1;
+      this.each=function(f) {
+        return new Color(f(this.r), f(this.g), f(this.b));
+      }
+      this.modify=function(amp) {
+        return this.each(function(n) {
+          var x=n+rand0(amp);
+          if (x>255) {
+            return 255;
+          }
+          else if (x<0) {
+            return 0;
+          }
+          else {
+            return x;
+          }
+        });
+      }
+      this.lighten=function(v) {
+        return this.each(function(n) {
+          var x=n+v;
+          if (x>255) {
+            return 255;
+          }
+          else if (x<0) {
+            return 0;
+          }
+          else {
+            return x;
+          }
+        });
+      }
+      this.darken=function(v) {
+        return this.each(function(n) {
+          var x=n-v;
+          if (x>255) {
+            return 255;
+          }
+          else if (x<0) {
+            return 0;
+          }
+          else {
+            return x;
+          }
+        });
+      }
+      this.add=function(v) {
+        return new Color(this.r+v.r, this.g+v.g, this.b+v.b);
+      }
+      this.sub=function(v) {
+        return new Color(this.r-v.r, this.g-v.g, this.b-v.b);
+      }
+      this.mult=function(v) {
+        return new Color(this.r*v, this.g*v, this.b*v);
+      }
+      this.div=function(v) {
+        return new Color(this.r/v, this.g/v, this.b/v);
+      }
+      this.rgb=function() {
+        return "rgb("+this.r+","+this.g+","+this.b+")";
+      }
+      this.rgba=function(a=this.a) {
+        return "rgba("+this.r+","+this.g+","+this.b+","+a+")";
+      }
+    }
+    var colleaf=new Color(60,220,30);
+    var colbran1=new Color(20,10,5);
+    var colbran2=new Color(100,70,50);
+    // var colbran2=new Color(40,10,10);
+    // var colbran1=new Color(10,10,10);
+    // var colbran2=new Color(30,40,20);
+    function Ang2(h, v) {
+      this.h=h;
+      this.v=v;
+      this.add=function(a) {
+        return new Ang2(this.h+a.h, this.v+a.h);
+      }
+      this.modify=function(a) {
+        var n=this.v+rand0(a);
+        //console.log(a/Math.cos(this.v));
+        return new Ang2(this.h+rand0(a/Math.cos(this.v))+rand0(10), n);
+      }
+    }
+    function Vec2(x, y) {
+      this.x=x;
+      this.y=y;
+      this.add=function(v) {
+        return new Vec2(this.x+v.x, this.y+v.y);
+      }
+      this.mult=function(n) {
+        return new Vec2(this.x*n, this.y*n);
+      }
+      this.sub=function(v) {
+        return new Vec2(this.x-v.x, this.y-v.y);
+      }
+      this.total=function() {
+        return this.x+this.y;
+      }
+    }
+    function Vec3(x, y, z) {
+      this.x=x;
+      this.y=y;
+      this.z=z;
+      this.add=function(v) {
+        return Array.isArray(v) ? new Vec3(this.x+v[0], this.y+v[1], this.z+v[2]) : new Vec3(this.x+v.x, this.y+v.y, this.z+v.z);
+      }
+      this.sub=function(v) {
+        return new Vec3(this.x-v.x, this.y-v.y, this.z-v.z);
+      }
+      this.mult=function(n) {
+        return new Vec3(this.x*n, this.y*n, this.z*n);
+      }
+      this.dot=function(v) {
+        return Array.isArray(v) ? this.x*v[0]+this.y*v[1]+this.z*v[2] : this.x*v.x+this.y*v.y+this.z*v.z;
+      }
+      this.avg=function(arr) {
+        res=new Vec3(this.x, this.y, this.z)
+        for (var i = 0; i < arr.length; i++) {
+          res.add(arr[i]);
+        }
+        return res.div(arr.length+1);
+      }
+      this.fproject=function(ang) {
+        return this.x*Math.cos(ang)+this.y*Math.sin(ang)
+      }
+      this.project=function(ang) {
+        //return new Vec2(this.x*canvas.height+canvas.width/2, (this.z-1)*-canvas.height);
+        return new Vec2((this.x*Math.cos(ang)+this.y*Math.sin(ang))*zoom*canvas.height+canvas.width/2*(1-movex*zoom),
+          //((this.z-0.5)*zoom-0.5)*-canvas.height/**(1-movey*zoom)*/
+          ((-this.z+movey+0.5)*zoom+0.5)*canvas.height
+          );
+      }
+    }
+    function VecN(v) {
+      if(typeof v=="number"){
+        this.D=v
+        for (var i = 0; i < this.D; i++) {
+          this[i]=0;
+        }
+      }
+      else {
+        this.D=v.length
+        for (var i = 0; i < v.length; i++) {
+          this[i]=v[i]
+        }
+      }
+      this.set=function(v) {
+        for (var i = 0; i < this.D; i++) {
+          this[i]=null;
+        }
+        this.D=v.length;
+        for (var i = 0; i < this.D; i++) {
+          this[i]=v[i]
+        }
+        return this;
+      }
+      this.copy=function() {
+        var res=[]
+        for (var i = 0; i < this.D; i++) {
+          res.push(this[i])
+        }
+        return new VecN(res);
+      }
+      this.add=function(v) {
+        var res=this.copy();
+        for (var i = 0; i < this.D; i++) {
+          res[i]+=v[i];
+        }
+        return res;
+      }
+      this.sub=function(v) {
+        var res=this.copy();
+        for (var i = 0; i < this.D; i++) {
+          res[i]-=v[i];
+        }
+        return res;
+      }
+      this.mult=function(n) {
+        var res=this.copy();
+        for (var i = 0; i < this.D; i++) {
+          res[i]*=n;
+        }
+        return res;
+      }
+      this.div=function(n) {
+        var res=this.copy();
+        for (var i = 0; i < this.D; i++) {
+          res[i]/=n;
+        }
+        return res;
+      }
+      this.dot=function(v) {
+        var u=this.copy();
+        var res=0;
+        for (var i = 0; i < this.D; i++) {
+          res+=u[i]*v[i];
+        }
+        return res;
+      }
+      this.avg=function(v) {
+        var res=this.copy();
+        if (typeof v=="object") {
+          if (Array.isArray(v)) {
+            // console.log("a");
+            for (var i = 0; i < v.length; i++) {
+              // console.log(v[i][0]+" - "+v[i][1]+" - "+v[i][2]);
+              // console.log("+ "+res[0]+" - "+res[1]+" - "+res[2]);
+              res.add(v[i]);
+              // console.log("= "+res[0]+" - "+res[1]+" - "+res[2]);
+              // console.log(res.add);
+            }
+            return res.div(v.length+1);
+          }
+          else {
+            return res.add(v).div(2);
+          }
+        }
+        else {
+          return res;
+        }
+      }
+      this.len=function() {
+        var res=0;
+        for (var i = 0; i < this.D; i++) {
+          res+=this[i]**2;
+        }
+        return Math.sqrt(res);
+      }
+      this.sqlen=function() {
+        var res=0;
+        for (var i = 0; i < this.D; i++) {
+          res+=this[i]**2;
+        }
+        return res;
+      }
+      this.neg=function() {
+        var res=[]
+        for (var i = 0; i < this.D; i++) {
+          res.push(-this[i])
+        }
+        return new VecN(res);
+      }
+      this.unit=function() {
+        var res=0;
+        for (var i = 0; i < this.D; i++) {
+          res+=this[i]**2;
+        }
+        return this.copy().div(Math.sqrt(res));
+      }
+    }
+
+    var campos=new VecN(D);
+    var camdir=new VecN(D);
+    var projx=new VecN(D);
+    var projy=new VecN(D);
+    var light=new VecN(D);
+    // console.log((new VecN([1,0,1,0])).add(new VecN([1,1,0,0])));
+    // console.log((new VecN([1,1,0])).avg([new VecN([1,0,0]),new VecN([0,0,1])]));
+
+    function Tri(p1, p2, p3, col, normal) { //triangle class
+      this.p=[p1, p2, p3];
+      this.col=col || new Color(rand(255),rand(255),rand(255));
+      var e=[];
+      for (var i = 0; i < this.p[1].D; i++) {
+        e[i]=(this.p[0][i]+this.p[1][i]+this.p[2][i])/3;
+      }
+      this.avg=new VecN(e);
+      // this.avg=this.p[0].avg([this.p[1],this.p[2]]);
+      if (normal) {
+        if (normal===true||normal) {
+          this.n=this.avg.unit();
+        }
+        else {
+          this.n=normal;
+        }
+      }
+      else {
+        this.n=false;
+      }
+      this.d=1;
+      this.calc=function(){
+        var res=[];
+        for (var i = 0; i < this.p.length; i++) {
+          res.push(this.p[i].dot(projx))
+          res.push(this.p[i].dot(projy))
+        }
+        return res;
+      }
+    }
+    function Light(ang, h, col, br) {
+      this.ang=ang;
+      this.h=h;
+      this.col=col;
+      this.br=br;
+      this.pos=new VecN(D);
+    }
+
+    if (true) { //make triangles
+      var p=[];
+      var d=[];
+      // var col=new Color(20,100,75);
+      // var col=new Color(200,20,20);
+      var col=new Color(150,150,150);
+      // var colrand=40;
+      var colrand=0;
+      var convex=false;
+      var equidistant=false;
+      function make() {
+        for (var i = 0; i < d.length; i++) { //clearing duplicates in d
+          for (var j = i+1; j < d.length; j++) { //for each in d and each after that
+            var e=true;
+            for (var k = 0; k<3 && e; k++) { //for each point in both in d
+              e=false;
+              for (var l = 0; l < 3; l++) {
+                if (d[i][k]==d[j][l]) {
+                  e=true;
+                  if (k==2) {
+                    d.splice(j,1);
+                  }
+                  break;
+                }
+              }
+            }
+          }
+        }
+        for (var i = 0; i < d.length; i++) {//make tris from p and d
+          var e=[]//array of 3 points in tri
+          for (var j = 0; j < 3; j++) {//all points
+            var posarr=[]//current point position array
+            for (var k = 0; k < D; k++) {//all point dimensions
+              posarr[k]=p[d[i][j]][k] //push point positions(point connection tris(tris(tri points(dimensions))))
+            }
+            e.push(new VecN(posarr))
+          }
+          tris.push(new Tri(e[0], e[1], e[2], col.modify(colrand), convex))
+        }
+        p=[];
+        d=[];
+        convex=false;
+        equidistant=false;
+      }
+      if (false) {//orthoplexes
+        convex=true;
+        equidistant=true;
+        // var p=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]
+        // var d=[[0,2,4],[0,2,5],[0,3,4],[0,3,5],[1,2,4],[1,2,5],[1,3,4],[1,3,5]]
+        for (var i = 0; i < D; i++) { //make p
+          var u=[];
+          var w=[];
+          for (var j = 0; j < D; j++) {
+            if (i==j) {
+              u.push(1); w.push(-1)
+            }
+            else {
+              u.push(0); w.push(0);
+            }
+          }
+          p.push(u); p.push(w);
+        }
+        for (var i = 0; i < 2**D; i++) { //make d
+          var e=[];
+          for (var j = 0; j < D; j++) {
+            e.push(j*2+((i & (2**j)) / (2**j))); //even numbers + each binary combination
+          }
+          if (e.length==3) {
+            d.push(e);
+          }
+          else if (e.length==4) {
+            for (var j = 0; j < 4; j++) {
+              var v=copyarr(e);
+              v.splice(j,1)
+              d.push(v)
+            }
+          }
+          else {
+            alert("Wrong # of dimensions")
+          }
+        }
+      }
+      if (true) {//icosahedron
+        var n=[0, 1, PHI];
+        // var n=[0, 1, PHI-1];
+        // var n=[0, 1, 1];
+        // var n=[0, 1, -1];
+        convex=true;
+        equidistant=true;
+        d=[
+          [2,3,11],
+          [2,3,9],
+          [2,11,5],
+          [2,5,4],
+          [2,4,9],
+          [4,0,5],
+          [10,0,5],
+          [5,10,11],
+          [8,9,4],
+          [6,9,8],
+          [1,6,8],
+          [3,6,9],
+          [0,4,8],
+          [1,8,0],
+          [1,10,0],
+          [1,7,10],
+          [7,10,11],
+          [1,6,7],
+          [3,6,7],
+          [3,7,11]
+        ];
+        for (var i = 0; i < 3; i++) {//make p
+          for (var j = 0; j < 4; j++) {
+            var e=copyarr(n);
+            e[1]*=(j&1)*2-1;
+            e[2]*=(j&2)-1;
+            var l=Math.sqrt(e[0]**2+e[1]**2+e[2]**2);
+            p.push([e[i]/l,e[(i+1)%3]/l,e[(i+2)%3]/l])
+          }
+        }
+        make();
+      }
+      if (false) {//random triangles
+        for (var i = 0; i < 20; i++) {
+          var e=[[],[],[]];
+          for (var j = 0; j < 3; j++) {//each point
+            for (var k = 0; k < D; k++) {//each dimension
+              e[j][k]=rand0();
+            }
+            e[j]=new VecN(e[j]);
+          }
+          tris.push(new Tri(e[0], e[1], e[2]))
+        }
+      }
+      // tris.push(new Tri(new VecN([0,0,2]),new VecN([0,0.5,2]),new VecN([0.5,0,2]),false,true))
+      console.log(tris);
+    }
+    var sumbright=0;
+    if (true) { //make lights
+      lights.push(new Light(2, -1, new Color(255, 1, 255), 2));
+      lights.push(new Light(5, 0, new Color(200, 255, 1), 2));
+      lights.push(new Light(0.5, 0.2, new Color(1, 250, 200), 3));
+      for (var i = 0; i < lights.length; i++) {
+        sumbright+=lights[i].br;
+      }
+    }
+
+
+///////////////////////////////////////////////////////////////////////////////
+function draw() {
+  if (!paused) {
+  if (loops% frameskip <1) {
+    if (true) { //controls
+      switch (controls) {
+        case 0: // x => ang
+          anghormod=(lastx*TAU-0.5*TAU*canvas.width)/canvas.height;
+          angver=(0.5-lasty/canvas.height)*PI;
+          break;
+        case 1: // x => angspeed
+          anghormod+=(lastx/canvas.width-0.5)/5*frameskip;
+          angver=(0.5-lasty/canvas.height)*PI;
+          break;
+        case 2:
+
+          break;
+      }
+      if(keys[37]){//left
+        anghormod-=0.05*frameskip;
+      }
+      if(keys[39]){//right
+        anghormod+=0.05*frameskip;
+      }
+      if(keys[38]){//up
+        angver+=0.05*frameskip;
+        if (angver>PI/2) {
+          angver=PI/2-0.00001
+        }
+      }
+      if(keys[40]){//down
+        angver-=0.05*frameskip;
+        if (angver<-PI/2) {
+          angver=-PI/2+0.00001
+        }
+      }
+    }
+    // angver%=-PI/2
+    anghormod%=TAU;
+    anghor=(loops*angspeed+anghormod)%TAU;
+    if (true) {//set projection vectors
+      // camdir=[Math.cos(anghor),-Math.sin(anghor),0,0];
+      var e=Math.cos(angver);
+      camdir.set([Math.cos(anghor)*e,-Math.sin(anghor)*e,Math.sin(angver),0]);
+      // X project
+      var e=Math.cos(angver);
+      projx.set([Math.sin(anghor),Math.cos(anghor),0,0]);
+      // Y project
+      var e1=camdir.copy();//camera without z
+      e1[2]=0;
+      var e2=camdir.neg();//opposite to camera
+      e2[2]=e1.sqlen()/camdir[2];
+      if (e2[2]==Infinity) {
+        e2=new VecN(D);
+        e2[2]=1;
+      }
+      else if (e2[2]==-Infinity) {
+        e2=new VecN(D);
+        e2[2]=-1;
+      }
+      else {
+        e2=e2.unit();
+      }
+      if (angver<0) {
+        e2=e2.neg();
+      }
+      // var d2=[0,0,1,0];
+      projy=e2;
+      for (var i = 0; i < lights.length; i++) {
+        lights[i].pos=lights[i].pos.set([Math.cos(anghor+lights[i].ang), -Math.sin(anghor+lights[i].ang), lights[i].h, 0]).unit()
+      }
+      // light=light.set([Math.cos(anghor+2),-Math.sin(anghor+2),-1,0]).unit();
+    }
+    context.clearRect(0, 0, canvas.width, canvas.height);//clear screen
+    for (var i = 0; i < tris.length; i++) {tris[i].d=tris[i].avg.dot(camdir)} //measuring triangle "distance"
+    tris.sort(function(a, b) {//sorting triangles
+      return a.d-b.d;
+    })
+    // console.log(tris);
+    for (var i = 0; i < tris.length; i++) {//drawing triangles
+      var e=tris[i].n;
+      if (tris[i].n) {//coloring
+        // e=e.dot(light);
+        var curcol=new Color(0);
+        for (var j = 0; j < lights.length; j++) {
+          curcol=curcol.add(lights[j].col.mult(Math.abs(lights[j].br*(tris[i].n.dot(lights[j].pos)/2-0.5))));
+        }
+        curcol=curcol.div(sumbright/(1-1/32)).add(new Color(256/32));
+        // if (e>0) {
+        //   context.fillStyle=tris[i].col.darken(e*60).rgba(alpha);
+        // }
+        // else {
+        //   context.fillStyle=tris[i].col.lighten(-e*60).rgba(alpha);
+        // }
+        context.fillStyle=curcol.rgba(alpha);
+      }
+      else {
+        context.fillStyle=tris[i].col.rgba(alpha);
+      }
+      e=tris[i].calc();
+      for (var n = 0; n < e.length; n++) {//////////
+        e[n]*=h/2.5;
+      }
+      context.beginPath();
+      context.moveTo(e[0]+w/2, h/2-e[1]);
+      context.lineTo(e[2]+w/2, h/2-e[3]);
+      context.lineTo(e[4]+w/2, h/2-e[5]);
+      context.closePath();
+      context.fill();
+    }
+  }
+  loops++;
+  window.requestAnimationFrame(draw);
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+    function restart() {
+      loops=0;
+    }
+    function resize() {
+      w=window.innerWidth;
+      h=window.innerHeight;
+      canvas.width=w;
+      canvas.height=h;
+      context.lineJoin="round";
+      context.lineCap="round";
+      restart();
+    }
+    resize();
+    function mouse(e) {
+      // lastx=event.clientX;
+      // lasty=event.clientY;
+      n=1;
+      lastx=(e.clientX+lastx*n)/(n+1);
+      lasty=(e.clientY+lasty*n)/(n+1);
+    }
+    draw();
+    canvas.addEventListener("mousemove",function(){mouse(event)});
+    window.addEventListener("dblclick",function(){location.reload();});
+    window.addEventListener("keyup",function(){
+      keys[event.keyCode]=false;
+    });
+    window.addEventListener("keydown",function(){
+      var e=event.keyCode;
+      keys[e]=true;
+      // console.log(k);
+      switch (e) {
+        case 32://space
+          paused=!paused;
+          console.log(paused?"Paused":"Unpaused");
+          draw();
+          break;
+        case 37://left
+          break;
+        case 87://w
+          movey+=0.05/zoom;
+          break;
+        case 65://a
+          movex-=0.05/zoom;
+          break;
+        case 83://s
+          movey-=0.05/zoom;
+          break;
+        case 68://d
+          movex+=0.05/zoom;
+          break;
+        case 82://r
+          restart();
+          console.log("Restart");
+          break;
+        case 88://x
+          controls=(controls+1)%3;
+          console.log("Controls: "+controls);
+          break;
+        case 107://+
+          zoom*=1.1;
+          break;
+        case 109://-
+          zoom/=1.1;
+          break;
+        case 219://[
+          thick/=1.1;
+          break;
+        case 221://]
+          thick*=1.1;
+          break;
+      }
+    });
+    window.addEventListener("resize",function(){resize();})
+  </script>
+</body>
+</html>

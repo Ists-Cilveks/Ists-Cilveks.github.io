@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Rays 11</title>
+    <style media="screen">
+      body{
+        background-color: rgb(20,20,20);
+        color: rgb(200, 200, 200);
+        font-size: 40px;
+        overflow: hidden;
+        font-size: 300%;
+      }
+      canvas{
+        position: absolute;
+        left: 0;
+        top: 0;
+        outline: 2px dashed navy;
+        z-index: 1;
+      }
+      .panel{
+        position:absolute;
+        background-color: rgba(150,0,0,1);
+        z-index: 2;
+        width: 2vmin;
+        height: 6vmin;
+        display: none;
+      }
+      #p1{
+        left: 1vmin;
+        top: 1vmin;
+      }
+      #p2{
+        left: 5vmin;
+        top: 1vmin;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="300" height="300"></canvas>
+    <div class="panel" id="p1"></div><div class="panel" id="p2"></div>
+    <script type="text/javascript">
+      function classels(classname) {
+        var a = [];
+        var re = new RegExp('(^| )'+classname+'( |$)');
+        var els = document.body.getElementsByTagName("*");
+        for(var i=0,j=els.length; i<j; i++)
+            if(re.test(els[i].className))a.push(els[i]);
+        return a;
+      }
+      function rand(max=1) {
+        return Math.random()*max;
+      }
+      function randint(max=2) {
+        return Math.floor(Math.random()*max);
+      }
+      function rand0(n=1) {
+        return (Math.random()*2-1)*n;
+      }
+      function clamp(num, val) {//num to clamp, special value
+        return 1+(val/(num+val));
+      }
+      function dot(a, b) {
+        var res=0;
+        for (var i = 0; i < a.length; i++) {
+          res+=a[i]*b[i];
+        }
+        return res;
+      }
+      function atan4(x1, y1, x2, y2) {
+        return Math.atan2(y2-y1, x2-x1);
+      }
+      function modify(obj, prop, val) {
+        obj[prop]=val;
+        return obj;
+      }
+
+      /*// TODO:
+        fogging based on distance traveled
+
+
+      */
+
+      var canvas=document.getElementById("canvas");
+        var context=canvas.getContext("2d");
+        var loops=0;
+        var camwid=TAU=Math.PI*2;
+        var PI=Math.PI;
+        var PHI=Math.sqrt(5)/2+0.5;
+        var PHIBAR=1/(Math.sqrt(5)/2+0.5);
+        var anghor=angver=fog=i=j=coldiv=0;
+        var lasthit=undefined;
+        var paused=layering=false;
+        var pixsize=16;
+        var usew=useh=10;
+        var k=[];
+        var data=[];
+        var ray=new Vec3();
+        var step=new Vec3();
+
+        // var sphereRadius=PHIBAR-0.01;
+        var sphereRadius=PHI;
+        var minColorCast=0.005;
+
+        // var colors=32;
+
+        var vision=30;
+        var stepsize=0.07;
+        var fogging=255/vision;
+        var fogBase=0.94;
+        // var fogging=0.05;
+        // var stepsize=vision*fogging/255;
+
+        var camang=0;
+        var startpos=new Vec3(0, 0, 0);
+        // var startpos={x:1.02, y:0.43, z:0.11};
+        var arr=new Array(usew);
+
+      function Color(r, g, b) {
+        if (g!=undefined) {//all colors defined, set as those
+          this.r=r;
+          this.g=g;
+          this.b=b;
+        }
+        else {//one color defined, set to that gray
+          this.r=r;
+          this.g=r;
+          this.b=r;
+        }
+        this.mult=function (c) {
+          if (typeof c=="number") {
+            return new Color(this.r*c, this.g*c, this.b*c);
+          }
+          else {
+            return new Color(this.r*c.r, this.g*c.g, this.b*c.b);
+          }
+        }
+        this.div=function(v) {
+          return new Color(this.r/v, this.g/v, this.b/v);
+        }
+        this.add=function(v) {
+          if (typeof v=="number") {
+            return new Color(this.r+v, this.g+v, this.b+v);
+          }
+          else {
+            return new Color(this.r+v.r, this.g+v.g, this.b+v.b);
+          }
+        }
+      }
+      var colpass=new Color();
+      var colres=new Color();
+      function Vec3(x=0, y=0, z=0) {
+        if (typeof x=="number") {
+          this.x=x;
+          this.y=y;
+          this.z=z;
+        }
+        else {
+          this.x=x[0];
+          this.y=x[1];
+          this.z=x[2];
+        }
+        this.copy=function() {
+          return new Vec3(this.x, this.y, this.z);
+        }
+        this.neg=function() {
+          return new Vec3(-this.x, -this.y, -this.z);
+        }
+        this.sub=function(v) {
+          return new Vec3(this.x-v.x, this.y-v.y, this.z-v.z);
+        }
+        this.add=function(v) {
+          return new Vec3(this.x+v.x, this.y+v.y, this.z+v.z);
+        }
+        this.mult=function(sc) {
+          return new Vec3(this.x*sc, this.y*sc, this.z*sc);
+        }
+        this.len=function() {
+          return Math.sqrt(this.x**2+this.y**2+this.z**2);
+        }
+        this.unit=function(sc) {
+          var len=this.len();
+          return new Vec3(this.x/len, this.y/len, this.z/len);
+        }
+        this.div=function(sc) {
+          return new Vec3(this.x/sc, this.y/sc, this.z/sc);
+        }
+        this.cross=function(v) {
+          return new Vec3(this.y*v.z-this.z*v.y, -(this.x*v.z-this.z*v.x), this.x*v.y-this.y*v.x);
+        }
+        this.dot=function(v) {
+          return this.x*v.x+this.y*v.y+this.z*v.z;
+        }
+      }
+      function Material(color, light, gloss=0) {
+        if (true) {//defining this.color
+          if (typeof color=="number") {
+            this.color=new Color(color, color, color);
+          }
+          else if (Array.isArray(color)) {
+            this.color=new Color(color[0], color[1], color[2]);
+          }
+          else {
+            this.color=color;
+          }
+        }
+        if (true) {//defining this.light
+          if (light==undefined) {
+            this.light=new Color(this.color.r, this.color.g, this.color.b);
+          }
+          else if (typeof light=="number") {
+            this.light=new Color(light, light, light);
+          }
+          else if (Array.isArray(light)) {
+            this.light=new Color(light[0], light[1], light[2]);
+          }
+          else {
+            this.light=light;
+          }
+        }
+        this.gloss=gloss;
+        // this.hit=function() {
+        //   colres=colres.add(colpass.mult(this.light));
+        //   colpass=colpass.mult(this.color);
+        //   if (this.rang) {
+        //     rangle();
+        //   }
+        // }
+      }
+
+      var pRect=[
+        [PHI, 1, 0],
+        [PHI, -1, 0],
+        [-PHI, 1, 0],
+        [-PHI, -1, 0],
+        [1, 0, PHI],
+        [-1, 0, PHI],
+        [1, 0, -PHI],
+        [-1, 0, -PHI],
+        [0, PHI, 1],
+        [0, PHI, -1],
+        [0, -PHI, 1],
+        [0, -PHI, -1]
+      ]
+
+      var m={
+        wall: new Material([0.7, 0.1, 0.5], 0),
+        sun: new Material(0, 0.9),
+        floor: new Material([0.1, 0.7, 0.5], 0),
+        // mirror: new Material([0.1, 0.7, 0.5], 0.1, 0.9),
+        // mirror: new Material([0.7, 0.9, 0.8], 0, 0.8),
+        mirror: new Material(0.8, 0, 0.86),
+        collumn: new Material([0.05, 0.85, 0.95]),
+        white: new Material(0.95, 0),
+        black: new Material(0, 0),
+        fire: new Material([0.9, 0.7, 0.2]),
+        green: new Material([0.1, 0.95, 0.2], 0),
+        lamp: new Material(0.9)
+      }
+      var things=[];
+      // var things=[
+      //   // ["hs", m.fire, [0, 0, -1], 2],
+      //   // ["hs", m.white, [0, 0, 1], 1],
+      //   // ["hs", m.collumn, [-0.707, 0, -0.707], 2]
+      //   ["tri", m.collumn, new Vec3(0.707, 0, 1.707), new Vec3(1.707, 0, 2.707), new Vec3(0.707, 1, 0.707)]
+      //   // ["tri", m.collumn, new Vec3(0.707, 0, 1.707), new Vec3(1.707, 0, 2.707), new Vec3(0.707, 1, 0.707)]
+      // ]
+      // var things=[];
+      // var things=[
+      //   ["tri", m.mirror, new Vec3(-1.3, -1.5, 1.7), new Vec3(-1.3, 0, -1.7), new Vec3(-0.3, 3, 0.7)],
+      //   ["tri", m.mirror, new Vec3(1.7, -1.5, 1.7), new Vec3(1.2, 0, -1.7), new Vec3(2.7, 3, 0.7)],
+      //   ["hs", m.mirror, new Vec3(1.7, -1.5, 1.7), new Vec3(-5.7, 0, 1.7), new Vec3(2.7, 3, 0.7)],
+      //   ["tri", m.fire, new Vec3(1.7, 1, 0.7), new Vec3(1.7, 1.26, -0.4), new Vec3(1.2, 2, 0.2)]
+      // ]
+      // for (var i = 0; i < 4; i++) {
+      //   things.push(["tri", new Material([rand(), rand(), rand()]), new Vec3(rand0(2), rand0(2), rand0(2)), new Vec3(rand0(2), rand0(2), rand0(2)), new Vec3(rand0(2), rand0(2), rand0(2))]);
+      // }
+
+      if (true) {//dodecahedron plane definition
+        function nwThng(a, b, c) {
+          things.push(["tri", m.mirror, new Vec3(pRect[a]), new Vec3(pRect[b]), new Vec3(pRect[c])])
+        }
+        nwThng(0, 1, 4);
+        nwThng(0, 1, 6);
+        nwThng(2, 3, 5);
+        nwThng(2, 3, 7);
+        nwThng(4, 5, 8);
+        nwThng(4, 5, 10);
+        nwThng(6, 7, 9);
+        nwThng(6, 7, 11);
+        nwThng(8, 9, 0);
+        nwThng(8, 9, 2);
+        nwThng(10, 11, 1);
+        nwThng(10, 11, 3);
+
+        nwThng(0, 4, 8);
+        nwThng(0, 6, 9);
+        nwThng(1, 4, 10);
+        nwThng(1, 6, 11);
+        nwThng(2, 5, 8);
+        nwThng(2, 7, 9);
+        nwThng(3, 5, 10);
+        nwThng(3, 7, 11);
+
+
+        /* Test below, apparently order doesn't matter */
+        // nwThng(1, 0, 4);
+        // nwThng(1, 0, 6);
+        // nwThng(3, 2, 5);
+        // nwThng(3, 2, 7);
+        // nwThng(5, 4, 8);
+        // nwThng(5, 4, 10);
+        // nwThng(7, 6, 9);
+        // nwThng(7, 6, 11);
+        // nwThng(9, 8, 0);
+        // nwThng(9, 8, 2);
+        // nwThng(11, 10, 1);
+        // nwThng(11, 10, 3);
+
+        /* Incomplete edge drawing (draw six of the edges, unfinished) */
+        // function nwThng(a, b, prop1, prop2) {
+        //   things.push(["hs", m.green, new Vec3(pRect[a]), new Vec3(pRect[b]), new Vec3(pRect[c])])
+        // }
+        // nwThng(0, 1, );
+        // nwThng(2, 3, 6);
+        // nwThng(4, 5, 5);
+        // nwThng(6, 7, 7);
+        // nwThng(8, 9, 8);
+        // nwThng(10, 11, 10);
+
+        // things[things.length-1][1]=m.collumn;// Make one of the faces light
+        // things[5][1]=new Material([0.05, 0.95, 0.1]);// Make one of the faces light
+        // things[5][1]=m.collumn;// Make one of the faces light
+      }
+
+
+      // function rangle() {
+      //   anghor=rand(TAU);
+      //   angver=Math.asin(rand0());
+      // }
+      function stepcalc() {
+        step=new Vec3(
+          stepsize*Math.cos(anghor)*Math.cos(angver),
+          stepsize*Math.sin(anghor)*Math.cos(angver),
+          stepsize*Math.sin(angver)
+        )
+      }
+      function draw() {
+        for (var i = 0; i < usew; i++) {
+          for (var j = 0; j < useh; j++) {
+            var e=arr[i][j];
+            context.fillStyle="rgb("+e[0]/e[3]*256+","+e[1]/e[3]*256+","+e[2]/e[3]*256+")";
+            context.fillRect(i*pixsize,j*pixsize,pixsize,pixsize);
+          }
+        }
+      }
+      function update() {
+        if (!paused) {
+          if (true) {//controls
+            if(k[87]){//w - forward
+              startpos.x+=Math.cos(camang)/ 50 ;
+              startpos.y+=Math.sin(camang)/ 50 ;
+              clear();
+            }
+            if(k[65]){//a - left
+              camang-=0.02;
+              clear();
+            }
+            if(k[83]){//s - back
+              startpos.x-=Math.cos(camang)/ 50 ;
+              startpos.y-=Math.sin(camang)/ 50 ;
+              clear();
+            }
+            if(k[68]){//d - right
+              camang+=0.02;
+              clear();
+            }
+            if(k[219]){//[ - down
+              startpos.z-=0.01;
+              clear();
+            }
+            if(k[221]){//] - up
+              startpos.z+=0.01;
+              clear();
+            }
+            if(k[221]){//] - up
+              startpos.z+=0.01;
+              clear();
+            }
+          }
+      		for(var n=0; n<150; n++){//calculate
+            if (!layering) {//don't layer
+              if (loops>useh*usew) {
+                break;
+              }
+            }
+            i=loops%usew+Math.random();
+            j=(Math.floor(loops/usew))%useh+Math.random();
+            // i=loops%usew;
+            // j=(Math.floor(loops/usew))%useh;
+            camwid=TAU/3;
+            anghor=camwid*(i+0.5)/usew+camang-camwid/2;
+            angver=PI/2*(j+0.5)/useh-PI/4;
+            // camwid=TAU;
+            // anghor=TAU*(i+0.5)/usew+camang+PI;
+            // angver=PI*(j+0.5)/useh-PI/2;
+            ray=startpos.copy();
+            fog=0;
+            colpass=new Color(1);//how much emitted light gets from current position to camera
+            colres=new Color(0);//what light is sensed (add to during path)
+            lasthit=undefined;
+            var collisionNum=0;
+            var reflected=false;
+            stepcalc();
+      			while(!(colpass.r<minColorCast && colpass.g<minColorCast && colpass.b<minColorCast) && collisionNum<50){
+              var minDist=Infinity;
+              var minObj=undefined;
+
+              for (var th = 0; th < things.length; th++) {//find closest object that gets hit
+                var p0=things[th][2].copy(); var p1=things[th][3].copy(); var p2=things[th][4].copy();
+                var p01=p1.sub(p0); var p02=p2.sub(p0);
+                var la=ray.copy(); var labNeg=step.neg();
+
+                var dotWith=la.sub(p0).div(labNeg.dot(p01.cross(p02)));
+
+                var t=p01.cross(p02).dot(dotWith);
+
+                function setRecord() {
+                  minDist=t;
+                  minObj=things[th];
+                }
+
+                var thingType=things[th][0];
+                if (thingType=="tri") {
+                  var u=p02.cross(labNeg).dot(dotWith);
+                  var v=labNeg.cross(p01).dot(dotWith);
+                  if (u>=0 && v>=0 && u+v<=1 && t>0.001 && t<minDist) {//object is in correct direction and is the closest yet
+                    setRecord();
+                  }
+                }
+                else if (thingType=="hs") {
+                  if (t>0.001 && t<minDist) {//object is in correct direction and is the closest yet
+                    setRecord();
+                  }
+                }
+              }
+
+              if (ray.add(step.mult(minDist)).len()>sphereRadius) {//bounding sphere
+                colpass=colpass.mult(fogBase**minDist);
+                colres=colres.add(new Color(1).mult(colpass));
+                break;
+              }
+
+              if (minObj!=undefined) {//a collision happened, do light calculations
+                colpass=colpass.mult(fogBase**minDist);
+
+                var p0=minObj[2].copy(); var p1=minObj[3].copy(); var p2=minObj[4].copy();
+                  var p01=p1.sub(p0); var p02=p2.sub(p0);
+                  var la=ray.copy(); var labNeg=step.neg();
+
+                  var norm=p01.cross(p02).unit();
+
+                  var dotWith=la.sub(p0).div(labNeg.dot(p01.cross(p02)));
+
+                  var t=p01.cross(p02).dot(dotWith);
+                  var u=p02.cross(labNeg).dot(dotWith);
+                  var v=labNeg.cross(p01).dot(dotWith);
+
+                ray=ray.add(step.mult(t));//set ray position to collision place
+                colres=colres.add(minObj[1].light.mult(1-minObj[1].gloss).mult(colpass));//add the color of currently collided object
+                colpass=colpass.mult(minObj[1].color);
+
+                if (minObj[1].gloss!=0) {//material is somewhat glossy
+                  colpass=colpass.mult(minObj[1].gloss);
+                  var negStepDir=step.neg().unit();
+
+                  step=norm.mult(2*norm.dot(negStepDir)).sub(negStepDir);
+                  reflected=true;
+                }
+                else {//no gloss, // TODO: random angle, currently just stop
+                  break;
+                }
+
+              }
+              else {//no collisions happened
+                colres=colres.add(new Color(0.05, 0.05, 0.05).mult(colpass));
+                // colres=new Color(0, 0, 0);
+                break;
+              }
+              collisionNum++;
+
+              // if (minObj) {//if any object has been hit
+              //   ray.x+=step.x*minDist;
+              //   ray.y+=step.y*minDist;
+              //   ray.z+=step.z*minDist;
+              //   colpass=colpass.div(1.01**minDist);
+              //   // minObj[1].hit();
+              // }
+              // else{
+              //   break;
+              // }
+              // if (Math.floor(i)==1 && Math.floor(j)==Math.floor((canvas.height+80)/2/pixsize)) {
+              //   data.push([rayx,rayy,rayz]);
+              // }
+              // lasthit=minObj;
+              // break;
+            }
+
+            if (true) {//update image array and draw current pixel
+              i=Math.floor(i);
+              j=Math.floor(j);
+              var e=1/ 2 ;//something to do with gamma
+              arr[i][j][0]+=Math.pow(colres.r, e);
+              arr[i][j][1]+=Math.pow(colres.g, e);
+              arr[i][j][2]+=Math.pow(colres.b, e);
+              arr[i][j][3]++;
+              e=arr[i][j];
+              context.fillStyle="rgba(0,0,0,0)";
+              context.fillStyle="rgb("+e[0]/e[3]*256+","+e[1]/e[3]*256+","+e[2]/e[3]*256+")";
+              context.fillRect(i*pixsize,j*pixsize,pixsize,pixsize);
+            }
+            loops++;
+          }
+          // if (true) {//log data
+          //   for (var i = 0; i < data.length; i++) {
+          //     curang=[atan4(startpos.x, data[i].x, startpos.y, data[i].y), Math.asin(ray.z-startpos.z)];
+          //     curpos=[(curang[0]-camang)/TAU*canvas.width, (curang/PI+0.5)*canvas.height];
+          //     context.fillRect(curpos.x, curpos.y, 10, 10);
+          //   }
+          // }
+          window.requestAnimationFrame(update);//loop
+        }
+      }
+
+      function clear() {
+        usew=Math.ceil(canvas.width/pixsize)+1;
+        useh=Math.ceil(canvas.height/pixsize)+1;
+        arr=new Array(usew);
+        for (var i = 0; i < arr.length; i++) {
+          arr[i]=new Array(useh);
+          for (var j = 0; j < arr[i].length; j++) {
+            arr[i][j]=[0,0,0,0];
+          }
+        }
+        loops=0;
+      }
+      function restart() {
+        clear();
+        update();
+      }
+      function resize() {
+        canvas.width=window.innerWidth;
+        canvas.height=window.innerHeight;
+        restart();
+      }
+      resize();
+
+      // window.addEventListener("resize",function(){resize();});
+      window.addEventListener("click",function(){});
+      window.addEventListener("dblclick",function(){location.reload();});
+      window.addEventListener("keypress",function(){
+        var k=event.keyCode;
+        //console.log(k);
+        if (k<58 && k>48) {//numbers - pixsize
+          pixsize=2**(k-49);
+          console.log(pixsize);
+          restart();
+        }
+        else {
+          switch (k) {
+            case 114://r - resize and restart
+              console.log("Restart");
+              resize();
+              restart();
+              break;
+            case 32://space - pause
+              paused=!paused;
+              if (paused) {
+                var e=classels("panel")
+                for (var i=0; i<e.length; i++) {
+                  e[i].style.display="block";
+                }
+              }
+              if (!paused) {
+                var e=classels("panel")
+                for (var i=0; i<e.length; i++) {
+                  e[i].style.display="none";
+                }
+                update();
+              }
+              break;
+            // case 43://+ - stepsize++
+            //   stepsize*=1.1;
+            //   console.log("Step++");
+            //   restart();
+            //   break;
+            // case 45://- - stepsize--
+            //   stepsize*=0.9;
+            //   console.log("Step--");
+            //   restart();
+            //   break;
+            case 120://x - multilayering
+              layering=!layering;
+              break;
+            default:
+              // console.log("Key: "+k);
+          }
+        }
+      });
+      window.addEventListener("keydown",function(){
+        k[event.keyCode]=true;
+      });
+      window.addEventListener("keyup",function(){
+        k[event.keyCode]=false;
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>𝑻 𝑹 𝑬 𝑬 𝑺</title>
+  <style media="screen">
+    body{
+      background-color: rgb(10,50,40);
+      color: rgb(200, 200, 200);
+      font-size: 40px;
+      overflow: hidden;
+      font-size: 300%;
+    }
+    canvas{
+      position: absolute;
+      left: 0;
+      top: 0;
+      outline: 2px dashed navy;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="300" height="300"></canvas>
+  <script type="text/javascript">
+    function rand(max=1) {
+      return Math.random()*max;
+    }
+    function rand0(max=1) {
+      return (Math.random()-0.5)*max;
+    }
+    function randint(max=2) {
+      return Math.floor(Math.random()*max);
+    }
+    function clamp(num, val=1) {//num to clamp, special value
+      return 1+(val/(num+val));
+    }
+    function collerp(x, n1, n2) {
+      return n2.sub(n1).mult(x).add(n1);
+    }
+
+    var canvas=document.getElementById("canvas");
+    var context=canvas.getContext("2d");
+    var TAU=6.2832;
+    var PI=3.1416;
+    var loops=e=v=ang=movex=movey=angmod=lasty=controls=0;
+    var lastx=window.innerWidth/2;
+    var paused=false;
+    var zoom=1;
+    var brancharr=trees=k=[];
+
+    var angspeed=  0  ;
+    var begwid=  100  ;
+    var lenmax=1/begwid/  1.5  ;
+    var bailout=  10  ;
+    var frameskip=  2  ;
+
+    function Color(r=255, g=0, b=255, a=1) {
+      this.r=r;
+      this.g=g;
+      this.b=b;
+      this.a=a;
+      this.each=function(f) {
+        return new Color(f(this.r), f(this.g), f(this.b));
+      }
+      this.modify=function(amp) {
+        return this.each(function(n) {
+          var x=n+rand0(amp);
+          if (x>255) {
+            return 255;
+          }
+          else if (x<0) {
+            return 0;
+          }
+          else {
+            return x;
+          }
+        });
+      }
+      this.add=function(v) {
+        return new Color(this.r+v.r, this.g+v.g, this.b+v.b);
+      }
+      this.sub=function(v) {
+        return new Color(this.r-v.r, this.g-v.g, this.b-v.b);
+      }
+      this.mult=function(v) {
+        return new Color(this.r*v, this.g*v, this.b*v);
+      }
+      this.rgb=function() {
+        return "rgb("+this.r+","+this.g+","+this.b+")";
+      }
+    }
+    var colleaf=new Color(60,220,30);
+    var colbran1=new Color(40,10,10);
+    var colbran2=new Color(90,60,40);
+    // var colbran2=new Color(40,10,10);
+    // var colbran1=new Color(10,10,10);
+    // var colbran2=new Color(30,40,20);
+    function Vec2(x, y) {
+      this.x=x;
+      this.y=y;
+      this.add=function(v) {
+        return new Vec2(this.x+v.x, this.y+v.y);
+      }
+      this.mult=function(n) {
+        return new Vec2(this.x*n, this.y*n);
+      }
+      this.sub=function(v) {
+        return new Vec2(this.x-v.x, this.y-v.y);
+      }
+      this.total=function() {
+        return this.x+this.y;
+      }
+    }
+    function Vec3(x, y, z) {
+      this.x=x;
+      this.y=y;
+      this.z=z;
+      this.add=function(v) {
+        return new Vec3(this.x+v.x, this.y+v.y, this.z+v.z);
+      }
+      this.mult=function(n) {
+        return new Vec3(this.x*n, this.y*n, this.z*n);
+      }
+      this.fproject=function(ang) {
+        return this.x*Math.cos(ang)+this.y*Math.sin(ang)
+      }
+      this.project=function(ang) {
+        //return new Vec2(this.x*canvas.height+canvas.width/2, (this.z-1)*-canvas.height);
+        return new Vec2((this.x*Math.cos(ang)+this.y*Math.sin(ang))*zoom*canvas.height+canvas.width/2*(1-movex*zoom),
+          //((this.z-0.5)*zoom-0.5)*-canvas.height/**(1-movey*zoom)*/
+          ((-this.z+movey+0.5)*zoom+0.5)*canvas.height
+          );
+      }
+    }
+    function Ang2(h, v) {
+      this.h=h;
+      this.v=v;
+      this.add=function(a) {
+        return new Ang2(this.h+a.h, this.v+a.h);
+      }
+    }
+
+    function Branch(parent, type, pos, width, length) {
+      this.parent=parent;
+      this.type=type;
+      this.pos=pos;
+      this.wid=width;
+      this.len=length;
+      this.mod=new Vec3(rand0(this.len),rand0(this.len),rand(this.len/2));
+      this.end=this.pos.add(this.mod);
+      this.color=collerp(this.wid/begwid, colbran1, colbran2).modify( 20 );
+      this.grown=false;
+      this.grow=function() {
+        if (this.type==1) {
+          if(this.wid>bailout){ //Make branches
+            var r=randint(3);
+            for (var i = -1; i < r; i++) {
+              trees[this.parent].branches.push(new Branch(this.parent, this.type, this.end, this.wid/1.5, this.len/1.5));
+            }
+          }
+          else { //Make "leaves"
+            e=trees[this.parent].branches.push(new Branch(this.parent, this.type+1, this.end, 30+rand(50), 0));
+          }
+        }
+        else { //Is "leaf"
+          this.color=colleaf.modify( 40 );
+        }
+        this.grown=true;
+      }
+    }
+
+    function Tree(index) {
+      this.index=index;
+      this.pos=new Vec3(0,0,0);
+      this.branches=[new Branch(this.index, 1, this.pos, begwid, 1)];
+      this.grow=function() {
+        for (var i = 0; i < this.branches.length; i++) {
+          if(!this.branches[i].grown){
+            this.branches[i].grow();
+          }
+        }
+      }
+    }
+    for (var i = 0; i < 1; i++) {
+      trees.push(new Tree(i));
+      trees[i].grow();
+    }
+
+///////////////////////////////////////////////////////////////////////////////
+
+function draw() {
+  if (!paused) {
+  if (loops% frameskip <1) {
+    switch (controls) {
+      case 0:
+        angmod=(lastx/canvas.width-0.5)*10;
+        break;
+      case 1:
+        angmod+=(lastx/canvas.width-0.5)/2;
+        break;
+    }
+    angmod%=TAU;
+    ang=(loops*angspeed+angmod)%TAU;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    for (var i = 0; i < trees.length; i++) { //  Selecting trees to evaluate and draw
+      trees[i].branches.sort(function(a, b) { //  Sorting by "distance" to the camera
+        return a.end.fproject(ang+PI/2)-b.end.fproject(ang+PI/2);
+      })
+      for (var j = 0; j < trees[i].branches.length; j++) { //  Drawing branches
+        v=trees[i].branches[j];
+        context.strokeStyle=v.color.rgb();
+        context.lineWidth=v.wid;
+        context.beginPath();
+        e=v.pos.project(ang);
+        context.moveTo(e.x,e.y);
+        e=v.end.project(ang);
+        context.lineTo(e.x,e.y);
+        context.stroke();
+      }
+    }
+  }
+  loops++;
+  window.requestAnimationFrame(draw);
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+    function restart() {
+      loops=0;
+    }
+    function resize() {
+      canvas.width=window.innerWidth;
+      canvas.height=window.innerHeight;
+      context.lineJoin="round";
+      context.lineCap="round";
+      restart();
+    }
+    resize();
+    draw();
+    canvas.addEventListener("mousemove",function(){
+      // lastx=event.clientX;
+      // lasty=event.clientY;
+      lastx=(event.clientX+lastx)/2;
+      lasty=(event.clientY+lasty)/2;
+    });
+    window.addEventListener("dblclick",function(){location.reload();});
+    window.addEventListener("keyup",function(){
+      k="";
+    });
+    window.addEventListener("keydown",function(){
+      k=event.keyCode;
+      console.log(k);
+      switch (k) {
+        case 32://space
+          paused=!paused;
+          draw();
+          break;
+        case 37://left
+          break;
+        case 87://w
+          movey+=0.05/zoom;
+          break;
+        case 65://a
+          movex-=0.05/zoom;
+          break;
+        case 83://s
+          movey-=0.05/zoom;
+          break;
+        case 68://d
+          movex+=0.05/zoom;
+          break;
+        case 82://r
+          restart();
+          break;
+        case 88://x
+          controls=(controls+1)%2;
+          break;
+        case 107://+
+          zoom*=1.1;
+          break;
+        case 109://-
+          zoom/=1.1;
+          break;
+      }
+    });
+    window.addEventListener("resize",function(){resize();})
+  </script>
+</body>
+</html>

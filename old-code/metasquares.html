@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>Hyperbolic plane</title>
+  <style media="screen">
+    body{
+      /* background-color: rgb(10,15,30); */
+      background-color: rgb(255,255,0);
+      /* color: rgb(200, 200, 200); */
+      color: rgb(10, 10, 10);
+      font-size: 2.5vh;
+      overflow: hidden;
+    }
+    canvas{
+      position: absolute;
+      left: 0;
+      top: 0;
+      outline: 2px dashed navy;
+    }
+    .uiContainer {
+      text-align: right;
+      font-family: sans-serif;
+      /* font-family: cursive; */
+      position: absolute;
+      left: 1.6vh;
+      top: 1.6vh;
+      z-index: 2;
+      background-color: hsl(0,0%,30%);
+      padding: 1vh;
+      border-radius: 1vh;
+      line-height: 3.5vh;
+      overflow: auto;
+      color: rgb(200, 200, 200);
+    }
+    .uiSubContainer {
+      text-align: left;
+      background-color: hsl(0,0%,85%);
+      padding: 0.6vh;
+      margin: 0.3vh;
+      border-radius: 0.6vh;
+      color: rgb(10, 10, 10);
+    }
+
+    .gameSettingsNumbers{
+      width: 4.5vh;
+      /* background-color: hsl(0,0%,75%); */
+      background-color: inherit;
+      border-radius: 0.4vh;
+      border: 1px solid gray;
+    }
+    .inlineNumber{
+      display: inline;
+    }
+    #schlafliInputContainer{
+       padding-bottom:3px;
+       padding-top:3px;
+    }
+    #curPlayerMarker{
+      user-select: none;
+      padding-left: 0.6vh;
+      font-size: 3.5vh;
+    }
+
+    button{
+      user-select: none;
+    }
+    .noSelect {
+      -webkit-touch-callout: none; /* iOS Safari */
+        -webkit-user-select: none; /* Safari */
+         -khtml-user-select: none; /* Konqueror HTML */
+           -moz-user-select: none; /* Old versions of Firefox */
+            -ms-user-select: none; /* Internet Explorer/Edge */
+                user-select: none; /* Non-prefixed version, currently
+                                      supported by Chrome, Edge, Opera and Firefox */
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="300" height="300"></canvas>
+  <div class="uiContainer">
+    <div id="curPlayerMarker" style="position:absolute;">⬤</div>
+    <div><p class="inlineNumber" id="numTakenVerts">0</p>/<p class="inlineNumber" id="numVerts">0</p></div>
+    <div id="scoreContainer" class="uiSubContainer"></div>
+    <div class="uiSubContainer">
+      <span id="schlafliInputContainer"><b>{<input class="gameSettingsNumbers" type="number" id="schlafliP" name="schlafliP" min="3" max="30">; <input class="gameSettingsNumbers" type="number" id="schlafliQ" name="schlafliQ" min="3" max="30">}</b></span> grid with<br>
+      <input class="gameSettingsNumbers" type="number" id="numPlayers" name="numPlayers" min="1" max="10"> players
+      <!-- <input class="gameSettingsNumbers" type="number" id="schlafliP" name="schlafliP" min="3" max="30">
+      <input class="gameSettingsNumbers" type="number" id="schlafliQ" name="schlafliQ" min="3" max="30">
+      <input class="gameSettingsNumbers" type="number" id="numPlayers" name="numPlayers" min="1" max="10"> -->
+      <button onclick="restart()"><b>Go</b></button>
+    </div>
+  </div>
+  <script type="text/javascript">
+    // "use strict";
+    function rand(max=1) {
+      return Math.random()*max;
+    }
+    function rand0(max=1) {
+      return (Math.random()-0.5)*max;
+    }
+    function randInt(max=2) {
+      return Math.floor(Math.random()*max);
+    }
+    function randProb(p=0.5) {
+      return p>Math.random();
+    }
+    function randRange(a, b) {
+      return Math.random()*(b-a)+a;
+    }
+    function clamp(num, val=1) {//num to clamp, special value
+      return 1-(val/(num+val));
+    }
+    function colorLerp(x, n1, n2) {
+      return n2.sub(n1).mult(x).add(n1);
+    }
+    function cutoff(x, min, max) {
+      if (min!=undefined && x<min) {
+        return min;
+      }
+      if (max!=undefined && x>max) {
+        return max;
+      }
+      return x;
+    }
+    function closenessPenalty(x, coefficient) { //what number to divide x by so it doesn't reach 1
+      return 1-coefficient-coefficient/(x-1);
+    }
+    function round(v, p=2) {
+      return Math.round(v*10**p+Number.EPSILON)/10**p;
+    }
+    function lerp(x, v1, v2) {
+      return x*(v2-v1)+v1;
+    }
+    function map(x, a1, a2, b1, b2) {
+      return (x-a1)/(a2-a1)*(b2-b1)+b1;
+    }
+    function arrayContains(arr, val) {
+      for (var i = 0; i < arr.length; i++) {
+        if (arr[i]==val) return true;
+      }
+      return false;
+    }
+    function indexOfElement(arr, val) {
+      for (var i = 0; i < arr.length; i++) {
+        if (arr[i]==val) return i;
+      }
+      // return false;// TODO: is this fine?
+    }
+
+    /* TODO:
+      replace a bunch of 0.001 epsilons
+      nicer board shape
+      prettier taken circles
+        3d offset effect
+        precise hyperbolic circle centers (center != vertice position)
+        shading
+        colorblind friendly shapes
+        better colors (also originals)
+      resizing that waits (not resizing multiple times a second)
+      resizing also draws taken polygons
+      custom resizing via dragging? (support for screens that cut off edges)
+      change body.background-color
+      also euclidean tilings (maybe also spherical and penrose)
+        also add player chosen distortions, to get more used to counting on the grid
+
+    */
+
+    // var schlafliSymbol=[5, 4];
+    var schlafliSymbol=[4, 5];
+    // var schlafliSymbol=[6, 4];
+    // var schlafliSymbol=[4, 6];
+    // var schlafliSymbol=[8, 3];
+    // var schlafliSymbol=[10, 3];
+    // var schlafliSymbol=[3, 8];
+    // var schlafliSymbol=[3, 27];
+    var canvas=document.getElementById("canvas");
+      var context=canvas.getContext("2d");
+      const TAU=2*Math.PI;
+      const PI=Math.PI;
+      const HPI=Math.PI/2;
+      const PHI=(Math.sqrt(5)+1)/2;
+      const HALFROOT3=Math.sqrt(3)/2;
+      var paused=false;
+      var frameSkip=10;
+      var fReqs=frameSkip;
+      var keys=[];
+      var height=100;
+      var P=[];//Polygons array
+      var V=[];//Vertices array
+      const radius=1;//has to be 1
+      var numPlayers=2;
+      var curPlayer=1;
+      var numPolys=0;
+      var numVerts=0;
+      var takenPolys=[];//what polygons have been taken by one player
+      var schlafliP=schlafliSymbol[0];
+      var schlafliQ=schlafliSymbol[1];
+      document.getElementById("schlafliP").value=schlafliP;
+      document.getElementById("schlafliQ").value=schlafliQ;
+      document.getElementById("numPlayers").value=numPlayers;
+      var numTakenVerts=0;
+      var lastClickTookPolygon=false;
+      var poincareEdgeLength;
+
+    if(true){// COLORS and color gradients used
+      function Color(r=255, g=0, b=255, a=1) {
+        this.r=r;
+        this.g=g;
+        this.b=b;
+        this.a=a;
+        this.copy=function() {
+          return new Color(this.r, this.g, this.b, this.a);
+        }
+        this.each=function(f) {
+          return new Color(f(this.r), f(this.g), f(this.b));
+        }
+        this.modify=function(amp) {
+          return this.each(function(n) {
+            var x=n+rand0(amp);
+            if (x>255) {
+              return 255;
+            }
+            else if (x<0) {
+              return 0;
+            }
+            else {
+              return x;
+            }
+          });
+        }
+        this.add=function(v) {
+          return new Color(this.r+v.r, this.g+v.g, this.b+v.b);
+        }
+        this.lighten=function(v) {
+          return new Color(v*(256-this.r)+this.r, v*(256-this.g)+this.g, v*(256-this.b)+this.b);
+        }
+        this.sub=function(v) {
+          return new Color(this.r-v.r, this.g-v.g, this.b-v.b);
+        }
+        this.mult=function(v) {
+          return new Color(this.r*v, this.g*v, this.b*v);
+        }
+        this.rgb=function() {
+          return "rgb("+this.r+","+this.g+","+this.b+")";
+        }
+        this.square=function() {
+          return new Color(this.r**2, this.g**2, this.b**2, this.a);
+        }
+        this.sqrt=function() {
+          return new Color(Math.sqrt(this.r), Math.sqrt(this.g), Math.sqrt(this.b), this.a);
+        }
+        this.grayen=function(amp) {
+          return this.each(function(n){
+            return n*(1-amp)+128*amp;
+          });
+        }
+      }
+      function Gradient(v) {
+        this.colors=[];
+        this.values=[];
+        for (var i = 0; i < v.length; i+=2) {
+          this.colors[i/2]=v[i];
+          this.values[i/2]=v[i+1];
+        }
+        this.get=function(x) {
+          for (var i = 0; i < this.values.length; i++) {
+            if (this.values[i]>x) {
+              if (i==0) {
+                return this.colors[0].copy();
+              }
+              else {
+                // return this.colors[i].sub(this.colors[i-1]).mult((x-this.values[i-1])/(this.values[i]-this.values[i-1])).add(this.colors[i-1]); // simple, ugly mixing
+                return this.colors[i].square().sub(this.colors[i-1].square()).mult((x-this.values[i-1])/(this.values[i]-this.values[i-1])).add(this.colors[i-1].square()).sqrt(); // complicated, expesive, prettier mixing
+              }
+            }
+          }
+          return this.colors[this.colors.length-1].copy();
+        }
+      }
+      var colors={
+        mist: new Color(110, 130, 210),
+        sky: new Color(50, 150, 210),
+        darkBrown: new Color(40, 17, 2),
+        lightBrown: new Color(200, 160, 60),
+        sand: new Color(200, 170, 120),
+
+        white: new Color(255, 255, 255),
+        black: new Color(0, 0, 0),
+        red: new Color(255, 0, 0),
+        green: new Color(0, 255, 0),
+        blue: new Color(0, 0, 255),
+        yellow: new Color(255, 255, 0),
+        magenta: new Color(255, 0, 255),
+        cyan: new Color(0, 255, 255),
+
+        darkRed: new Color(127, 0, 0),
+        darkGreen: new Color(0, 127, 0),
+        darkBlue: new Color(0, 0, 127),
+        darkYellow: new Color(127, 127, 0),
+        darkMagenta: new Color(127, 0, 127),
+        darkCyan: new Color(0, 127, 127),
+        veryDarkRed: new Color(63, 0, 0),
+        veryDarkGreen: new Color(0, 63, 0),
+        veryDarkBlue: new Color(0, 0, 63),
+        veryDarkYellow: new Color(63, 63, 0),
+        veryDarkMagenta: new Color(63, 0, 63),
+        veryDarkCyan: new Color(0, 63, 63),
+
+        orange: new Color(255, 127, 0),
+        gray: new Color(127, 127, 127),
+        darkGray: new Color(63, 63, 63),
+        darkGray: new Color(63, 63, 63),
+        slate: new Color(50, 67, 127)
+        // brown: new Color(64, 32, 0)
+      }
+      var gradients={
+        leafy: new Gradient([colors.veryDarkGreen, 0, colors.green, 0.5, colors.yellow, 1]),
+        rainbow: new Gradient([colors.black, 0, colors.red, 0.1, colors.yellow, 0.26, colors.green, 0.42, colors.cyan, 0.58, colors.blue, 0.74, colors.magenta, 0.9, colors.white, 1]),
+        natural: new Gradient([colors.black, 0, colors.green, 0.6, colors.yellow, 0.8, colors.white, 0.9, colors.red, 1]),
+        tech: new Gradient([colors.black, 0, colors.darkBlue, 0.3, colors.cyan, 0.6, colors.white, 1]),
+        flame: new Gradient([colors.black, 0, colors.darkBlue, 0.1, colors.white, 0.24, colors.yellow, 0.38, colors.red, 0.7, colors.black, 1]),
+        middleBand: new Gradient([colors.black, 0.4, colors.white, 0.401, colors.white, 0.599, colors.black, 0.6]),
+        middleNarrowBand: new Gradient([colors.white, 0.47, colors.black, 0.472, colors.black, 0.528, colors.white, 0.53]),
+        blendingTest: new Gradient([colors.green, 0, colors.red, 1])
+      }
+      var useGradient=gradients.tech;
+      var BGColor=new Color(10, 15, 30);
+      var takeColors=[[255,255,0],
+        [213, 94, 0],
+        [0, 114, 178],
+        [230, 220, 60],
+        [204, 121, 167],
+        [0, 158, 115],
+        [86, 180, 233],
+        [230, 159, 0],
+        // [220, 110, 0],
+        // [220, 110, 0],
+        // [220, 110, 0],
+      ]
+      for (var i = 0; i < takeColors.length; i++) {
+        var curColor=new Color(takeColors[i][0], takeColors[i][1], takeColors[i][2]);
+        var curFaceColor=curColor.rgb();
+        curFaceColor=curFaceColor.substring(0, curFaceColor.length-1)+",30%)";
+        takeColors[i]={
+          vertex: curColor.rgb(),
+          edge: curColor.rgb(),
+          face: curFaceColor
+        }
+      }
+      // var takeColors=[{},
+      //   {
+      //     vertex: "rgb(220, 110, 0)",
+      //     edge: "rgb(220, 110, 0)",
+      //     face: "rgba(165, 72, 0, 30%)"
+      //   },
+      //   {
+      //     vertex: "rgb(0, 10, 220)",
+      //     edge: "rgb(0, 10, 220)",
+      //     face: "rgba(0, 7, 165, 30%)"
+      //   }
+      // ]
+    }
+
+    function Vec2(x=0, y=0) {
+      this.x=x;
+      this.y=y;
+      this.copy=function() {
+        return new Vec2(this.x, this.y);
+      }
+      this.add=function(v1, v2) {// FIXME: doesn't always work with both values
+        if (v2!=undefined) {
+          return new Vec2(this.x+v1, this.y+v2);
+        }
+        return new Vec2(this.x+v1.x, this.y+v1.y);
+      }
+      this.sub=function(v) {
+        return new Vec2(this.x-v.x, this.y-v.y);
+      }
+      this.mult=function(n) {
+        return new Vec2(this.x*n, this.y*n);
+      }
+      this.div=function(n) {
+        return new Vec2(this.x/n, this.y/n);
+      }
+      this.dot=function(v) {
+        return v.x*this.x + v.y*this.y;
+      }
+      this.iHatLanding=function(v) {
+        return new Vec2(v.x*this.x-v.y*this.y, v.x*this.y+v.y*this.x);
+      }
+      this.len=function() {
+        return Math.sqrt(this.x**2+this.y**2);
+      }
+      this.sqLen=function() {
+        return this.x**2+this.y**2;
+      }
+      this.dist=function(v) {
+        return Math.sqrt((this.x-v.x)**2+(this.y-v.y)**2);
+      }
+      this.sqDist=function(v) {
+        return (this.x-v.x)**2+(this.y-v.y)**2;
+      }
+      this.unit=function() {
+        var len=Math.sqrt(this.x**2+this.y**2);
+        return new Vec2(this.x/len, this.y/len);
+      }
+      this.ang=function() {//angle to x axis in radians
+        return Math.atan2(this.y, this.x);
+      }
+      this.taxi=function() {//taxicab distance
+        return this.x+this.y;
+      }
+      this.screen=function() {//coordinates for drawing
+        // return new Vec2(this.x-0.5*this.y, this.y*HALFROOT3);
+        return new Vec2(this.x*height/2+canvas.width/2, height/2-this.y*height/2);// TODO: not quite to screen height, also optimize?
+      }
+      this.unscreen=function() {//coordinates for mouse interaction
+        return new Vec2((this.x-canvas.width/2)*2/height, (height/2-this.y)*2/height);// TODO:
+      }
+    }
+    // function Vec3(x=0, y=0, z=0) {
+    //   if (typeof x=="number") {
+    //     this.x=x;
+    //     this.y=y;
+    //     this.z=z;
+    //   }
+    //   else {
+    //     this.x=x[0];
+    //     this.y=x[1];
+    //     this.z=x[2];
+    //   }
+    //   this.copy=function() {
+    //     return new Vec3(this.x, this.y, this.z);
+    //   }
+    //   this.neg=function() {
+    //     return new Vec3(-this.x, -this.y, -this.z);
+    //   }
+    //   this.sub=function(v) {
+    //     return new Vec3(this.x-v.x, this.y-v.y, this.z-v.z);
+    //   }
+    //   this.add=function(v) {
+    //     return new Vec3(this.x+v.x, this.y+v.y, this.z+v.z);
+    //   }
+    //   this.mult=function(sc) {
+    //     return new Vec3(this.x*sc, this.y*sc, this.z*sc);
+    //   }
+    //   this.len=function() {
+    //     return Math.sqrt(this.x**2+this.y**2+this.z**2);
+    //   }
+    //   this.unit=function(sc) {
+    //     var len=this.len();
+    //     return new Vec3(this.x/len, this.y/len, this.z/len);
+    //   }
+    //   this.div=function(sc) {
+    //     return new Vec3(this.x/sc, this.y/sc, this.z/sc);
+    //   }
+    //   this.cross=function(v) {
+    //     return new Vec3(this.y*v.z-this.z*v.y, -(this.x*v.z-this.z*v.x), this.x*v.y-this.y*v.x);
+    //   }
+    //   this.dot=function(v) {
+    //     return this.x*v.x+this.y*v.y+this.z*v.z;
+    //   }
+    //   this.dist=function(v) {
+    //     return Math.sqrt((this.x-v.x)**2+(this.y-v.y)**2+(this.z-v.z)**2);
+    //   }
+    //   this.rotateY=function(a) {
+    //     return new Vec3(this.z*Math.sin(a)+this.x*Math.cos(a), this.y, this.z*Math.cos(a)-this.x*Math.sin(a));
+    //   }
+    //   this.rotateZ=function(a) {
+    //     return new Vec3(this.x*Math.cos(a)-this.y*Math.sin(a), this.x*Math.sin(a)+this.y*Math.cos(a), this.z);
+    //   }
+    //   this.randNudge=function(a) {
+    //     return new Vec3(this.x+rand0(a), this.y+rand0(a), this.z+rand0(a));
+    //   }
+    // }
+    // function sphericalToVec3(hor, ver, mag=1) {
+    //   return new Vec3(Math.cos(ver)*Math.cos(hor)*mag, Math.cos(ver)*Math.sin(hor)*mag, Math.sin(ver)*mag);
+    // }
+    // function smootherStep(x) {
+    //   return x * x * x * (x * (x * 6 - 15) + 10);
+    // }
+    // function getSmoothWeightedAverage(x, v1=0, v2=1) {//lerp, but with smootherstep
+    //   return x * x * x * (x * (x * 6 - 15) + 10)*(v2-v1)+v1;
+    // }
+    // function getWeightedSquareAverage(x, y, v1, v2, v3, v4) {//smooth interpolation
+    //   return getSmoothWeightedAverage(y, getSmoothWeightedAverage(x, v1, v2), getSmoothWeightedAverage(x, v3, v4));
+    // }
+    // function getNoise(i, j, seed=0) {//perlin noise
+    //   var fi=Math.floor(i);
+    //   var fj=Math.floor(j);
+    //   var reli=i-fi;
+    //   var relj=j-fj;
+    //   function getCurrentDot(iOff, jOff) {
+    //     var ang=((fi+iOff)*2+((fj+jOff+seed)*(seed+1))**2)**2;
+    //     // var ang=((fi+iOff)+(fj+jOff)*2)**2;
+    //     return Math.cos(ang)*(reli-iOff)+Math.sin(ang)*(relj-jOff);
+    //   }
+    //   return getWeightedSquareAverage(reli, relj, getCurrentDot(0, 0), getCurrentDot(1, 0), getCurrentDot(0, 1), getCurrentDot(1, 1))*0.8591+0.5;
+    // }
+    function Polygon () {// TODO: classes with push, not weird index saving
+      this.numNext=0;
+      this.next=[];
+      this.numVerts=0;
+      this.verts=[];
+      this.addNext=function (n) {
+        this.next[this.numNext]=n;
+        this.numNext++;
+      }
+      this.addVert=function (v) {
+        this.verts[this.numVerts]=v;
+        this.numVerts++;
+      }
+    };
+    function Vert () {
+      this.numNext=0;
+      this.next=[];
+      this.numPolys=0;
+      this.polys=[];
+      this.pos=new Vec2();
+      this.drawPos=new Vec2();
+      this.takenByNumber=0;
+      this.radius=0;
+      this.addNext=function(n) {
+        this.next[this.numNext]=n;
+        this.numNext++;
+      }
+      this.addPoly=function(p) {
+        this.polys[this.numPolys]=p;
+        this.numPolys++;
+      }
+      this.setPos=function(v) {
+        this.pos=v.copy();
+        // this.drawPos=v.copy();
+        // this.drawPos=v.mult(v.len());
+        // this.radius=0.13*(1-v.sqLen());
+        // this.radius=0.08*(1-this.drawPos.sqLen());
+        // this.drawPos=v.square();
+        // this.drawPos=new Vec2(v.x, v.y);
+
+        let y=(Math.cosh(poincareEdgeLength*  0.35  )-1)/2;
+        this.magnit=this.pos.len();
+        let fracBottom=1-y*this.magnit**2+y;
+        this.radius=(1-this.magnit*this.magnit)*Math.sqrt(y*(y+1))/fracBottom;
+        let drawCenterDist=this.magnit/fracBottom;
+        this.drawPos=this.pos.mult(1/fracBottom);
+      }
+      this.draw=function() {
+        let screenPos=this.drawPos.screen();
+
+        // context.beginPath();//clear circle (may cause pixel-wide dark areas)
+        //   context.arc(screenPos.x, screenPos.y, this.radius*height/2, 0, TAU);
+        //   context.fillStyle=BGColor.rgb();
+        //   context.fill();
+
+        if (this.takenByNumber!=0) {
+          context.beginPath();
+          // context.arc(screenPos.x, screenPos.y, 0.85*this.radius*height/2, 0, TAU);
+          context.arc(screenPos.x, screenPos.y, this.radius*height/2+0.5, 0, TAU);
+          context.fillStyle=takeColors[this.takenByNumber].vertex;
+          context.fill();
+        }
+        else {
+          context.beginPath();
+          context.arc(screenPos.x, screenPos.y, this.radius*height/2, 0, TAU);
+          context.fillStyle="rgb(220, 220, 220)";
+          context.fill();
+        }
+      }
+    };
+
+    function drawSquare(pos, w=4) {
+      pos=pos.screen();
+      // context.fillRect(0.08*pos.x*canvas.height+0.34*canvas.width, (pos.y*0.08+0.1)*canvas.height, w, w);
+      context.fillRect(pos.x-w/2, pos.y-w/2, w, w);
+    }
+    function drawLine(p1, p2) {
+      p1=p1.screen();
+      p2=p2.screen();
+      context.beginPath();
+      context.moveTo(p1.x, p1.y);
+      context.lineTo(p2.x, p2.y);
+      context.stroke();
+    }
+
+    function drawPoincareEdge(v1, v2) {
+      // if (true) {//arc edges
+        var scaleM=((radius/v1.len())**2 + 1)/2;
+        var scaleN=((radius/v2.len())**2 + 1)/2;
+        var M=v1.mult(scaleM);
+        var N=v2.mult(scaleN);
+        // var centerY=(M.x*(M.x-N.x-N.y*N.y/N.x)+M.y*M.y)/(M.y-N.y*M.x/N.x);// TODO: optimize?
+        let centerY=(M.x*(M.x*N.x-N.x*N.x-N.y*N.y)+M.y*M.y*N.x)/(M.y*N.x-N.y*M.x);// TODO: is this safer???
+        var prevC=new Vec2(M.x+M.y*(M.y-centerY)/M.x, centerY);
+        var newR=(prevC.sub(v1)).len();
+        // console.log(newR);
+        if (newR>=10000) {// TODO: different kind of boundary?
+          var v1Screen=v1.screen();
+          var v2Screen=v2.screen();
+          // context.moveTo(v1Screen.x, v1Screen.y);
+          // context.lineTo(v2Screen.x, v2Screen.y);
+          // context.moveTo(v2Screen.x, v2Screen.y);
+          context.lineTo(v1Screen.x, v1Screen.y);
+        }
+        else {
+          var prevCScreen=prevC.screen();
+          var ang1=-v1.sub(prevC).ang();
+          var ang2=-v2.sub(prevC).ang();
+          var widd=(ang1-ang2+TAU)%TAU>PI;
+          context.arc(prevCScreen.x, prevCScreen.y, newR*height/2, ang2, ang1, widd);
+        }
+      // }
+      // else {//straight edges
+      //   drawLine(v1, v2);//straight lines, alternative to arcs
+      // }
+    }
+    function pathPoincarePoly(vertArr) {
+      var avgVertPos=new Vec2();
+      context.beginPath();
+      let firstVertScreen=V[vertArr[0]].pos.screen();
+      context.moveTo(firstVertScreen.x, firstVertScreen.y);
+      for (var j=0; j<vertArr.length; j++) {//all edges
+        var v1=V[vertArr[(j+1)%vertArr.length]].pos;
+        var v2=V[vertArr[j]].pos;
+        drawPoincareEdge(v1, v2);
+        avgVertPos=avgVertPos.add(v1);
+      }
+      // context.closePath();
+      avgVertPos=avgVertPos.div(schlafliP);
+      return {
+        "avgVertPos": avgVertPos
+      }
+    }
+    function drawGridPoly(vertArr) {
+      var pathData=pathPoincarePoly(vertArr);
+      // var avgVertPos=pathData;
+      // var color=new Color(randRange(30, 256), randRange(30, 256), randRange(30, 256));
+      // var color=useGradient.get(rand());
+      var color=useGradient.get(rand()).grayen(0.2).modify(50);
+      context.lineWidth=0.06*(1-pathData.avgVertPos.sqLen())*height/2;
+      // context.strokeStyle="rgb(0, 0, 0)";
+      // context.strokeStyle="rgb(220, 220, 220)";
+      context.strokeStyle="rgb(110, 110, 110)";
+      // context.lineWidth=1;
+      // context.strokeStyle=color.rgb();
+      context.fillStyle=color.rgb();
+      // context.fill();
+      context.stroke();
+    }
+    function drawTakenPoly(vertArr, player, justTaken=false) {
+      var pathData=pathPoincarePoly(vertArr);
+      // var avgVertPos=pathData;
+      // var color=new Color(randRange(30, 256), randRange(30, 256), randRange(30, 256));
+      // var color=useGradient.get(rand());
+      // var color=useGradient.get(rand()).grayen(0.2).modify(50);
+      // context.lineWidth=0.06*(1-pathData.avgVertPos.sqLen())*height/2;
+      context.lineWidth=0.02*height/2;
+      // context.strokeStyle="rgb(0, 0, 0)";
+      // context.strokeStyle="rgb(220, 220, 220)";
+      context.strokeStyle=takeColors[player].edge;
+      // context.lineWidth=1;
+      // context.strokeStyle=color.rgb();
+      if (justTaken) {//fill if taken in the last turn
+        context.fillStyle=takeColors[player].face;
+        // context.fillStyle=color.rgb();
+        context.fill();
+      }
+      context.stroke();
+    }
+    function drawAllVerts() {
+      for (var i=0; i<numVerts; i++) {//all polygons
+        V[i].draw();
+      }
+    }
+    function updateCurPlayerMarkerColor() {
+      document.getElementById("curPlayerMarker").style.color=takeColors[curPlayer].vertex;
+    }
+
+    function draw() {
+      context.fillStyle=BGColor.rgb();
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      if (true) {//draw boundary circle
+        context.strokeStyle="hsla(0, 0%, 0%, 0.9)";
+        context.lineWidth=1.5;
+        context.beginPath();
+        context.arc(canvas.width/2, canvas.height/2, canvas.height/2, 0, TAU);
+        context.stroke();
+      }
+
+      if (true) {//Draw edges for each polygon
+        for (var i=numPolys-1; i>=0; i--) {//all polygons (reverse order)
+          // for (var i=0; i<numPolys; i++) {//all polygons
+          drawGridPoly(P[i].verts)
+        }
+      }
+      for (var playerIndex=1; playerIndex<takenPolys.length; playerIndex++) {
+        for (var polyIndex=0; polyIndex<takenPolys[playerIndex].length; polyIndex++) {
+          drawTakenPoly(takenPolys[playerIndex][polyIndex], playerIndex, false);
+        }
+      }
+      drawAllVerts();
+    }
+    // function update() {
+    //   if (!paused) {
+    //     if (fReqs>=frameSkip) {
+    //       fReqs-=frameSkip;
+    //       draw();
+    //     }
+    //     fReqs++;
+    //     // window.requestAnimationFrame(update);
+    //   }
+    // }
+    function restart() {
+      let newSchlafliSymbol=[parseInt(document.getElementById("schlafliP").value), parseInt(document.getElementById("schlafliQ").value)];
+      let newNumPlayers=parseInt(document.getElementById("numPlayers").value);
+      if //make sure input values are reasonable, if so, change variables accordingly // TODO: maybe unnecessary (better to use computation measurements?)
+        (
+          newSchlafliSymbol[0]>=3 && newSchlafliSymbol[0]<=30
+          && newSchlafliSymbol[1]>=3 && newSchlafliSymbol[1]<=30
+          && newNumPlayers>=1 && newNumPlayers<=10 &&
+          (newSchlafliSymbol[0]-2)*(newSchlafliSymbol[1]-2)>4
+        )
+        {// TODO: arbitrary limits (particularly upper ones)
+          document.getElementById("schlafliInputContainer").style.backgroundColor="";
+          schlafliSymbol=newSchlafliSymbol;
+          schlafliP=schlafliSymbol[0];
+          schlafliQ=schlafliSymbol[1];
+          numPlayers=newNumPlayers;
+        }
+        else {
+          document.getElementById("schlafliInputContainer").style.backgroundColor="rgb(240, 90, 90)";
+        }
+      curPlayer=1; updateCurPlayerMarkerColor();
+      if (true){// INITIAL object definition (first polygon and vertices with positions)
+        P=[new Polygon()];//Polygons array
+        V=[];//Vertices array
+        for (var i = 0; i < schlafliP; i++)
+          V[i]=new Vert();
+        for (var i = 0; i < schlafliP; i++) {
+          P[0].addVert(i);
+          V[i].addPoly(0);
+          V[i].addNext((i+1)%schlafliP);
+          V[(i+1)%schlafliP].addNext(i);
+        }
+
+        let d=Math.sqrt((Math.tan(PI / 2 - PI / schlafliQ) - Math.tan(PI / schlafliP)) / (Math.tan(PI / 2 - PI / schlafliQ) + Math.tan(PI / schlafliP)));
+        poincareEdgeLength=Math.acosh(1+2*((1-Math.cos(TAU/schlafliP))**2+Math.sin(TAU/schlafliP)**2)*(radius*d)**2/( (radius**2-d**2)**2 ));
+        // console.log(poincareEdgeLength);
+        for (var i=0; i<schlafliP; i++) {
+          // let offsetAng=0; let offsetX=0.02; let offsetY=0.01;//c++ version, causes problems near borders
+          // let offsetAng=0; let offsetX=0.001; let offsetY=0.002;//stable
+          // let offsetAng=0.001; let offsetX=0.0001; let offsetY=0.00002;//extra stable?
+          // let offsetAng=0.0000000001; let offsetX=0; let offsetY=0;//newly stable
+          let offsetAng=0.05; let offsetX=0; let offsetY=0;//newly stable
+          // let offsetAng=0; let offsetX=0; let offsetY=0;// TODO: why doesn't it work??
+
+          // let offsetAng=0.001; let offsetX=0; let offsetY=0;
+
+
+          V[i].setPos(new Vec2(radius*d*Math.cos(i*TAU/schlafliP+offsetAng)+offsetX, -radius*d*Math.sin(i*TAU/schlafliP+offsetAng)+offsetY));
+        }
+        numVerts=schlafliP;
+        numPolys=1;
+      }
+      for (var k=0; k<1+schlafliP+50; k++) {// GRAPH generation
+        // for (var k=0; k<2; k++) {//polygons
+        for (var i=0; i<schlafliP; i++) {//edges
+          //don't make new polygon towards parent
+          if (P[k].numNext>0 && i==0) continue;
+          //get first 2 vertices of new polygon
+          var v1=P[k].verts[(1+i)%schlafliP];
+          var v2=P[k].verts[i];
+
+          if (V[v1].numPolys==schlafliQ || V[v2].numPolys==schlafliQ) continue;
+
+          P[numPolys]=new Polygon();
+
+          //neighborship of new polygon and its parent
+          P[k].addNext(numPolys);
+          P[numPolys].addNext(k);
+
+          //add 2 vertices of first polygon to new polygon and vice versa
+          P[numPolys].addVert(v1);
+          P[numPolys].addVert(v2);
+          V[v1].addPoly(numPolys);
+          V[v2].addPoly(numPolys);
+
+          var makeV3=(V[v2].numNext<schlafliQ);
+          var makeV4=(V[v1].numNext<schlafliQ);
+
+          var vertArc=[];
+          if (makeV3) {
+            vertArc.push(v2);
+          }
+          else {
+            vertArc.push(V[v2].next[V[v2].numNext-1]);//make efficient (not V[v2].numNext but schlafliQ or something) (elsewhere similarly)
+
+            V[vertArc[0]].addPoly(numPolys);
+            P[numPolys].addVert(vertArc[0]);
+
+            P[V[v2].polys[V[v2].numPolys-2]].addNext(numPolys);
+            P[numPolys].addNext(V[v2].polys[V[v2].numPolys-2]);
+          }
+
+          for (var j = 4-makeV3-makeV4; j < schlafliP; j++) {
+            var newVert=numVerts;
+            V[newVert]=new Vert();
+            vertArc.push(newVert);
+            V[newVert].addPoly(numPolys);
+            P[numPolys].addVert(newVert);
+            numVerts++;
+          }
+
+          if (makeV4) {
+            vertArc.push(v1);
+          }
+          else {
+            vertArc.push(V[v1].next[V[v1].numNext-1]);
+
+            V[vertArc[vertArc.length-1]].addPoly(numPolys);
+            P[numPolys].addVert(vertArc[vertArc.length-1]);
+
+            P[V[v1].polys[V[v1].numPolys-2]].addNext(numPolys);
+            P[numPolys].addNext(V[v1].polys[V[v1].numPolys-2]);
+          }
+
+          for (var j = 1; j < vertArc.length; j++) {
+            V[vertArc[j]].addNext(vertArc[j-1]);
+            V[vertArc[j-1]].addNext(vertArc[j]);
+          }
+
+          numPolys++;
+        }
+      }
+      for (var i=0; i<numVerts; i++) {// ORDER the vertices
+        // console.log("i=", i, "!!!!!");
+        let curV=V[i];
+        var j=0;
+        for (; j < curV.polys.length; j++) {
+          let curPoly=P[curV.polys[j]];
+          // console.log("curPoly", curV.polys[j]);
+          let vertArr=curPoly.verts;
+          let curVLocalIndex=indexOfElement(vertArr, i);
+          // let widdVert=vertArr[(curVLocalIndex-1+schlafliP)%schlafliP];
+          let widdVert=vertArr[(curVLocalIndex+1)%schlafliP];
+          // console.log(widdVert);
+          let k=0;
+          for (; k < curV.polys.length; k++) {
+            if (arrayContains(P[curV.polys[k]].verts, widdVert) && j!=k) {
+              break;
+            }
+          }
+          if (k==curV.polys.length) {
+            // console.log("begin at", curV.polys[j]);
+            break;
+          }
+          else {
+            // console.log("ok");
+          }
+        }
+
+        let newNextArr=[];
+        let newPolyArr=[];
+        let curPairIndex=j;
+        if (curPairIndex==curV.polys.length) {
+          curPairIndex=0;
+        }
+        let pairs=[];
+        let firstPairIndex=curPairIndex;
+
+        for (var j=0; j < curV.polys.length; j++) {
+          let curPoly=P[curV.polys[j]];
+          // console.log(curPolyIndex, curV.polys[curPolyIndex]);
+          // console.log("curPoly", curV.polys[j]);
+          let vertArr=curPoly.verts;
+          let curVLocalIndex=indexOfElement(vertArr, i);
+          let widdVert=vertArr[(curVLocalIndex-1+schlafliP)%schlafliP];
+          let clockVert=vertArr[(curVLocalIndex+1)%schlafliP];
+          // pairs.push([widdVert, clockVert]);
+          pairs.push([clockVert, widdVert, curV.polys[j]]);
+          // console.log(widdVert);
+          // let k=0;
+          // for (; k < curV.polys.length; k++) {
+          //   if (arrayContains(P[curV.polys[k]].verts, widdVert) && j!=k) {
+          //     break;
+          //   }
+          // }
+          // if (k!=curV.polys.length) {//another polygon with the 2 vertices was found
+          //   if () {
+          //   }
+          //   else {
+          //     newNextArr.push(widdVert);
+          //     newPolyArr.push(curV.polys[k]);
+          //     curPolyIndex=k;
+          //   }
+          // }
+          // else {
+          //   newNextArr.push(vertArr[(curVLocalIndex+1)%schlafliP]);
+          //   break;
+          // }
+        }
+
+        // console.log(pairs);
+
+        while (curPairIndex!=firstPairIndex || newNextArr.length==0) {
+          let curPair=pairs[curPairIndex];
+          // console.log(curPairIndex, curPair);
+          newNextArr.push(curPair[0]);
+          newPolyArr.push(curPair[2]);
+          for (var k=0; k < pairs.length; k++) {
+            if (pairs[k][0]==curPair[1]) {
+              curPairIndex=k;
+              break;
+            }
+          }
+          if (k==pairs.length) {
+            newNextArr.push(curPair[1]);
+            break;
+          }
+        }
+
+        // console.log("!!result!!", newNextArr, newPolyArr);
+
+        curV.next=newNextArr;
+        curV.polys=newPolyArr;
+
+        // for (var j=0; j < curV.polys.length; j++) {
+        //   let curPoly=P[curV.polys[curPolyIndex]];
+        //   console.log(curPolyIndex, curV.polys[curPolyIndex]);
+        //   // console.log("curPoly", curV.polys[j]);
+        //   let vertArr=curPoly.verts;
+        //   let curVLocalIndex=indexOfElement(vertArr, i);
+        //   let widdVert=vertArr[(curVLocalIndex-1+schlafliP)%schlafliP];
+        //   // console.log(widdVert);
+        //   let k=0;
+        //   for (; k < curV.polys.length; k++) {
+        //     if (arrayContains(P[curV.polys[k]].verts, widdVert) && j!=k) {
+        //       break;
+        //     }
+        //   }
+        //   if (k!=curV.polys.length) {//another polygon with the 2 vertices was found
+        //     if () {
+        //     }
+        //     else {
+        //       newNextArr.push(widdVert);
+        //       newPolyArr.push(curV.polys[k]);
+        //       curPolyIndex=k;
+        //     }
+        //   }
+        //   else {
+        //     newNextArr.push(vertArr[(curVLocalIndex+1)%schlafliP]);
+        //     break;
+        //   }
+        // }
+
+        // let k=0;
+        // let lastK=undefined;
+        // let lastPoly=curV.polys[0];
+        // let newNextArr=[];
+        // let newPolysArr=[0];
+        // do {
+        //   let vertArr=P[lastPoly].verts;//verts array of the first parent polygon
+        //   let lastVert=vertArr[(indexOfElement(vertArr, i)-1+schlafliQ)%schlafliQ];
+        //   k=0;
+        //   for (; k < curV.numPolys; k++) {//find another polygon with curV and last found vertex as its vertices
+        //     // console.log(P[curV.polys[k]].verts, lastVert);
+        //     if (arrayContains(P[curV.polys[k]].verts, lastVert) && k!=lastK) {
+        //       break;
+        //     }
+        //   }
+        //
+        //   if (k==curV.numPolys) {
+        //     console.log("bad!!!!!!!!!!!!!!!!");
+        //     break;
+        //   }
+        //   else {
+        //     lastPoly=curV.polys[k];
+        //     newPolysArr.push(lastPoly)
+        //   }
+        //   lastK=k;
+        // } while (k!=0)
+        //
+        // console.log(i);
+        // // console.log(curV.next);
+        // // console.log(newNextArr);
+        // console.log(curV.polys);
+        // console.log(newPolysArr);
+
+        // let newNextArr=[];
+        // let vertArr=P[curV.polys[0]].verts;//verts array of the first parent polygon
+        // let lastVert=V[vertArr[(indexOfElement(vertArr, curV)-1+schlafliQ)%schlafliQ]];
+        // while (true) {
+        //   newNextArr.push(lastVert);
+        //   vertArr=P[curV.polys[lastVert]].verts;//verts array of one of the parent polygons
+        //   // newNextArr.push(vertArr[(indexOfElement(vertArr, i)-1+schlafliQ)%schlafliQ]);//get the element after curV in vertArr, add it to newNextArr
+        //   var k=0;
+        //   for (; k < curV.numPolys; k++) {//find another polygon with curV and last found vertex as its vertices
+        //     if (arrayContains(P[curV.polys[k]].verts, newNextArr[newNextArr.length-1]) && k!=j) {
+        //       break;
+        //     }
+        //   }
+        //   if (k==curV.numPolys) {
+        //     console.log("bad!!!!!!!!!!!!!!!!");
+        //     break;
+        //   }
+        //   else {
+        //
+        //   }
+        //   let vertArr=P[curV.polys[0]].verts;
+        //   let lastVert=V[vertArr[(indexOfElement(vertArr, curV)-1+schlafliQ)%schlafliQ]];
+        //   console.log(indexOfElement(vertArr, i), (indexOfElement(vertArr, i)+1)%schlafliQ);
+        // }
+        // console.log(curV.next, newNextArr);
+        // console.log("");
+      }
+      for (var i=1; i<numPolys; i++) {// CALCULATE vertex positions
+        let v1=P[i].verts[0];
+        let v2=P[i].verts[1];
+        let scaleM=(radius**2/V[v1].pos.sqLen() + 1)/2;
+        let scaleN=(radius**2/V[v2].pos.sqLen() + 1)/2;
+        let M=new Vec2(V[v1].pos.x*scaleM, V[v1].pos.y*scaleM);
+        let N=new Vec2(V[v2].pos.x*scaleN, V[v2].pos.y*scaleN);
+        // let centerY=(M.x*(M.x-N.x-N.y*N.y/N.x)+M.y*M.y)/(M.y-N.y*M.x/N.x);//mostly works, but has division by N.x
+        let centerY=(M.x*(M.x*N.x-N.x*N.x-N.y*N.y)+M.y*M.y*N.x)/(M.y*N.x-N.y*M.x);
+
+        let prevC=new Vec2(M.x+M.y*(M.y-centerY)/M.x, centerY);
+        let newR=(prevC.sub(V[v1].pos)).len();
+        let parentPoly=P[P[i].next[0]];
+
+        // TODO: prevC.x breaks when offsetAng is a multiple of HPI
+        // console.log(prevC);
+        // console.log("M", M);
+        // console.log(M.y*(M.y-centerY)/M.x);
+        // console.log(M.y, "*", (M.y-centerY)/M.x, "=", M.y*((M.y-centerY)/M.x));
+        // console.log(V[v1].pos);console.log(V[v2].pos);
+        // console.log(prevC);
+        // console.log(prevC.len());
+        // console.log("");
+
+        if (prevC.len()>10000) {
+          for (var j=2; j<schlafliP; j++) {
+            let newV=P[i].verts[j];
+            let normalI=V[parentPoly.verts[(indexOfElement(parentPoly.verts, v1)-j+schlafliP)%schlafliP]].pos;//point to be mirrored, to get another position
+
+            let s=V[v2].pos.sub(V[v1].pos);
+            let k=V[v1].pos.sub(normalI);
+
+            let invertedI=V[v1].pos.mult(2).sub(normalI).sub(s.mult(2*(k.x*s.x+k.y*s.y)/(s.x*s.x+s.y*s.y)));
+            V[P[i].verts[j]].setPos(invertedI);
+          }
+        }
+        else {
+          for (var j=2; j<schlafliP; j++) {
+            let newV=P[i].verts[j];
+            let normalI=V[parentPoly.verts[(indexOfElement(parentPoly.verts, v1)-j+schlafliP)%schlafliP]].pos;//point to be mirrored, to get another position
+            let prevCToNormalI=normalI.sub(prevC);
+            let invertedI=prevC.add(prevCToNormalI.mult((newR/prevCToNormalI.len())**2));
+
+            // console.log(invertedI);
+            // context.strokeStyle=new Color(randRange(30, 256), randRange(30, 256), randRange(30, 256)).rgb();
+            // // context.strokeStyle="rgb(200, 200, 200)";
+            // context.lineWidth=1;
+            // var prevCScreen=prevC.screen();
+            // context.beginPath();
+            // context.arc(prevCScreen.x, prevCScreen.y, newR*height/2, 0, TAU);
+            // context.stroke();
+
+            V[P[i].verts[j]].setPos(invertedI);
+          }
+        }
+
+      }
+      // /* DEBUG (print graph info) */
+      // for (var i=0; i<numVerts; i++) {
+      //   console.log("V[" + i + "]");
+      //   console.log("Adjacent vertices:", V[i].next);
+      //   console.log("Polygons:", V[i].polys);
+      //   console.log(round(V[i].pos.x), round(V[i].pos.y));
+      //   console.log("");
+      // }
+      // console.log(""); console.log("");
+      // for (var i=0; i<numPolys; i++) {
+      //   console.log("P[" + i + "]");
+      //   console.log("Adjacent polygons:", P[i].next);
+      //   console.log("Vertices:", P[i].verts);
+      //   console.log("");
+      // }
+      // console.log("numVerts", numVerts);
+      // console.log("numPolys", numPolys);
+
+      numTakenVerts=0;
+      document.getElementById("numTakenVerts").innerHTML=numTakenVerts;
+      document.getElementById("numVerts").innerHTML=numVerts;
+      takenPolys=[];//what polygons have been taken by one player
+      for (var i = 1; i < numPlayers+1; i++) {
+        takenPolys[i]=[];
+      }
+      let scoreHTML="";
+      for (var i = 1; i < numPlayers+1; i++) {
+        scoreHTML+='<div><span class="noSelect" style="color: '+takeColors[i].vertex+'">⬤ </span><span id="scoreDisplay'+i+'">0</span></div>'
+      }
+      document.getElementById("scoreContainer").innerHTML=scoreHTML;
+      lastClickTookPolygon=false;
+
+      draw();
+    }
+    function resize() {
+      canvas.width=window.innerWidth;
+      height=canvas.height=window.innerHeight;
+      context.lineJoin="round";
+      context.lineCap="round";
+      draw();
+    }
+    resize();
+    restart();
+    // update();
+    // draw();
+
+
+    // canvas.addEventListener("mousemove",function(){
+    //   // lastx=event.clientX;
+    //   // lasty=event.clientY;
+    //   var n=1;
+    //   lastx=(event.clientX+lastx*n)/(n+1);
+    //   lasty=(event.clientY+lasty*n)/(n+1);
+    // });
+    // window.addEventListener("dblclick",function(){location.reload();});
+    // window.addEventListener("click",function(){
+    //   draw();
+    // });
+    canvas.addEventListener("click",function(){
+      let mouseCoords=new Vec2(event.clientX, event.clientY).unscreen();
+      let v1;
+      var v1Index=0;
+      let vertSelectSuccess=false;
+      for (; v1Index < numVerts; v1Index++) {
+        v1=V[v1Index];
+        if (v1.drawPos.sub(mouseCoords).len()<v1.radius && v1.takenByNumber==0) {
+          v1.takenByNumber=curPlayer;
+          v1.draw();
+          vertSelectSuccess=true;
+          break;
+        }
+      }
+      let prevNumTakenPolys=takenPolys[curPlayer].length;
+      if (vertSelectSuccess) {
+        if (lastClickTookPolygon) {
+          draw();
+        }
+        for (var v2Index = 0; v2Index < numVerts; v2Index++) {
+          let v2=V[v2Index];
+          if (v2.takenByNumber!=curPlayer || v2Index==v1Index) continue; //skip v2 because it hasn't been taken or is the same as v1
+
+          let scaleM=(radius**2/v1.pos.sqLen() + 1)/2; //calculate endpoints and length of line v1 to v2
+            let scaleN=(radius**2/v2.pos.sqLen() + 1)/2;
+            let M=new Vec2(v1.pos.x*scaleM, v1.pos.y*scaleM);
+            let N=new Vec2(v2.pos.x*scaleN, v2.pos.y*scaleN);
+            let centerY=(M.x*(M.x*N.x-N.x*N.x-N.y*N.y)+M.y*M.y*N.x)/(M.y*N.x-N.y*M.x);
+
+            let C1=new Vec2(M.x+M.y*(M.y-centerY)/M.x, centerY);
+            let C1SqLen=C1.sqLen();
+            let tanD=radius*Math.sqrt((C1.x*radius)**2 + C1SqLen*(C1.y**2-radius**2));
+            let tanX1=(C1.x*radius**2+tanD)/C1SqLen;
+            let tanX2=(C1.x*radius**2-tanD)/C1SqLen;
+            let endpointU=new Vec2(tanX1, (radius**2-C1.x*tanX1)/C1.y);
+            let endpointV=new Vec2(tanX2, (radius**2-C1.x*tanX2)/C1.y);
+            // let newR=(C1.sub(v1.pos)).len();
+            let edgeLen1=Math.acosh(1+2*v1.pos.sub(v2.pos).sqLen()*radius**2/( (radius**2-v1.pos.sqLen())*(radius**2-v2.pos.sqLen()) ));
+
+          // context.fillStyle="orange";
+          // drawSquare(endpointU);
+          // drawSquare(endpointV);
+
+          for (var v3Index = 0; v3Index < numVerts; v3Index++) {
+            let v3=V[v3Index];
+
+            /* reasons v3 might be invalid */
+            if (v3.takenByNumber!=curPlayer || v3Index==v1Index || v3Index==v2Index) continue; //skip v3 because it hasn't been taken or is the same as a previous vertex
+            let edgeLen2=Math.acosh(1+2*v2.pos.sub(v3.pos).sqLen()*radius**2/( (radius**2-v2.pos.sqLen())*(radius**2-v3.pos.sqLen()) )); //skip v3 because its distance to v2 is different than v2 to v1
+              if (Math.abs(edgeLen1-edgeLen2)>0.001) continue;
+            let v1v3Rot=new Vec2(v1.pos.y-v3.pos.y, v3.pos.x-v1.pos.x); //skip v3 because it goes widdershins
+              let polygonOrientation=v1v3Rot.dot(v2.pos.sub(v1.pos));
+              if (polygonOrientation<=0) {
+                // console.log("widdershins poly!");
+                continue;
+              }
+
+            scaleM=(radius**2/v2.pos.sqLen() + 1)/2;//calculate endpoints of line v2 to v3
+              scaleN=(radius**2/v3.pos.sqLen() + 1)/2;
+              M=new Vec2(v2.pos.x*scaleM, v2.pos.y*scaleM);
+              N=new Vec2(v3.pos.x*scaleN, v3.pos.y*scaleN);
+              centerY=(M.x*(M.x*N.x-N.x*N.x-N.y*N.y)+M.y*M.y*N.x)/(M.y*N.x-N.y*M.x);
+
+              let C2=new Vec2(M.x+M.y*(M.y-centerY)/M.x, centerY);
+              let C2SqLen=C2.sqLen();
+              tanD=radius*Math.sqrt((C2.x*radius)**2 + C2SqLen*(C2.y**2-radius**2));
+              tanX1=(C2.x*radius**2+tanD)/C2SqLen;
+              tanX2=(C2.x*radius**2-tanD)/C2SqLen;
+              let endpointS=new Vec2(tanX1, (radius**2-C2.x*tanX1)/C2.y);
+              let endpointT=new Vec2(tanX2, (radius**2-C2.x*tanX2)/C2.y);
+
+            let angleP=endpointU.sub(endpointV).dot(endpointS.sub(endpointT))+// TODO:NOTE:  this means radius has to be 1
+              endpointU.dot(endpointT)*endpointV.dot(endpointS)-
+              endpointU.dot(endpointS)*endpointV.dot(endpointT);
+              let angleQ=(1-endpointU.dot(endpointV))**2;
+              let angleR=(1-endpointS.dot(endpointT))**2;
+              let firstAngle=Math.acos(Math.sqrt(angleP**2/(angleQ*angleR)));
+              let firstDiagonalLen=Math.acosh(1+2*v1.pos.sub(v3.pos).sqLen()*radius**2/( (radius**2-v1.pos.sqLen())*(radius**2-v3.pos.sqLen()) ));
+              // console.log(firstDiagonalLen);
+
+            // console.log(v1Index, v2Index, v3Index, ": ", firstAngle, " | ", edgeLen1, edgeLen2);
+
+            let wVerts=[v1Index, v2Index, v3Index]; //Vertices in new polygon
+            let lastEndpoint1=endpointS;
+            let lastEndpoint2=endpointT;
+
+            while (true) {//keep going along polygon until raching the starting point or a nonexistent vertex
+              let w1Index=wVerts[wVerts.length-2];
+              let w2Index=wVerts[wVerts.length-1];
+              let w1=V[w1Index];
+              let w2=V[w2Index];
+              let w3Found=false;
+              var w3Index=0;
+              let curEndpoint1, curEndpoint2;
+              for (; w3Index < numVerts; w3Index++) {
+                let w3=V[w3Index];
+
+                /* reasons w3 might be invalid */
+                if (w3.takenByNumber!=curPlayer || w3Index==w1Index || w3Index==w2Index) continue; //skip w3 because it hasn't been taken or is the same as a previous vertex
+                let edgeLen3=Math.acosh(1+2*w2.pos.sub(w3.pos).sqLen()*radius**2/( (radius**2-w2.pos.sqLen())*(radius**2-w3.pos.sqLen()) )); //skip w3 because its distance to w2 is different than edgeLen1
+                  if (Math.abs(edgeLen1-edgeLen3)>0.001) {
+                    // console.log("a");
+                    continue;
+                  }
+                let w1w3Rot=new Vec2(w1.pos.y-w3.pos.y, w3.pos.x-w1.pos.x); //skip w3 because it goes widdershins
+                  let curOrientation=w1w3Rot.dot(w2.pos.sub(w1.pos));
+                  if (curOrientation<=0) {
+                    // console.log("widdershins poly!");
+                    continue;
+                  }
+                let newDiagonalLen=Math.acosh(1+2*w1.pos.sub(w3.pos).sqLen()*radius**2/( (radius**2-w1.pos.sqLen())*(radius**2-w3.pos.sqLen()) ));//skip w3 because it makes a diagonal with a new length
+                  if (Math.abs(firstDiagonalLen-newDiagonalLen)>0.001) {
+                    // console.log("diagonal new");
+                    continue;
+                  }
+
+                scaleM=(radius**2/w2.pos.sqLen() + 1)/2;//calculate endpoints of line w2 to w3
+                  scaleN=(radius**2/w3.pos.sqLen() + 1)/2;
+                  M=new Vec2(w2.pos.x*scaleM, w2.pos.y*scaleM);
+                  N=new Vec2(w3.pos.x*scaleN, w3.pos.y*scaleN);
+                  centerY=(M.x*(M.x*N.x-N.x*N.x-N.y*N.y)+M.y*M.y*N.x)/(M.y*N.x-N.y*M.x);
+
+                  let C3=new Vec2(M.x+M.y*(M.y-centerY)/M.x, centerY);
+                  let C3SqLen=C3.sqLen();
+                  tanD=radius*Math.sqrt((C3.x*radius)**2 + C3SqLen*(C3.y**2-radius**2));
+                  tanX1=(C3.x*radius**2+tanD)/C3SqLen;
+                  tanX2=(C3.x*radius**2-tanD)/C3SqLen;
+                  curEndpoint1=new Vec2(tanX1, (radius**2-C3.x*tanX1)/C3.y);
+                  curEndpoint2=new Vec2(tanX2, (radius**2-C3.x*tanX2)/C3.y);
+
+                angleP=lastEndpoint1.sub(lastEndpoint2).dot(curEndpoint1.sub(curEndpoint2))+ //calculate angle w1-w2-w3 // TODO:NOTE: this means radius has to be 1
+                  lastEndpoint1.dot(curEndpoint2)*lastEndpoint2.dot(curEndpoint1)-
+                  lastEndpoint1.dot(curEndpoint1)*lastEndpoint2.dot(curEndpoint2);
+                  angleQ=(1-lastEndpoint1.dot(lastEndpoint2))**2;
+                  angleR=(1-curEndpoint1.dot(curEndpoint2))**2;
+                  let curAngle=Math.acos(Math.sqrt(angleP**2/(angleQ*angleR)));
+
+                if (Math.abs(curAngle-firstAngle)>0.001) { //skip w3 because current angle is different to firstAngle
+                  // console.log("a");
+                  continue;
+                }
+
+                w3Found=true;
+                break;
+              }
+
+              if (w3Found) {//new taken vertex in streak
+                if (wVerts.length>50) console.error("Infinite loop (probably)");
+
+                if (w3Index==v1Index) {//successful loop back to start, polygon done
+                  if (true) {//check that the polygon isn't a star
+                    let v1v2Rot=new Vec2(v1.pos.y-v2.pos.y, v2.pos.x-v1.pos.x);
+                    let isStar=false;
+                    for (var i = 2; i < wVerts.length; i++) {
+                      let curOrientation=v1v2Rot.dot(V[wVerts[i]].pos.sub(v1.pos));
+                      // console.log(curOrientation);
+                      if (curOrientation>=0) {
+                        isStar=true;
+                        break;
+                      }
+                    }
+                    if (isStar) {
+                      break;
+                    }
+                  }
+
+                  // console.log("%c&&& Hooray!  "+(wVerts.length), "color:orange; font-size:120%");
+                  takenPolys[curPlayer].push(wVerts);
+                  // drawTakenPoly(wVerts, 1);
+
+                  break;
+                }
+                else {//polygon not yet done, continue through the streak
+                  wVerts.push(w3Index);
+                  lastEndpoint1=curEndpoint1;
+                  lastEndpoint2=curEndpoint2;
+                  // console.log("&&& Keep going!");
+                  // // break;// TODO: shouldn't have break here, currently not working, use a breakpoint here while debugging
+                }
+              }
+              else {//streak of taken vertices ended, polygon is incomplete
+                // console.log("&&& Streak ended!");
+                break;
+              }
+
+              // break;
+            }
+
+
+            // TODO: exceptions...
+            // if (prevC.len()>10000) {
+            //   // for (var j=2; j<schlafliP; j++) {
+            //   //   let newV=P[i].verts[j];
+            //   //   let normalI=V[parentPoly.verts[(indexOfElement(parentPoly.verts, v1)-j+schlafliP)%schlafliP]].pos;//point to be mirrored, to get another position
+            //   //
+            //   //   let s=V[v2].pos.sub(V[v1].pos);
+            //   //   let k=V[v1].pos.sub(normalI);
+            //   //
+            //   //   let invertedI=V[v1].pos.mult(2).sub(normalI).sub(s.mult(2*(k.x*s.x+k.y*s.y)/(s.x*s.x+s.y*s.y)));
+            //   //   // V[P[i].verts[j]].setPos(invertedI);
+            //   // }
+            //
+            //   console.log("bad!!!!!!!!!!!!!!!");
+            // }
+            // else {
+            //
+            // }
+          }
+        }
+        let newNumTakenPolys=takenPolys[curPlayer].length;
+        if (newNumTakenPolys!=prevNumTakenPolys) {
+          for (var i=prevNumTakenPolys; i<newNumTakenPolys; i++) {
+            drawTakenPoly(takenPolys[curPlayer][i], curPlayer, true);
+          }
+          drawAllVerts();
+          document.getElementById("scoreDisplay"+curPlayer).innerHTML=takenPolys[curPlayer].length;
+          lastClickTookPolygon=true;
+        }
+        numTakenVerts++;
+        document.getElementById("numTakenVerts").innerHTML=numTakenVerts;
+        curPlayer=curPlayer+1; if (curPlayer>numPlayers) curPlayer-=numPlayers;//move to next player
+        updateCurPlayerMarkerColor();
+      }
+      // console.log("click done");
+    });
+    window.addEventListener("keyup",function(){
+      var curKey=event.keyCode;
+      keys[curKey]=false;
+      // console.log(keys);
+    });
+    window.addEventListener("keydown",function(){
+      var curKey=event.keyCode;
+      keys[curKey]=true;
+      // if (curKey<58 && curKey>48) {//numbers - pixsize
+      //   pixSize=2**(curKey-49);
+      //   // var pixSize=14;
+      //   gridWidth=canvas.width/pixSize; gridHeight=canvas.height/pixSize;
+      //   initialiseGrid();
+      //   draw();
+      // }
+      // console.log(keys);
+      // console.log(curKey);
+      switch (curKey) {
+        case 32://space - pause
+          paused=!paused;
+          console.log(paused?"Paused":"Unpaused");
+          update();
+          break;
+        case 68://d - draw
+          draw();
+          break;
+        // case 37://left
+        //   move.left();
+        //   break;
+      }
+    });
+    // window.addEventListener("resize",function(){resize();})
+  </script>
+</body>
+</html>

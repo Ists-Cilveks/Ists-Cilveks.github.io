@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>𝑻 𝑹 𝑬 𝑬 𝑺</title>
+  <style media="screen">
+    body{
+      /* background-color: rgb(10,50,40); */
+      background-color: rgb(230,230,190);
+      color: rgb(200, 200, 200);
+      font-size: 40px;
+      overflow: hidden;
+      font-size: 300%;
+    }
+    canvas{
+      position: absolute;
+      left: 0;
+      top: 0;
+      outline: 2px dashed navy;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="300" height="300"></canvas>
+  <script type="text/javascript">
+    "use strict";
+    function rand(max=1) {
+      return Math.random()*max;
+    }
+    function rand0(max=1) {
+      return (Math.random()-0.5)*max;
+    }
+    function randInt(max=2) {
+      return Math.floor(Math.random()*max);
+    }
+    function randProb(p=0.5) {
+      return p>Math.random();
+    }
+    function randRange(a, b) {
+      return Math.random()*(b-a)+a;
+    }
+    function clamp(num, val=1) {//num to clamp, special value
+      return 1+(val/(num+val));
+    }
+    function collerp(x, n1, n2) {
+      return n2.sub(n1).mult(x).add(n1);
+    }
+    function cutoff(x, min, max) {
+      if (min && x<min) {
+        return min;
+      }
+      if (max && x>max) {
+        return max;
+      }
+      return x;
+    }
+    function closenessPenalty(x, coefficient) { //what number to divide x by for to not reach 1
+      return 1-coefficient-coefficient/(x-1);
+    }
+    function mod(v, m) {
+      return (v%m+m)%m;
+    }
+    function round(num, p=2) {
+      return Math.round((num + Number.EPSILON) * 10**p) / 10**p;
+    }
+
+    var canvas=document.getElementById("canvas");
+    var context=canvas.getContext("2d");
+    var TAU=2*Math.PI;
+    var PI=Math.PI;
+    var HPI=Math.PI/2;
+    var loops=0;
+    var k=0;
+    // var lastx=window.innerWidth/2;
+    var paused=false;
+    var zoom=1;
+    var frameskip=20;
+
+
+    function Color(r=255, g=0, b=255, a=1) {
+      this.r=r;
+      this.g=g;
+      this.b=b;
+      this.a=a;
+      this.each=function(f) {
+        return new Color(f(this.r), f(this.g), f(this.b), this.a);
+      }
+      this.modify=function(amp) {
+        return this.each(function(n) {
+          var x=n+rand0(amp);
+          if (x>255) {
+            return 255;
+          }
+          else if (x<0) {
+            return 0;
+          }
+          else {
+            return x;
+          }
+        });
+      }
+      this.add=function(v) {
+        return new Color(this.r+v.r, this.g+v.g, this.b+v.b);
+      }
+      this.sub=function(v) {
+        return new Color(this.r-v.r, this.g-v.g, this.b-v.b);
+      }
+      this.mult=function(v) {
+        return new Color(this.r*v, this.g*v, this.b*v);
+      }
+      this.rgb=function() {
+        return "rgba("+this.r+","+this.g+","+this.b+","+this.a+")";
+      }
+    }
+    function randColor(v=255) {
+      return new Color(randInt(v), randInt(v), randInt(v));
+    }
+    if (true) {//colors used
+      var colors={
+        petal1: new Color(20, 40, 170, 0.6),
+        flowerStem: new Color(50, 100, 20),
+        flowerMiddle: new Color(150, 130, 50)
+      }
+    }
+
+    function Vec2(x=0, y=0) {
+      this.x=x;
+      this.y=y;
+      this.copy=function() {
+        return new Vec2(this.x, this.y);
+      }
+      this.add=function(v) {
+        return new Vec2(this.x+v.x, this.y+v.y);
+      }
+      this.sub=function(v) {
+        return new Vec2(this.x-v.x, this.y-v.y);
+      }
+      this.mult=function(n) {
+        return new Vec2(this.x*n, this.y*n);
+      }
+      this.div=function(n) {
+        return new Vec2(this.x/n, this.y/n);
+      }
+      this.avg=function(v) {
+        return new Vec2((this.x+v.x)/2, (this.y+v.y)/2);
+      }
+      this.dir=function() {
+        return Math.atan2(this.y, this.x);
+      }
+      this.len=function() {
+        return Math.sqrt(this.x**2+this.y**2);
+      }
+      this.total=function() {
+        return this.x+this.y;
+      }
+      this.screen=function() {
+        return new Vec2((this.x+1)*canvas.width/2, (1-this.y)*canvas.height);
+      }
+    }
+    function rand0Vec2(v=1) {
+      return new Vec2(rand0(v), rand0(v));
+    }
+    function polarVec2(d, m=1) {//cartesian vector from polar coordinates
+      return new Vec2(Math.cos(d)*m, Math.sin(d)*m);
+    }
+
+    function getTanArc(a, b, ang, dir=false, ord=false) {
+      var tanAng=ang;
+      var alpha=tanAng+HPI;
+
+      var m=b.sub(a).div(2);
+      var beta=HPI+Math.atan2(m.y, m.x);
+
+      var px=(m.x*(Math.tan(beta))-m.y)/(Math.tan(beta)+Math.tan(alpha));
+      var p=new Vec2(px, -Math.tan(alpha)*px);
+      var rad=p.len();
+      p=p.add(a);
+      m=m.add(a);
+      // console.log(p);
+      /* debug lines */
+      // context.beginPath();
+      // context.moveTo(a.x+200*Math.cos(alpha), a.y-200*Math.sin(alpha))
+      // context.lineTo(a.x-200*Math.cos(alpha), a.y+200*Math.sin(alpha))
+      // context.stroke();
+      //
+      // context.beginPath();
+      // context.moveTo(m.x+Math.cos(beta)*200, m.y+Math.sin(beta)*200)
+      // context.lineTo(m.x-Math.cos(beta)*200, m.y-Math.sin(beta)*200)
+      // context.stroke();
+      //
+      // context.lineWidth=5;
+      // context.strokeStyle="rgba(250, 80, 80, 0.3)";
+      // context.beginPath();
+      // context.moveTo(a.x+200*Math.cos(tanAng), a.y-200*Math.sin(tanAng));
+      // context.lineTo(a.x-200*Math.cos(tanAng), a.y+200*Math.sin(tanAng));
+      // context.stroke();
+      // context.lineWidth=2;
+      // context.strokeStyle="rgba(250, 80, 80, 0.5)";
+      // context.beginPath();
+      // context.moveTo(a.x+20*Math.cos(tanAng), a.y-20*Math.sin(tanAng));
+      // context.lineTo(a.x-20*Math.cos(tanAng), a.y+20*Math.sin(tanAng));
+      // context.stroke();
+
+      var begAng=Math.atan2(a.y-p.y, a.x-p.x);
+      var endAng=Math.atan2(b.y-p.y, b.x-p.x);
+      var realOrder=true;
+      // if (ord) {
+      //   var e=begAng;
+      //   begAng=endAng;
+      //   endAng=e;
+      // }
+      if (true) {
+        var angDif=endAng-begAng;
+        // console.log(round(endAng)+" - "+round(begAng)+" = "+round(angDif));
+        if ((angDif>PI) || (angDif<0 && angDif>-PI)) {
+          realOrder=false;
+        }
+      }
+
+      return {
+        x:p.x,
+        y:p.y,
+        rad:rad,
+        begAng:begAng,
+        endAng:endAng,
+        ord:realOrder
+      };
+
+      /* debug points */
+      // context.fillStyle="rgba(250, 80, 200, 1)";
+      // context.fillRect(start.x-2, start.y-2, 4, 4);
+      // context.fillRect(a.x-2, a.y-2, 4, 4);
+      // context.fillRect(b.x-2, b.y-2, 4, 4);
+      // context.fillRect(p.x-3, p.y-3, 6, 6);
+      // context.fillRect(px-2, 0, 4, 500);
+      //
+      // context.fillStyle="rgba(250, 80, 80, 1)";
+      // context.fillRect(m.x-2, m.y-2, 4, 4);
+
+      // console.log(p.x>m.x ? "p>m":"p<m", mod( m.x>p.x ? PI-alpha : -alpha , PI));
+    }
+    function drawPetal(start, end) {
+      // var start=new Vec2(canvas.width/2, canvas.height/2);
+      // var end=start.add(new Vec2(100,150));
+      var dif=end.sub(start);
+      var angle=Math.atan2(-dif.y, dif.x);
+      var al=angle+rand(0.5);
+      var mid1=start.avg(end).add(rand0Vec2(dif.len()/3.5));
+      var mid2=start.avg(end).add(rand0Vec2(dif.len()/3.5));
+
+
+      var a1=getTanArc(mid1, start, PI+al);
+      var a2=getTanArc(mid1, end, al);
+      var a3=getTanArc(mid2, end, al);
+      var a4=getTanArc(mid2, start, PI+al);
+
+      context.fillStyle=colors.petal1.modify(20).rgb();
+      // context.strokeStyle="rgba(250,250,250,0.5)";
+      context.lineWidth=2;
+      context.beginPath();
+      context.arc(a1.x, a1.y, a1.rad, a1.endAng, a1.begAng, a1.ord);
+      context.arc(a2.x, a2.y, a2.rad, a2.begAng, a2.endAng, !a2.ord);
+      context.arc(a3.x, a3.y, a3.rad, a3.endAng, a3.begAng, a3.ord);
+      context.arc(a4.x, a4.y, a4.rad, a4.begAng, a4.endAng, !a4.ord);
+      context.fill();
+      // context.stroke();
+
+      // context.strokeStyle="rgba(250,0,0,0.5)";
+      // context.lineWidth=2;
+      // context.beginPath();
+      // context.moveTo(mid1.x+20*Math.cos(al), mid1.y-20*Math.sin(al));
+      // context.lineTo(mid1.x-20*Math.cos(al), mid1.y+20*Math.sin(al));
+      // context.stroke();
+      // context.beginPath();
+      // context.moveTo(mid2.x+20*Math.cos(al), mid2.y-20*Math.sin(al));
+      // context.lineTo(mid2.x-20*Math.cos(al), mid2.y+20*Math.sin(al));
+      // context.stroke();
+    }
+
+    var al=0;
+    function loop() {
+      if (!paused) {
+        if (loops% frameskip <1) {
+          draw();
+        }
+        loops++;
+        // window.requestAnimationFrame(loop);
+      }
+    }
+    function draw() {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      for (var i = 0; i < 5; i++) {//draw flowers
+        var center=new Vec2(canvas.width*randRange(0.2, 0.8), canvas.height*randRange(0.4, 0.8));
+        var petalLength=canvas.height*randRange(0.1, 0.3);
+        var petalCount=randRange(25, 65);
+        var flowerTurn=randRange(0.3, 0.5);
+        var middleSize=randRange(0.15, 0.25);
+
+
+        if (true) {//draw stem
+          context.strokeStyle=colors.flowerStem.modify(20).rgb();
+          context.lineWidth=randRange(3, 7);
+          context.beginPath();
+          context.moveTo(center.x, center.y);
+          context.lineTo(center.x, canvas.height);
+          context.stroke();
+        }
+        if (true) {//draw middle bit
+          context.fillStyle=colors.flowerMiddle.modify(50).rgb();
+          context.lineWidth=randRange(3, 7);
+          context.beginPath();
+          context.ellipse(center.x, center.y, petalLength*middleSize, petalLength*middleSize*flowerTurn, 0, 0, TAU);
+          context.fill();
+        }
+
+        for (var j = 0; j < petalCount; j++) {//draw petals
+          var curPetAng=(TAU*j+Math.random())/petalCount;
+          var curPetUnit=new Vec2(Math.cos(curPetAng), Math.sin(curPetAng)*flowerTurn);
+          drawPetal(center.add(curPetUnit.mult(petalLength*middleSize*randRange(0.7, 1))), center.add(curPetUnit.add(rand0Vec2(0.15)).mult(petalLength)));
+        }
+      }
+
+      al+=0.3;
+    }
+
+
+    function restart() {
+      loops=0;
+    }
+    function resize() {
+      canvas.width=window.innerWidth;
+      canvas.height=window.innerHeight;
+      context.lineJoin="round";
+      context.lineCap="round";
+      restart();
+    }
+    resize();
+    // var mid1=new Vec2(canvas.width/2, canvas.height/2).avg(new Vec2(canvas.width/2, canvas.height/2).add(new Vec2(100,150))).add(new Vec2(-20, 50));
+
+    loop();
+    // canvas.addEventListener("mousemove",function(){
+    //   // lastx=event.clientX;
+    //   // lasty=event.clientY;
+    //   var n=1;
+    //   lastx=(event.clientX+lastx*n)/(n+1);
+    //   lasty=(event.clientY+lasty*n)/(n+1);
+    // });
+    window.addEventListener("click",function(){
+      // mid1=new Vec2(event.clientX, event.clientY);
+    });
+    window.addEventListener("dblclick",function(){location.reload();});
+    window.addEventListener("keyup",function(){
+      k=0;
+    });
+    window.addEventListener("keydown",function(){
+      k=event.keyCode;
+      console.log(k);
+      switch (k) {
+        case 32://space
+          paused=!paused;
+          console.log(paused?"Paused":"Unpaused");
+          loop();
+          break;
+        case 37://left
+          al-=0.3;
+          draw();
+          break;
+        case 39://right
+          al+=0.3;
+          draw();
+          break;
+      }
+    });
+    // window.addEventListener("resize",function(){resize();})
+  </script>
+</body>
+</html>
