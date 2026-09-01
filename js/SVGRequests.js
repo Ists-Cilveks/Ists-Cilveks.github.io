@@ -1,9 +1,9 @@
 const invisibleSVGContainer = document.createElement("div")
 invisibleSVGContainer.style.display = "none"
-invisibleSVGContainer.style.display = "invisible-svg-container"
+invisibleSVGContainer.id = "invisible-svg-container"
 document.body.appendChild(invisibleSVGContainer)
 
-function insertSVG(fileName, container=invisibleSVGContainer, cutomOnload) {
+function insertSVG(fileName, container=invisibleSVGContainer, customOnload) {
   // using https://stackoverflow.com/a/14070928/10630826
   const xhr = new XMLHttpRequest()
   xhr.open("GET", fileName, true)
@@ -12,7 +12,7 @@ function insertSVG(fileName, container=invisibleSVGContainer, cutomOnload) {
     // You might also want to check for xhr.readyState/xhr.status here
     doc = xhr.responseXML.documentElement
     container.appendChild(doc)
-    if (cutomOnload) cutomOnload(e, container.firstElementChild)
+    if (customOnload) customOnload(e, container.firstElementChild)
   };
   xhr.send("");
 }
