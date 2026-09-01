@@ -299,7 +299,7 @@
       // The element that knows the metric hierarchy. Ideally everything should be written so that just by changing this you can also write songs in 4/4, 3/4, silver ratio etc.
       const fibonacciTimer = {
         isPlaying: false,
-        barLength: 3.2,
+        barLength: 3.6,
         // get beatLength() {return this.barLength/ona},
         getUnitLength(level = 0) {
           return this.beatLength * phi**level
@@ -846,6 +846,47 @@
         }
       }
 
+      class Sampler {
+        constructor (samplePath, audioContext) {
+          this.samplePath = samplePath
+          this.audioContext = audioContext
+          this.sampler = this.makeSampler(this.samplePath)
+        }
+
+        
+        async makeSampler(samplePath) {
+          return await getFile(this.audioContext, samplePath);
+        }
+
+        play(audioContext, time, rate, stop=true) {
+          let preinstance = this.sampler.then((sample) => {
+            return playSample(audioContext, sample, time, rate)
+          })
+          let instance = new SampleInstance(preinstance, stop)
+          return instance
+        }
+      }
+      class SampleInstance {
+        constructor(instance, stop=true) {
+          this.instance = instance
+          this.stopAfterNoteEnd = stop
+        }
+
+        loop(value=true) {
+          this.instance.then((instance) => {
+            instance.loop = true
+          })
+        }
+        
+        stop(time) {
+          if (this.stopAfterNoteEnd) {
+            this.instance.then((instance) => {
+              instance.stop(time)
+            })
+          }
+        }
+      }
+
       class Synth {
         // currentlyPlaying = []
 
@@ -885,9 +926,11 @@
         return name
       }
       class SampleSynth extends Synth {
-        constructor (sampleName, defaultFreq) {
+        constructor (sampleName, defaultFreq, loop=false, stop=true) {
           super()
           this.defaultFreq = defaultFreq
+          this.loop = loop
+          this.stopAfterNoteEnd = stop
 
           let sampleSynth = this
           
@@ -896,14 +939,15 @@
         }
 
         setupSample(sampleName) {
-          this.sampler = setupSample(getSamplePath(sampleName))
+          this.sampler = new Sampler(getSamplePath(sampleName), audioContext)
+          // this.sampler = setupSample(getSamplePath(sampleName))
         }
 
         playFreq(time, freq, endTime, node = synthGainNode) {
           let rate = freq / this.defaultFreq
-          this.sampler.then((sample) => {
-            let sampleSource = playSample(audioContext, sample, time, rate)
-          })
+          let instance = this.sampler.play(audioContext, time, rate, this.stopAfterNoteEnd)
+          if (this.loop) instance.loop()
+          return [instance]
         }
       }
 
@@ -960,23 +1004,25 @@
       const m22 = new MonoMelody(["E4", "G4", "~"], 2)
       const m3  = new MonoMelody(["C4", "D4", "G4"], 3)
       const m4  = new MonoMelody(["F4", "E4", "D4"], 2)
-      const mm1 = new MonoMelody(["C4", "~", "G4", "F4", "~", "E4", "F4", "~"], 3, "custom")
+      const melodySynth = "triangle"
+      // const melodySynth = new SampleSynth("oldskool.wav", noteFreq[4]["C"])
+      const mm1 = new MonoMelody(["C4", "~", "G4", "F4", "~", "E4", "F4", "~"], 3, melodySynth)
       // "C4 "
       const mm2 = new MonoMelody([
-        // "E4", "~", "F4", "~", "G4", "F4", "~", "E4",
-        // "~", "~", "D4", "~", "E4",
-        // "D4", "~", "C4", "~", "~", "~", "~", "~"]
         "E4", "~", "~", "F4", "~", "~", "~", "~",
         "G4", "F4", "~", "E4", "~", "~", "~", "~", "~", "~", "D4", "~", "~",
         "~", "~", "E4", "D4", "~", "C4", "~", "~", "~", "~", "~", "~", "~"
-      ], 4, "custom")
-      const mm3 = new MonoMelody(["E4", "D4", "~", "~", "~"], 2, "custom")
-      const mySampleSynth = new SampleSynth("oldskool", noteFreq[4]["C"])
+      ], 4, melodySynth)
+      const mm3 = new MonoMelody(["E4", "D4", "~", "~", "~"], 2, melodySynth)
+      // const mySampleSynth = new SampleSynth("oldskool.wav", noteFreq[4]["C"])
+      const mySampleSynth = new SampleSynth("Toytown-C3-127-SPOWting.wav", noteFreq[4]["C"])
+      // const mySampleSynth = "triangle"
+      // const mySampleSynth = new SampleSynth("Short Pluck For Arps-C4-127-4JLK_1.wav", noteFreq[4]["C"])
       // const arp1 = new MonoMelody(["D2", "G2", "A2", "D2", "G2", "A2", "G2", "A2"], 2, mySampleSynth)
       // const arp2 = new MonoMelody(["C3", "B2", "A2", "G2", "A2"], 1, mySampleSynth)
       // const arp12 = arp1.concat(arp2)
-      const arp12 = new MonoSection([["E3", "A3", "C#4", "E3", "A3", "C#4", "A3", "C#4"], ["D4", "C#4", "B3", "A3", "B3"]], -2, 1, mySampleSynth)
-      // const arp12 = new MonoSection([["D3", "G3", "A3", "D3", "G3", "A3", "G3", "A3"], ["C4", "B3", "A3", "G3", "A3"]], -2, 1, mySampleSynth)
+      // const arp12 = new MonoSection([["E3", "A3", "C#4", "E3", "A3", "C#4", "A3", "C#4"], ["D4", "C#4", "B3", "A3", "B3"]], -2, 1, mySampleSynth)
+      const arp12 = new MonoSection([["D3", "G3", "A3", "D3", "G3", "A3", "G3", "A3"], ["C4", "B3", "A3", "G3", "A3"]], -2, 1, mySampleSynth)
       const over1 = new MonoMelody([""])
       function pause(level) {
         return new MonoMelody(["."], level)
@@ -996,7 +1042,7 @@
         // myTimer.playSequenceAtNextBeat([m1, m2, m1, m3, m22, m1, m4])
         myTimer.playSequenceAtNextBeat([mm1, mm3, mm1, mm2, pause(5), mm1, mm3, mm1, mm2])
         // myTimer.playSequenceAtNextBeat([arrows21, arrows23, arrows21, arrows22])
-        // arp12.playBasicPattern(200, 0)
+        arp12.playBasicPattern(200, 0)
         // playRepeatedPair(arrows11, arrows12, 200, 8)
 
         let changeTime = myTimer.getNextBeat(6, 1)
@@ -1005,7 +1051,7 @@
 
         let hum = setupSample(getSamplePath("heaven_loop2.flac"))
         hum.then((sample) => {
-          let sampleSource = playSample(audioContext, sample, changeTime)
+          let sampleSource = playSample(audioContext, sample, changeTime, 2**(-2/12))
           sampleSource.loop = true
         })
 
