@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <title>Fluid</title>
+  <style>
+    body {
+      background-color: #012;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+  </style>
+</head>
+
+<body style="overflow: hidden;">
+  <canvas id="distorted-canvas"></canvas>
+  <canvas style="opacity: 0.3;" id="clean-canvas"></canvas>
+  <script type="text/javascript">
+    var cleanCanvas = document.getElementById("clean-canvas")
+    var cleanContext = cleanCanvas.getContext("2d")
+    var distortedCanvas = document.getElementById("distorted-canvas")
+    var distortedContext = distortedCanvas.getContext("2d")
+    resize()
+    var paused = false
+    var scale = 100
+
+    function Color(r = 255, g = 0, b = 255, a = 255) {
+      this.r = r
+      this.g = g
+      this.b = b
+      this.a = a
+      this.lighten = function (strength = 0.5) {
+        return new Color(255 - (255 - this.r) * strength, 255 - (255 - this.g) * strength, 255 - (255 - this.b) * strength, this.a);
+      }
+      this.mainToExtra = function (strength = 0.4) {
+        // return new Color(255-(255-this.r)*strength, 255-(255-this.g)*strength, 255-(255-this.b)*strength, this.a*strength);
+        // return new Color(this.r, this.g, this.b, this.a*strength);
+        return new Color(this.r * strength, this.g * strength, this.b * strength, this.a * strength);
+      }
+      this.toString = function () {
+        return "rgba(" + this.r + "," + this.g + "," + this.b + "," + this.a / 256 + ")";
+      }
+    }
+    function randomOpaqueColor() {
+      return new Color(Math.random() * 255, Math.random() * 255, Math.random() * 255)
+    }
+
+    class Affine {
+      constructor(dx = 0, dy = 0, xi = 1, yi = 0, xj = 0, yj = 1) {
+        // affine transform
+        this.dx = dx
+        this.dy = dy
+        // where the first basis vector goes after linear transformation
+        this.xi = xi
+        this.yi = yi
+        // second basis vector
+        this.xj = xj
+        this.yj = yj
+      }
+      
+      apply(x, y) {
+        // affine transform
+        let xp = x * this.xi + y * this.xj + this.dx
+        let yp = x * this.yi + y * this.yj + this.dy
+        return [xp, yp]
+      }
+      unapply(x, y) {
+        // apply offset
+        x -= this.dx
+        y -= this.dy
+        // inverse linear transform
+        let D = this.yj * this.xi - this.xj * this.yi
+        let xp = (x * this.yj - y * this.xj) / D
+        let yp = (-x * this.yi + y * this.xi) / D
+        return [xp, yp]
+      }
+
+      linear(x, y) {
+        // linear part of the affine transform
+        let xp = x * this.xi + y * this.xj
+        let yp = x * this.yi + y * this.yj
+        return [xp, yp]
+      }
+      invLinear(x, y) {
+        // inverse of the linear part of the affine transform
+        let D = this.yj * this.xi - this.xj * this.yi
+        let xp = (x * this.yj - y * this.xj) / D
+        let yp = (-x * this.yi + y * this.xi) / D
+        return [xp, yp]
+      }
+
+      composeLinear(transf) {
+        "Creates an affine transform as linear transform of this, then linear transform of transf, then offset of this. Offset of transf is ignored."
+        return new Affine(
+          this.dx, this.dy,
+          this.xi*transf.xi+this.xj*transf.yi,
+          this.yi*transf.xi+this.yj*transf.yi,
+          this.xi*transf.xj+this.xj*transf.yj,
+          this.yi*transf.xj+this.yj*transf.yj
+        )
+      }
+    }
+    function rotTransl(angle, dx = 0, dy = 0) {
+      let sin = Math.sin(angle)
+      let cos = Math.cos(angle)
+      return new Affine(dx, dy, cos, -sin, sin, cos)
+    }
+    function shear(eigenangle, intensity, dx=0, dy=0) {
+      return rotTransl(-eigenangle).composeLinear(
+        new Affine(0, 0, 1, 0, intensity, 1).composeLinear(
+        rotTransl(eigenangle)
+      ))
+    }
+
+    class Glyph {
+      constructor(lines, flows, transf=new Affine()) {
+        this.lines = lines
+        this.flows = flows
+        this.transf = transf
+      }
+
+      drawClean() {
+        for (const line of this.lines) {
+          line.drawClean(this.transf)
+        }
+      }
+
+      _distort(x, y, inverse) {
+        let totalX = 0
+        let totalY = 0
+        for (const flow of this.flows) {
+          let [distX, distY] = inverse ? flow.getUndistortion(x, y) : flow.getDistortion(x, y)
+          totalX += distX
+          totalY += distY
+        }
+        return [totalX, totalY]
+      }
+      getDistortion(x, y) {
+        "Returns the total offset made to (x, y)."
+        return this._distort(x, y, false)
+      }
+      getUndistortion(x, y) {
+        "Returns the inverse of the total distortion made to (x, y)."
+        let [xt, yt] = this.transf.unapply(x, y)
+        let [xd, yd] = this._distort(xt, yt, true)
+        return this.transf.linear(xd, yd)
+      }
+
+      copy(transf) {
+        return new Glyph(this.lines, this.flows, transf || this.transf)
+      }
+    }
+
+    class DrawablePrimitive {
+      drawClean(transf) {
+        let prevTransf = cleanContext.getTransform()
+        cleanContext.transform(transf.xi, transf.yi, transf.xj, transf.yj, transf.dx, transf.dy)
+        this.drawUntransformed()
+        cleanContext.setTransform(prevTransf)
+      }
+    }
+
+    class LineSegment extends DrawablePrimitive {
+      constructor(x0, y0, x1, y1, width, color = new Color(255, 255, 255)) {
+        super()
+        this.x0 = x0
+        this.y0 = y0
+        this.x1 = x1
+        this.y1 = y1
+        this.width = width
+        this.color = color
+      }
+
+      drawUntransformed() {
+        cleanContext.lineWidth = this.width
+        cleanContext.strokeStyle = this.color.toString()
+        cleanContext.beginPath()
+        cleanContext.moveTo(this.x0, this.y0)
+        cleanContext.lineTo(this.x1, this.y1)
+        cleanContext.stroke()
+      }
+    }
+
+    class BezierCurve extends DrawablePrimitive {
+      constructor(x0, y0, h1x, h1y, h2x, h2y, x1, y1, width, color = new Color(255, 255, 255)) {
+        super()
+        this.x0 = x0
+        this.y0 = y0
+        this.h1x = h1x
+        this.h1y = h1y
+        this.h2x = h2x
+        this.h2y = h2y
+        this.x1 = x1
+        this.y1 = y1
+        this.width = width
+        this.color = color
+      }
+
+      drawUntransformed() {
+        cleanContext.lineWidth = this.width
+        cleanContext.strokeStyle = this.color.toString()
+        cleanContext.beginPath()
+        cleanContext.moveTo(this.x0, this.y0)
+        cleanContext.bezierCurveTo(this.h1x, this.h1y, this.h2x, this.h2y, this.x1, this.y1)
+        cleanContext.stroke()
+      }
+    }
+
+
+    class Distortion { }
+    class Smudge extends Distortion {
+      constructor(r, cx, cy, transf, sharpness=1) {
+        super()
+        // how big the smudged region is
+        this.r = r
+        // how defined the edges of the effect disk are
+        this.sharpness = sharpness
+        // the center of the smudge
+        this.cx = cx
+        this.cy = cy
+        // affine transform
+        this.transf = transf
+      }
+
+      _distortUnlimited(x, y) {
+        "Applies the affine transformation. The actual distortion limits the reach of the transformation."
+        return this.transf.apply(x, y)
+      }
+      _undistortUnlimited(x, y) {
+        "Applies the inverse of the affine transformation. The actual undistortion limits the reach of the transformation."
+        return this.transf.unapply(x, y)
+      }
+
+      _distort(x, y, inverse) {
+        x = x - this.cx
+        y = y - this.cy
+        let distanceSquared = x ** 2 + y ** 2
+        let intensity = 1 / (1 + distanceSquared ** this.sharpness / this.r ** 2)
+        let [dx, dy] = inverse ? this._undistortUnlimited(x, y) : this._distortUnlimited(x, y)
+        return [(dx - x) * intensity, (dy - y) * intensity]
+      }
+      getDistortion(x, y) {
+        "Returns the position to which this smudge takes (x, y)."
+        return this._distort(x, y, false)
+      }
+      getUndistortion(x, y) {
+        "Returns the position which is taken to (x, y) by this smudge."
+        return this._distort(x, y, true)
+      }
+    }
+
+
+    function resize() {
+      cleanCanvas.width = window.innerWidth
+      cleanCanvas.height = window.innerHeight
+      cleanCanvas.size = Math.min(window.innerHeight, window.innerWidth)
+
+      distortedCanvas.width = cleanCanvas.width
+      distortedCanvas.height = cleanCanvas.height
+      distortedCanvas.size = cleanCanvas.size
+    }
+
+    var baseGlyphs = {
+      liquid: new Glyph(
+        [
+          new LineSegment(-.35, 0.15, -.35, 0.8, 0.15, new Color(0, 100, 200)),
+          new LineSegment(  0, 0.6,   0, 1.4, 0.15, new Color(0, 150, 190)),
+          new LineSegment( .35, 0.0,  .35, 0.95, 0.15, new Color(0, 180, 180)),
+        ],
+        [
+          new Smudge(.6, -0.2, 0.2, new Affine(0.6, -0.3)),
+          new Smudge(.5, 0, 0.8, new Affine(-0.6, -0.2)),
+        ],
+      ),
+      passive: new Glyph(
+        [
+          new LineSegment(0, 0, -0.5, -0.6, 0.1, new Color(100, 100, 100)),
+          new BezierCurve(-0.5, -0.6, -0.2, -0.3, 0.1, -0.4, 0.1, -0.6, 0.1, new Color(100, 100, 100)),
+        ],
+        [
+          new Smudge(.05, 0, -0.6, rotTransl(0.6)),
+          new Smudge(.05, -0.2, -0.8, rotTransl(-0.6)),
+          new Smudge(.4, -0.3, -0.3, shear(1, 0.5)),
+        ],
+      ),
+    }
+
+    var glyphs = [
+      baseGlyphs.passive.copy(rotTransl(-0.2, 4.6, 2.3)),
+      baseGlyphs.liquid.copy(rotTransl(2.4, 5, 2)),
+    ]
+
+
+    function draw() {
+      cleanContext.resetTransform()
+      cleanContext.fillStyle = "#6666"
+      cleanContext.lineCap = "round"
+      for (let y = 0; y < cleanCanvas.height; y += 30) {
+        cleanContext.fillRect(0, y, cleanCanvas.width, 3)
+      }
+      for (let x = 0; x < cleanCanvas.width; x += 30) {
+        cleanContext.fillRect(x, 0, 3, cleanCanvas.height)
+      }
+      cleanContext.scale(scale, scale)
+      for (const glyph of glyphs) {
+        glyph.drawClean()
+      }
+
+      drawDistorted(5)
+      window.requestAnimationFrame(function () { drawDistorted(1) }) // TODO: draw the low res version first (so the user actually sees it) and only then call this to draw in hi res
+    }
+
+    function drawDistorted(pixelSize = 1) {
+      const cleanData = cleanContext.getImageData(0, 0, cleanCanvas.width, cleanCanvas.height).data
+      distortedContext.clearRect(0, 0, distortedCanvas.width, distortedCanvas.height)
+      for (let y = 0; y < distortedCanvas.height; y += pixelSize) {
+        for (let x = 0; x < distortedCanvas.width; x += pixelSize) {
+          let cleanX = x / scale
+          let cleanY = y / scale
+          let totalUndistX = 0
+          let totalUndistY = 0
+          for (const glyph of glyphs) {
+            let [undistX, undistY] = glyph.getUndistortion(cleanX, cleanY)
+            // let [undistX, undistY] = flow.getDistortion(cleanX, cleanY)
+            totalUndistX += undistX
+            totalUndistY += undistY
+          }
+          let undistortedX = (cleanX + totalUndistX) * scale
+          let undistortedY = (cleanY + totalUndistY) * scale
+          let intX = Math.round(undistortedX)
+          if (intX < 0 || intX >= cleanCanvas.width) continue
+          let intY = Math.round(undistortedY)
+          if (intY < 0 || intY >= cleanCanvas.height) continue
+          let indexOffset = (intY * cleanCanvas.width + intX) * 4
+          let [r, g, b, a] = cleanData.slice(indexOffset, indexOffset + 4)
+          distortedContext.fillStyle = new Color(r, g, b, a).toString()
+          distortedContext.fillRect(x, y, pixelSize, pixelSize)
+        }
+      }
+    }
+    draw()
+
+    document.addEventListener("resize", resize)
+    document.addEventListener("keydown", function () {
+      if (event.keyCode == 32) paused = !paused
+    })
+
+  </script>
+</body>
+
+</html>

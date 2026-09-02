@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>Platformer</title>
+  <style media="screen">
+    body{
+      background-color: rgb(10,50,40);
+      color: rgb(200, 200, 200);
+      font-size: 40px;
+      overflow: hidden;
+      font-size: 300%;
+    }
+    canvas{
+      position: absolute;
+      left: 0;
+      top: 0;
+      outline: 2px dashed navy;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" oncontextmenu="event.preventDefault()" width="300" height="300"></canvas>
+  <script type="text/javascript">
+    "use strict";
+
+    function rand(max=1) {
+      return Math.random()*max;
+    }
+    function rand0(max=1) {
+      return (Math.random()-0.5)*max;
+    }
+    function randInt(max=2) {
+      return Math.floor(Math.random()*max);
+    }
+    function randProb(p=0.5) {
+      return p>Math.random();
+    }
+    function randRange(a, b) {
+      return Math.random()*(b-a)+a;
+    }
+    function clamp(num, val=1) {//num to clamp, special value
+      return 1-(val/(num+val));
+    }
+    function colorLerp(x, n1, n2) {
+      return n2.sub(n1).mult(x).add(n1);
+    }
+    function cutoff(x, min, max) {
+      if (min!=undefined && x<min) {
+        return min;
+      }
+      if (max!=undefined && x>max) {
+        return max;
+      }
+      return x;
+    }
+    function closenessPenalty(x, coefficient) { //what number to divide x by for to not reach 1
+      return 1-coefficient-coefficient/(x-1);
+    }
+    function round(v, p=2) {
+      return Math.round(v*10**p+Number.EPSILON)/10**p;
+    }
+    function arrayContains(arr, val) {
+      // if (Array.isArray(val)) {
+      //   for (var i = 0; i < arr.length; i++) {
+      //     for (var j = 0; j < val.length; j++) {
+      //       if (arr) {
+      //
+      //       }[i]
+      //     }
+      //   }
+      // }
+      // else {
+        for (var i = 0; i < arr.length; i++) {
+          if (arr[i]==val) return true;
+        }
+        return false;
+      // }
+    }
+    function arr2DReadAttempt(arr, i, j) {
+      if (i>=0 && i<arr.length) {
+        if (j>=0 && j<arr[i].length) {
+          return arr[i][j];
+        }
+      }
+    }
+    function mod(a, b) {
+      return (a%b+b)%b;
+    }
+
+    if (true) {//boring constant definitions
+      var canvas=document.getElementById("canvas");
+      var context=canvas.getContext("2d");
+      var TAU=2*Math.PI;
+      var PI=Math.PI;
+      var HPI=Math.PI/2;
+      var loops=0;
+      var paused=false;
+      var keys=[];
+      var height=100;//temporary
+      var grid=[];
+      var particles=[];
+      var entities=[];
+      var lastButtons=0;
+      var logPoints=[];
+
+    }
+    // var platformFriction=0.7;
+    var frameskip=2;
+    var levelHeight=30;
+    var levelRatio=1.2;
+    var screenBlockHeight=20;
+    var screenBlockWidth=screenBlockHeight*canvas.width/canvas.height;
+    var cameraOffset=new Vec2();
+    for (var i = 0; i < levelHeight*levelRatio; i++) {
+      grid[i]=[];
+      for (var j = 0; j < levelHeight; j++) {
+        if (randProb(0.7)) {//air
+          grid[i][j]=0;
+        }
+        else if (randProb(0.02)) {//kill block
+          grid[i][j]=3;
+        }
+        else {//background block or solid
+          if (randProb(0.7)) {
+            grid[i][j]=randInt(2)+1;
+          }
+          else {
+            grid[i][j]=4;
+          }
+        }
+      }
+    }
+    var curLevelGrid=grid; //temporary // TODO: curlevel is a subsection of the whole level (????? don't know how to make set of all levels, how to make grid to index when colliding and drawing)
+    var curSquareSize=height/screenBlockHeight;//block size in pixels
+
+    /* TODO:
+      grab stuff (including poles)
+      better movement
+        full moveset
+      check to-do's
+      block display bugs?
+      3d
+        parallax background
+      textured blocks
+      camera turn with player?
+      many kinds of blocks
+      better player character
+      pixel graphics (make own rasteriser)
+      dual controls
+      go through comments to see which might be useful, which can be deleted and which need work
+
+    */
+
+    function Color(r=255, g=0, b=255, a=1) {
+      this.r=r;
+      this.g=g;
+      this.b=b;
+      this.a=a;
+      this.copy=function() {
+        return new Color(this.r, this.g, this.b, this.a);
+      }
+      this.each=function(f) {
+        return new Color(f(this.r), f(this.g), f(this.b));
+      }
+      this.modify=function(amp) {
+        return this.each(function(n) {
+          var x=n+rand0(amp);
+          if (x>255) {
+            return 255;
+          }
+          else if (x<0) {
+            return 0;
+          }
+          else {
+            return x;
+          }
+        });
+      }
+      this.add=function(v) {
+        return new Color(this.r+v.r, this.g+v.g, this.b+v.b);
+      }
+      this.sub=function(v) {
+        return new Color(this.r-v.r, this.g-v.g, this.b-v.b);
+      }
+      this.mult=function(v) {
+        return new Color(this.r*v, this.g*v, this.b*v);
+      }
+      this.rgb=function() {
+        return "rgba("+this.r+","+this.g+","+this.b+", "+this.a+")";
+      }
+    }
+    function randColor(v=255) {
+      return new Color(randInt(v), randInt(v), randInt(v));
+    }
+    if (true) {//colors used
+      var colors={
+        mist: new Color(110, 130, 210),
+        sky: new Color(50, 150, 210),
+        darkBrown: new Color(40, 17, 2),
+        lightBrown: new Color(200, 160, 60),
+        // sand: new Color(200, 170, 120),
+
+        car1: new Color(200, 7, 25),
+        car2: new Color(170, 6, 15),
+        carWindow: new Color(40, 8, 20),
+
+        white: new Color(255, 255, 255),
+        black: new Color(0, 0, 0),
+        red: new Color(255, 0, 0),
+        green: new Color(0, 255, 0),
+        blue: new Color(0, 0, 255),
+        yellow: new Color(255, 255, 0),
+        magenta: new Color(255, 0, 255),
+        cyan: new Color(0, 255, 255),
+
+        gray: new Color(127, 127, 127),
+        darkRed: new Color(127, 0, 0),
+        darkGreen: new Color(0, 127, 0),
+        darkBlue: new Color(0, 0, 127),
+        darkYellow: new Color(127, 127, 0),
+        darkMagenta: new Color(127, 0, 127),
+        darkCyan: new Color(0, 127, 127),
+
+        darkGray: new Color(64, 64, 64),
+
+        orange: new Color(255, 127, 0),
+        slate: new Color(50, 67, 127),
+        lightSlate: new Color(100, 134, 255),
+        transBlack: new Color(0, 0, 0, 0)
+        // brown: new Color(64, 32, 0)
+      }
+    }
+
+    function Vec2(x=0, y=0) {
+      this.x=x;
+      this.y=y;
+      this.copy=function() {
+        return new Vec2(this.x, this.y);
+      }
+      this.add=function(v1, v2) {// FIXME: doesn't always work with both values
+        if (v2) {
+          return new Vec2(this.x+v1, this.y+v2);
+        }
+        return new Vec2(this.x+v1.x, this.y+v1.y);
+      }
+      this.sub=function(v) {
+        return new Vec2(this.x-v.x, this.y-v.y);
+      }
+      this.mult=function(n) {
+        return new Vec2(this.x*n, this.y*n);
+      }
+      this.div=function(n) {
+        return new Vec2(this.x/n, this.y/n);
+      }
+      this.dot=function(v) {
+        return v.x*this.x + v.y*this.y;
+      }
+      this.iHatLanding=function(v) {
+        return new Vec2(v.x*this.x-v.y*this.y, v.x*this.y+v.y*this.x);
+      }
+      this.len=function() {
+        return Math.sqrt(this.x**2+this.y**2);
+      }
+      this.dist=function(v) {
+        return Math.sqrt((this.x-v.x)**2+(this.y-v.y)**2);
+      }
+      this.sqDist=function(v) {
+        return (this.x-v.x)**2+(this.y-v.y)**2;
+      }
+      this.unit=function() {
+        var len=Math.sqrt(this.x**2+this.y**2);
+        return new Vec2(this.x/len, this.y/len);
+      }
+      this.dir=function() {//angle to x axis in radians
+        return Math.atan2(this.y, this.x);
+      }
+      this.taxi=function() {//taxicab distance length
+        return this.x+this.y;
+      }
+      this.screen=function() {//coordinates for drawing
+        return new Vec2((this.x-cameraOffset.x)*height/screenBlockHeight, (this.y-cameraOffset.y)*height/screenBlockHeight);
+      }
+    }
+    function rand0Vec2(v=1) {
+      return new Vec2(rand0(v), rand0(v));
+    }
+    function polarVec2(d, m=1) {//cartesian vector from polar coordinates
+      return new Vec2(Math.cos(d)*m, Math.sin(d)*m);
+    }
+
+    function Particle(pos, vel, size, color, maxAge, calc, step, drawcalc, draw) {
+      this.pos=pos;
+      this.vel=vel || new Vec2(rand0(0.1), rand0(0.1));
+      this.size=size || randRange(0.06, 0.2);
+      this.color=color || colors.darkRed.copy();
+      this.maxAge=maxAge || 50;
+      this.age=0;
+      this.update=function () { this.age++; this.calc(); this.step(); this.drawcalc(); this.draw() };
+      this.calc=calc || function() {};
+      this.step=step || function() { this.pos=this.pos.add(this.vel); }
+      this.drawcalc=drawcalc || function() { this.color.a=1-this.age/this.maxAge; }
+      this.draw=draw || function() {
+        context.fillStyle=this.color.rgb();
+        var screenSize=this.size*height/screenBlockHeight;
+        var drawPos=this.pos.screen();
+        context.fillRect(drawPos.x-screenSize/2, drawPos.y-screenSize/2, screenSize, screenSize);
+      }
+    }
+
+    if (true) {//quick drawing functions
+      var quickVec2ScreenLine= function (p1, p2, width=2, color=colors.yellow) {
+        context.strokeStyle=color.rgb ? color.rgb() : color;
+        context.lineWidth=width;
+        context.beginPath();
+        var e=p1.screen();
+        context.moveTo(e.x, e.y);
+        e=p2.screen();
+        context.lineTo(e.x, e.y);
+        context.stroke();
+      }
+      var quickVec2Line= function (p1, p2, width=2, color=colors.yellow) {
+        context.strokeStyle=color.rgb ? color.rgb() : color;
+        context.lineWidth=width;
+        context.beginPath();
+        context.moveTo(p1.x, p1.y);
+        context.lineTo(p2.x, p2.y);
+        context.stroke();
+      }
+      var quickVec2ScreenSquare= function (p, width=4, color=colors.yellow) {
+        context.fillStyle=color.rgb ? color.rgb() : color;
+        var e=p.screen();
+        context.fillRect(e.x-width/2, e.y-width/2, width, width);
+      }
+      var quickVec2CenteredSquare= function (p, width=4, color=colors.yellow) {
+        context.fillStyle=color.rgb ? color.rgb() : color;
+        context.fillRect(p.x-width/2, p.y-width/2, width, width);
+      }
+      var quickVec2TopLeftSquare= function (p, width=4, color=colors.yellow) {
+        context.fillStyle=color.rgb ? color.rgb() : color;
+        context.fillRect(p.x, p.y, width, width);
+      }
+      var quickVec2TopLeftScreenSquare= function (p, width=4, color=colors.yellow) {
+        context.fillStyle=color.rgb ? color.rgb() : color;
+        var e=p.screen();
+        context.fillRect(e.x, e.y, width, width);
+      }
+      var quickVec2ScreenCircle= function (p, radius=2, color=colors.yellow) {
+        context.fillStyle=color.rgb ? color.rgb() : color;
+        var e=p.screen();
+        context.beginPath();
+        context.ellipse(e.x, e.y, radius, radius, 0, 0, TAU);
+        context.fill();
+      }
+    }
+
+    var player={
+      pos: new Vec2(10, 10),
+      vel: new Vec2(),
+      ang: 0,
+      angVel: 0,
+      size: 0.8,
+      centerToRestHand: 1.1,
+      centerToOutwardHand: 2,
+      frozen: false,
+      leftHandPos: 0,// range [0, 1]
+      rightHandPos: 0,// range [0, 1]
+      leftPole: false,
+      rightPole: false,
+      extendingLeftArm: false,
+      extendingRightArm: false,
+      targetPosLeft: new Vec2(),
+      targetPosRight: new Vec2(),
+      defaultLeftTarget: new Vec2(),
+      defaultRightTarget: new Vec2(),
+      targetStrengthLeft: 1,
+      targetStrengthRight: 1,
+      activelyTargetingLeft: false,
+      activelyTargetingRight: false,
+      downOnFloor: false,
+      sliding: false,
+      slideLength: 0,
+      die: function() {//currently just make particles and respawn // TODO: <<=
+        for (var i = 0; i < 10; i++) {
+          particles.push(new Particle(this.pos.copy()));
+        }
+        this.pos=new Vec2(randRange(0.2, 0.8)*levelHeight*levelRatio, randRange(0.2, 0.8)*levelHeight);
+      },
+      screen: function(i, j=0) {//coordinates relative to character (including facing direction) => coordinates relative to level
+        return this.pos.add(polarVec2(this.ang).iHatLanding(new Vec2(i, j)));// TODO: maybe put this.size in this instead of draw and elsewhere?
+      },
+      draw: function() {
+        var blockSize=height/screenBlockHeight;
+        context.lineCap="butt";
+        var leftArmLength=player.leftHandPos*(player.centerToOutwardHand-player.centerToRestHand)+player.centerToRestHand;
+        var rightArmLength=player.rightHandPos*(player.centerToOutwardHand-player.centerToRestHand)+player.centerToRestHand;
+
+        var thisPlayer=this;//weird solution to not being able to use this in draw functions
+
+        function drawLine(u1, v1, u2, v2, wid, col) {
+          quickVec2ScreenLine(thisPlayer.screen(thisPlayer.size*u1, thisPlayer.size*v1), thisPlayer.screen(thisPlayer.size*u2, thisPlayer.size*v2), thisPlayer.size*blockSize*wid, col);
+        }
+        function drawCircle(u, v, rad, col) {
+          quickVec2ScreenCircle(thisPlayer.screen(thisPlayer.size*u, thisPlayer.size*v), thisPlayer.size*blockSize*rad, col);
+        }
+
+        if (this.downOnFloor) {
+          this.sliding ?
+            drawCircle(0, 0, 1.7, "rgba(200, 200, 255, 0.4)") : //light // TODO: something else
+            drawCircle(0, 0, 0.7, "rgba(0, 0, 0, 0.4)") //shadow
+
+          drawLine(0.5, 0.4, 1.8, 0.4, 0.5, colors.darkMagenta);//left leg
+          drawLine(0.5, -0.4, 1.8, -0.4, 0.5, colors.darkMagenta);//right leg
+          drawLine(0, 0, 0, -leftArmLength, 0.5, colors.darkMagenta);//left arm
+          drawLine(0, 0, 0, rightArmLength, 0.5, colors.darkMagenta);//right arm
+          drawLine(0.8, 0, -0.8, 0, 1.5, colors.magenta);//torso
+
+          drawCircle(-0.6, 0, 0.3, colors.yellow);//head
+        }
+        else {
+          drawCircle(0, 0, 0.7, "rgba(0, 0, 0, 0.4)");//shadow
+
+          drawLine(0, 0, 0, -leftArmLength, 0.5, colors.darkMagenta);//left arm
+          drawLine(0, 0, 0, rightArmLength, 0.5, colors.darkMagenta);//right arm
+          // drawLine(2, 0, -2, 0, 1.5, colors.magenta);//torso
+          drawLine(0.5, 0, -0.5, 0, 1.5, colors.magenta);//torso
+
+          drawCircle(0.3, 0, 0.3, colors.yellow);//head
+        }
+      },
+      freeze: function() {
+        this.frozen=true;
+        this.angVel=0;
+        this.vel=new Vec2();
+      },
+      getCenterToLeftHand: function() {
+        return polarVec2(this.ang-HPI, (this.leftHandPos*(this.centerToOutwardHand-this.centerToRestHand)+this.centerToRestHand)*this.size);
+      },
+      getCenterToRightHand: function() {
+        return polarVec2(this.ang+HPI, (this.rightHandPos*(this.centerToOutwardHand-this.centerToRestHand)+this.centerToRestHand)*this.size);
+      }
+    }
+    var blockTypes={
+      colors: [colors.transBlack, colors.transBlack, colors.white, colors.darkRed, colors.darkGray],
+      topCollision: [2],
+      noCollision: [0, 1],
+      centerPole: [4],
+      specialDraw: [
+        ,//0
+        ,//1
+        ,//2
+        ,//3
+        function(x, y) {//4
+          quickVec2ScreenCircle(new Vec2(x+0.5, y+0.5), 4, colors.lightSlate);//pole (top down);
+
+          // context.fillStyle=colors.lightSlate.rgb();
+          // context.fillRect((i-cameraOffset.x/2)*curSquareSize, (j-cameraOffset.y/2)*curSquareSize, Math.ceil(curSquareSize), Math.ceil(curSquareSize));
+          // var e=new Vec2(x+0.5, y+0.5).screen();
+          // context.beginPath();
+          // context.ellipse(e.x, e.y, radius, radius, 0, 0, TAU);
+          // context.fill();
+        }
+      ]
+    }
+
+    function Entity(pos) {
+      this.pos=pos;
+      this.color=new Color(255, 0, 255);
+      this.dead=false;
+      this.draw=function() {
+        quickVec2ScreenSquare(this.pos, 0.8*curSquareSize, this.color);
+        // quickVec2ScreenSq uare(this.pos, 0.1*curSquareSize, colors.yellow);
+      }
+      this.update=function() {
+        // if (randProb(0.02)) console.log(player.getCenterToLeftHand().add(player.pos), this.pos);
+        // if (player.getCenterToLeftHand().add(player.pos).sub(this.pos).len()<0.4) {
+        // if (player.getCenterToLeftHand().add(player.pos).sub(this.pos).len()<2 || player.getCenterToRightHand().add(player.pos).sub(this.pos).len()<2) {
+        if (player.getCenterToLeftHand().add(player.pos).sub(this.pos).len()<0.4 || player.getCenterToRightHand().add(player.pos).sub(this.pos).len()<0.4) {
+          // console.log("killed");
+          this.dead=true;
+          this.color=new Color(32, 0, 0);
+        }
+      }
+    }
+    for (var i = 0; i < 10; i++) {//define entities
+      entities.push(new Entity(new Vec2(rand(levelHeight*levelRatio), rand(levelHeight))));
+    }
+
+    function update() {
+      if (!paused) {
+        // TODO: maybe put most of the physics into a player.update function
+        logPoints=[];
+        // var targetGoalSelection=[];
+        var leftTargetGoalSelection=[];
+        var rightTargetGoalSelection=[];
+        if (true) {//input physics
+          // var tempAcc=0.02;
+          var tempForwardAcc=0.02;
+          var tempBackwardAcc=0.015;
+          var tempAngAcc=0.025;
+          var handSpeedCoefficient=1;
+          // TODO: optimise turning checks (maybe?)
+          // if (true) {// TODO: maybe causes problems
+          //   // if (!player.frozen) {//player is allowed to move, evaluate turning around poles if present
+          //   if (player.leftPole) {// TODO: // TODO:
+          //     player.ang=player.pos.sub(player.leftPole).dir()-HPI;
+          //     player.pos=player.leftPole.sub(player.getCenterToLeftHand());
+          //   }
+          //   if (player.rightPole) {
+          //     player.ang=player.pos.sub(player.rightPole).dir()+HPI;
+          //     player.pos=player.rightPole.sub(player.getCenterToRightHand());
+          //   }
+          // }
+          if ((keys[37] || keys[65]) && (keys[39] || keys[68])) {//trying to turn both directions at once // TODO: tense up?
+
+          }
+          else {//check if turning either direction
+            if (keys[37] || keys[65]) {//left
+              if (player.leftPole) {
+
+              }
+              else if (player.rightPole) {
+
+              }
+              else {//not gripping pole, just turn left
+                player.angVel-=tempAngAcc;
+              }
+            }
+            else if (keys[39] || keys[68]) {//right
+              if (player.leftPole) {
+
+              }
+              else if (player.rightPole) {
+
+              }
+              else {//not gripping pole, just turn right
+                player.angVel+=tempAngAcc;
+              }
+            }
+          }
+          if ((keys[38] || keys[87]) && (keys[40] || keys[83])) {//up and down, slide
+            player.downOnFloor=true;
+          }
+          else {
+            player.downOnFloor=false;
+            if (keys[38] || keys[87]) {//up
+              player.vel=player.vel.add(polarVec2(player.ang, tempForwardAcc));
+
+              // if (player.leftPole) {
+              //   // player.ang=Math.atan2()
+              //   // player.vel
+              //   // player.ang=player.pos.sub(player.leftPole).dir()-HPI;
+              //
+              // }
+              // else if (player.rightPole) {
+              //
+              // }
+              // else {//not gripping pole, just go forwards
+              //   player.vel=player.vel.add(polarVec2(player.ang, tempAcc));
+              // }
+            }
+            if (keys[40] || keys[83]) {//down
+              player.vel=player.vel.sub(polarVec2(player.ang, tempBackwardAcc));
+
+              // if (player.leftPole) {
+              //
+              // }
+              // else if (player.rightPole) {
+              //
+              // }
+              // else {//not gripping pole, just go backwards
+              //   player.vel=player.vel.sub(polarVec2(player.ang, tempAcc));
+              // }
+            }
+          }
+
+          //not inputs but needs to be done high up
+          player.defaultLeftTarget=
+            polarVec2(player.ang-HPI, (0.75*(player.centerToOutwardHand-player.centerToRestHand)+player.centerToRestHand)*player.size)
+            .add(polarVec2(player.ang, 0.4))
+            .add(player.pos);
+          player.defaultRightTarget=
+            polarVec2(player.ang+HPI, (0.75*(player.centerToOutwardHand-player.centerToRestHand)+player.centerToRestHand)*player.size)
+            .add(polarVec2(player.ang, 0.4))
+            .add(player.pos);
+
+          if (lastButtons&1) {//main mouse button (LMB, extend left arm)
+            if (player.activelyTargetingLeft) {
+              if (!player.leftPole) {
+                player.leftHandPos=(
+                  player.leftHandPos+//current position
+                  handSpeedCoefficient*cutoff(//target hand position
+                    (polarVec2(player.ang-HPI).dot(player.targetPosLeft.sub(player.pos))/player.size-player.centerToRestHand)/(player.centerToOutwardHand-player.centerToRestHand),
+                    0, 1)//in normal hand position range
+                  )/(1+handSpeedCoefficient);//weighted average
+              }
+            }
+            else {
+              player.leftHandPos=(player.leftHandPos+handSpeedCoefficient)/(1+handSpeedCoefficient);
+            }
+            player.extendingLeftArm=true;
+          }
+          else {//retract left arm
+            player.leftHandPos=player.leftHandPos/(1+handSpeedCoefficient);
+            player.extendingLeftArm=false;
+          }
+          if (lastButtons&2) {//secondary mouse button (RMB, extend right arm)
+            if (player.activelyTargetingRight) {
+              player.rightHandPos=(
+                player.rightHandPos+//current position
+                handSpeedCoefficient*cutoff(//target hand position
+                  (polarVec2(player.ang+HPI).dot(player.targetPosRight.sub(player.pos))/player.size-player.centerToRestHand)/(player.centerToOutwardHand-player.centerToRestHand),
+                  0, 1)//in normal hand position range
+                )/(1+handSpeedCoefficient);//weighted average
+            }
+            else {
+              player.rightHandPos=(player.rightHandPos+handSpeedCoefficient)/(1+handSpeedCoefficient);
+            }
+            player.extendingRightArm=true;
+          }
+          else {//retract right arm
+            player.rightHandPos=player.rightHandPos/(1+handSpeedCoefficient);
+            player.extendingRightArm=false;
+          }
+        }
+        if (true) {//player physics
+          if (!player.frozen) {
+
+            if (player.leftPole && player.extendingLeftArm) {
+              // player.leftHandPos=1;
+              player.leftHandPos=(player.leftHandPos+0.2)/(1+0.2);
+              // var spinRadius=player.centerToOutwardHand*player.size;
+              var spinRadius=player.getCenterToLeftHand().len();
+              // if (randProb(0.02)) console.log("spinRadius: ", spinRadius);
+              // if (player.pos.sub(player.leftPole).len() < spinRadius) {
+              // if (player.leftHandPos < 1) {
+              //   player.pos=player.pos.add(player.vel);
+              //   var centerToPole=player.pos.sub(player.leftPole);
+              //   console.log(player.leftHandPos, cutoff(-(centerToPole.len()*player.size-player.centerToRestHand)/(player.centerToOutwardHand-player.centerToRestHand), 0, 1));
+              //   player.leftHandPos=cutoff((centerToPole.len()*player.size-player.centerToRestHand)/(player.centerToOutwardHand-player.centerToRestHand), 0, 1);
+              //   player.ang=Math.atan2(centerToPole.y, centerToPole.x)-HPI;
+              // }
+              // else {
+                // player.ang=player.pos.sub(player.leftPole).dir()-HPI;
+                player.ang=player.ang-player.vel.dot(polarVec2(player.ang))*PI/spinRadius;
+                // player.leftHandPos=1;
+                player.pos=player.leftPole.sub(player.getCenterToLeftHand());
+              // }
+            }
+            else if (player.rightPole && player.extendingRightArm) {
+              // player.rightHandPos=1;
+              player.rightHandPos=(player.rightHandPos+0.2)/(1+0.2);
+              // var spinRadius=player.centerToOutwardHand*player.size;
+              var spinRadius=player.getCenterToRightHand().len();
+              // if (randProb(0.02)) console.log("spinRadius: ", spinRadius);
+              // if (player.pos.sub(player.rightPole).len() < spinRadius) {
+              // if (player.rightHandPos < 1) {
+              //   player.pos=player.pos.add(player.vel);
+              //   var centerToPole=player.pos.sub(player.rightPole);
+              //   console.log(player.rightHandPos, cutoff(-(centerToPole.len()*player.size-player.centerToRestHand)/(player.centerToOutwardHand-player.centerToRestHand), 0, 1));
+              //   player.rightHandPos=cutoff((centerToPole.len()*player.size-player.centerToRestHand)/(player.centerToOutwardHand-player.centerToRestHand), 0, 1);
+              //   player.ang=Math.atan2(centerToPole.y, centerToPole.x)-HPI;
+              // }
+              // else {
+                // player.ang=player.pos.sub(player.rightPole).dir()-HPI;
+                player.ang=player.ang+player.vel.dot(polarVec2(player.ang))*PI/spinRadius;
+                // player.rightHandPos=1;
+                player.pos=player.rightPole.sub(player.getCenterToRightHand());
+              // }
+            }
+            else {
+              player.pos=player.pos.add(player.vel);
+              player.ang+=player.angVel;
+            }
+
+            if (player.downOnFloor) {//sliding friction
+              var forwardSpeed=player.vel.dot(polarVec2(player.ang));
+              // console.log(forwardSpeed);
+              if (forwardSpeed>0.13) {
+                player.sliding=true;
+                player.slideLength++;
+              }
+              else {
+                player.sliding=false;
+                player.slideLength=0;
+              }
+              // console.log(player.sliding);
+              // // if (randProb(0.01)) {
+              //   console.log(player.vel.dot(polarVec2(player.ang)));
+              // // }
+              // player.vel=player.vel.mult(player.vel.dot(polarVec2(player.ang))*0.99);
+              // console.log(forwardSpeed, player.vel.y, player.vel.unit().y);
+              if (player.sliding) {
+                if (player.slideLength<40) {
+                  player.vel=polarVec2(player.ang).mult(forwardSpeed*0.98);
+                  player.angVel*=0.4;
+                }
+                else {
+                  player.sliding=false;
+                  player.vel=polarVec2(player.ang).mult(forwardSpeed*0.9);
+                  player.angVel*=0.4;
+                }
+              }
+              else {
+                player.sliding=false;
+                player.vel=polarVec2(player.ang).mult(forwardSpeed*0.7);
+                player.angVel*=0.4;
+              }
+            }
+            else {//non-sliding "friction"
+              player.sliding=false;
+              if ((keys[38] || keys[87]) ^ (keys[40] || keys[83])) {//walking "friction"
+                player.vel=player.vel.mult(0.9);
+                player.angVel*=0.8;
+              }
+              else {//stopping "friction"
+                player.vel=player.vel.mult(0.6);
+                player.angVel*=0.8;
+              }
+            }
+          }
+          player.frozen=false;// TODO: maybe not how freezing should work? (currently has to be kept frozen, maybe frozen state should be sticky)
+
+          // TODO: collision very broken after turning, different body shape and arms
+          if (player.pos.x>=0 && player.pos.x<=levelRatio*levelHeight-player.size && player.pos.y>=0 && player.pos.y<=levelHeight-player.size) {//within bounds, check what blocks surround the player
+            var posCeil=new Vec2(player.pos.x-player.pos.x%1+1, player.pos.y-player.pos.y%1+1);
+            // var curBlocks=[//blocks in all corners of player hitbox // TODO: glitchy at left edge of screen because of subtraction  but glitchy on left side collision without it
+            //   curLevelGrid[Math.floor(player.pos.x*20-0.00001)][Math.floor(player.pos.y*20-0.00001)],
+            //   curLevelGrid[Math.floor((player.pos.x+player.size)*20)][Math.floor(player.pos.y*20-0.00001)],
+            //   curLevelGrid[Math.floor(player.pos.x*20-0.00001)][Math.floor((player.pos.y+player.size)*20)],
+            //   curLevelGrid[Math.floor((player.pos.x+player.size)*20)][Math.floor((player.pos.y+player.size)*20)]
+            // ]
+            var curBlocks=[//blocks in all corners of player hitbox
+              curLevelGrid[Math.floor(player.pos.x)][Math.floor(player.pos.y)],
+              curLevelGrid[Math.floor(player.pos.x+player.size)][Math.floor(player.pos.y)],
+              curLevelGrid[Math.floor(player.pos.x)][Math.floor(player.pos.y+player.size)],
+              curLevelGrid[Math.floor(player.pos.x+player.size)][Math.floor(player.pos.y+player.size)]
+            ]
+            if (arrayContains(curBlocks, 3)) {//hit kill block, die // TODO: kills through diagonal blocks, on flat surfaces // TODO: other kill blocks
+              player.die();
+            }
+            else {//don't die, check other collisions
+              function collideTop() {//run on collision with ceiling
+                player.pos.y=player.pos.y-(player.pos.y%(1/levelHeight))+1/levelHeight;
+                player.vel.y=0;
+              }
+              function collideBottom() {//run on collision with floor
+                player.pos.y=player.pos.y-((player.pos.y+player.size)%(1/levelHeight));
+                player.vel.y=0;
+              }
+              function collideLeft() {
+                player.pos.x=player.pos.x-(player.pos.x%(1/levelHeight))+1/levelHeight;
+                player.vel.x=0;
+              }
+              function collideRight() {
+                player.pos.x=player.pos.x-((player.pos.x+player.size)%(1/levelHeight));
+                player.vel.x=0;
+              }
+              // var calcDisp={
+              //   top: function() {
+              //     return Math.abs(player.pos.y-(player.pos.y-(player.pos.y%(1/levelHeight))+1/levelHeight));
+              //   },
+              //   bottom: function() {
+              //     return Math.abs(player.pos.y-(player.pos.y-((player.pos.y+player.size)%(1/levelHeight))));
+              //   },
+              //   left: function() {
+              //     return Math.abs(player.pos.x-(player.pos.x-(player.pos.x%(1/levelHeight))+1/levelHeight));
+              //   },
+              //   right: function() {
+              //     return Math.abs(player.pos.x-(player.pos.x-((player.pos.x+player.size)%(1/levelHeight))));
+              //   }
+              // }
+
+              var colCorners=[];
+              var colNum=0;
+              for (var i = 0; i < curBlocks.length; i++) {
+                colCorners[i]=arrayContains(blockTypes.topCollision, curBlocks[i]);
+                if (colCorners[i]) colNum++;
+              }
+              var noColCorners=[];
+              for (var i = 0; i < curBlocks.length; i++) {
+                noColCorners[i]=arrayContains(blockTypes.noCollision, curBlocks[i]);
+              }
+
+              if (colNum==0) {//no collisions
+                player.timeSinceGround++;
+              }
+              else if (colNum==2 || colNum==3) {
+                if (//diagonals // TODO:
+                  colNum==2 && ((colCorners[0] && colCorners[3]) || (colCorners[1] && colCorners[2]))
+                  ) {
+                  // if (colCorners[0] && colCorners[3]) {
+                  //   if (player.pos.y+player.size-player.pos.x>posCeil.x-posCeil.y) {
+                  //     colCorners[1]=true;
+                  //   }
+                  //   else {
+                  //     colCorners[2]=true;
+                  //   }
+                  // }
+                  // else {
+                  //   if (player.pos.y+player.pos.x>posCeil.x+posCeil.y) {
+                  //     colCorners[0]=true;
+                  //   }
+                  //   else {
+                  //     colCorners[3]=true;
+                  //   }
+                  // }
+                  // colNum++;
+                  // console.log("aaa");
+
+                  if (colCorners[0]) {//top left
+                    if (player.pos.x-player.pos.y<posCeil.x-posCeil.y) {
+                      collideTop();
+                    }
+                    else {
+                      collideLeft();
+                    }
+                  }
+                  if (colCorners[1]) {//top right
+                    if (player.pos.x+player.pos.y+player.size>posCeil.x+posCeil.y) {
+                      collideTop();
+                    }
+                    else {
+                      collideRight();
+                    }
+                  }
+                  if (colCorners[2]) {//bottom left
+                    if (player.pos.x+player.pos.y+player.size<posCeil.x+posCeil.y) {
+                      collideBottom();
+                    }
+                    else {
+                      collideLeft();
+                    }
+                  }
+                  if (colCorners[3]) {//bottom right (hit left corner of floor)
+                    if (player.pos.x-player.pos.y>posCeil.x-posCeil.y) {
+                      collideBottom();
+                    }
+                    else {
+                      collideRight();
+                    }
+                  }
+
+                }
+                if (colCorners[0] && colCorners[1]) {//top (hit the ceiling)
+                  collideTop();
+                }
+                if (colCorners[2] && colCorners[3]) {//bottom (hit the floor)
+                  collideBottom();
+                }
+                if (colCorners[0] && colCorners[2]) {//left
+                  collideLeft();
+                  // // if (keys[37]) {
+                  // if (true) {
+                  //   player.grabWall(1);
+                  // }
+                  // else {
+                  //   player.timeSinceGround++;
+                  // }
+                }
+                if (colCorners[1] && colCorners[3]) {//right
+                  collideRight();
+                  // // if (keys[39]) {
+                  // if (true) {
+                  //   player.grabWall(2);
+                  // }
+                  // else {
+                  //   player.timeSinceGround++;
+                  // }
+                }
+
+              }
+              else if (colNum==1) {//single block floor or ceiling
+                if (colCorners[0]) {//top left
+                  if (player.pos.x-player.pos.y<posCeil.x-posCeil.y) {
+                    collideTop();
+                  }
+                  else {
+                    collideLeft();
+                  }
+                }
+                if (colCorners[1]) {//top right
+                  if (player.pos.x+player.pos.y+player.size>posCeil.x+posCeil.y) {
+                    collideTop();
+                  }
+                  else {
+                    collideRight();
+                  }
+                }
+                if (colCorners[2]) {//bottom left
+                  // console.log("aaa");
+                  // // logPoints.push(player.pos.add(new Vec2(0, player.size)))
+                  // // logPoints.push(posCeil)
+                  // // quickVec2ScreenSquare(posCeil)
+                  // // quickVec2ScreenSquare(player.pos.add(new Vec2(0, player.size)))
+                  // // if (player.pos.x+player.pos.y+player.size<posCeil.x+posCeil.y) {
+                  // //   collideBottom();
+                  // //   console.log("bot");
+                  // // }
+                  // // else {
+                  // //   collideLeft();
+                  // //   console.log("left");
+                  // // }
+                  // // console.log(calcDisp.left());
+                  //
+                  // // console.log(calcDisp.bottom(), "<", calcDisp.left());
+                  // // // console.log(calcDisp.bottom()<calcDisp.left());
+                  // // if (calcDisp.bottom() < calcDisp.left()) {
+                  // //   console.log("true, bot");
+                  // //   collideBottom();
+                  // // }
+                  // // else {
+                  // //   console.log("false, left");
+                  // //   console.log(round(player.pos.x, 4), round(player.pos.y, 4));
+                  //   collideLeft();
+                  // //   console.log(round(player.pos.x, 4), round(player.pos.y, 4));
+                  // //   // console.log(calcDisp.left());
+                  // // }
+
+                  if (player.pos.x+player.pos.y+player.size<posCeil.x+posCeil.y) {
+                    collideBottom();
+                  }
+                  else {
+                    collideLeft();
+                  }
+                }
+                if (colCorners[3]) {//bottom right (hit left corner of floor)
+                  if (player.pos.x-player.pos.y>posCeil.x-posCeil.y) {
+                    collideBottom();
+                  }
+                  else {
+                    collideRight();
+                  }
+                }
+                // if (colCorners[2]) {//single block floor
+                //   collideBottom();
+                // }
+                // if (colCorners[0] || colCorners[1]) {//single block ceiling (// TODO: maybe wall)
+                //   collideTop();
+                // }
+              }
+              // else if (colNum==4) {//inside block or blocks, what to do? // TODO:
+              //   console.log("aaaaaaaaaaaaaaahhhhhhhhhhhhh stuck!!!");
+              // }
+            }
+          }
+          else {//handle screen edge collision
+            if (player.pos.x<0) {//left
+              player.pos.x=0;
+              player.vel.x=0;
+            }
+            else if (player.pos.x>levelRatio*levelHeight-player.size) {//right
+              player.pos.x=levelRatio*levelHeight-player.size;
+              player.vel.x=0;
+            }
+            if (player.pos.y<0) {//top
+              player.pos.y=0;
+              player.vel.y=0;
+            }
+            else if (player.pos.y>levelHeight-player.size) {//bottom also reset jumping
+              player.pos.y=levelHeight-player.size;
+              player.vel.y=0;
+            }
+            player.die();
+          }
+
+          if (true) {//check if a pole is being grabbed, change movement appropriately
+            // TODO: fancier swing around poles (account for center of mass, current velocity, angle of approach)
+            player.leftPole=false;
+            player.rightPole=false;
+            // if (player.leftHandPos>0.9) {//check left hand pole
+            if (player.extendingLeftArm) {//check left hand pole
+              // var curCoords=player.pos.sub(player.getCenterToLeftHand());
+              var curCoords=player.pos.add(player.getCenterToLeftHand());
+              var curBlock=arr2DReadAttempt(// TODO: instead of just closest block, use surrounding blocks
+                curLevelGrid,
+                Math.floor(curCoords.x),
+                Math.floor(curCoords.y)
+              );
+              if (curBlock!=undefined) {
+                if (arrayContains(blockTypes.centerPole, curBlock)) {
+                  var handToPoleDist=Math.sqrt((curCoords.x%1-0.5)**2+(curCoords.y%1-0.5)**2);
+                  if (handToPoleDist<=0.3) {
+                    // player.leftPole=true;
+                    player.leftPole=new Vec2(Math.floor(curCoords.x)+0.5, Math.floor(curCoords.y)+0.5);
+                  }
+                }
+              }
+            }
+            // if (player.rightHandPos>0.9) {//check right hand pole
+            if (player.extendingRightArm) {//check right hand pole
+              // var curCoords=player.pos.sub(player.getCenterToRightHand());
+              var curCoords=player.pos.add(player.getCenterToRightHand());
+              var curBlock=arr2DReadAttempt(// TODO: instead of just closest block, use surrounding blocks
+                curLevelGrid,
+                Math.floor(curCoords.x),
+                Math.floor(curCoords.y)
+              );
+              if (curBlock!=undefined) {
+                if (arrayContains(blockTypes.centerPole, curBlock)) {
+                  var handToPoleDist=Math.sqrt((curCoords.x%1-0.5)**2+(curCoords.x%1-0.5)**2);
+                  if (handToPoleDist<=0.3) {
+                    // player.rightPole=true;
+                    player.rightPole=new Vec2(Math.floor(curCoords.x)+0.5, Math.floor(curCoords.y)+0.5);
+                  }
+                }
+              }
+            }
+            if (player.leftPole && player.rightPole) {//grabbing poles on both sides, stop immediately // TODO: check force on arms???
+              player.freeze();
+            }
+          }
+        }
+        if (true) {//entity physics
+          for (var i = 0; i < entities.length; i++) {
+            entities[i].update();
+            var maxEntityDist=1.2;
+            if (true) {
+            // if (!entities[i].dead) {
+              if (entities[i].pos.sub(player.defaultLeftTarget).len()<maxEntityDist) {
+                leftTargetGoalSelection.push(["enemy", i, entities[i].pos.sub(player.pos).len(), 1]);
+              }
+              if (entities[i].pos.sub(player.defaultRightTarget).len()<maxEntityDist) {
+                rightTargetGoalSelection.push(["enemy", i, entities[i].pos.sub(player.pos).len(), 1]);
+              }
+            }
+          }
+        }
+        if (true) {//target position physics
+          // player.targetDefaultPos=player.pos.add(polarVec2(player.ang, 0.4+player.vel.dot(polarVec2(player.ang))*10));
+
+          if (true) {//add poles to targetGoalSelection // TODO: each hand targets
+            var maxPoleDist=0.6;
+            // for (var i = Math.round(player.targetDefaultPos.x-maxPoleDist); i < player.targetDefaultPos.x+maxPoleDist; i++) {
+            //   for (var j = Math.round(player.targetDefaultPos.y-maxPoleDist); j < player.targetDefaultPos.y+maxPoleDist; j++) {
+            //     if (arr2DReadAttempt(curLevelGrid, i, j)==4) {
+            //       targetGoalSelection.push(["pole", [i, j], new Vec2(i+0.5, j+0.5).sub(player.targetDefaultPos).len(), 0.5]);
+            //     }
+            //   }
+            // }
+            for (var i = Math.round(player.defaultLeftTarget.x-maxPoleDist); i < player.defaultLeftTarget.x+maxPoleDist; i++) {
+              for (var j = Math.round(player.defaultLeftTarget.y-maxPoleDist); j < player.defaultLeftTarget.y+maxPoleDist; j++) {
+                if (arr2DReadAttempt(curLevelGrid, i, j)==4) {
+                  leftTargetGoalSelection.push(["pole", [i, j], new Vec2(i+0.5, j+0.5).sub(player.defaultLeftTarget).len(), 0.5]);
+                }
+              }
+            }
+            for (var i = Math.round(player.defaultRightTarget.x-maxPoleDist); i < player.defaultRightTarget.x+maxPoleDist; i++) {
+              for (var j = Math.round(player.defaultRightTarget.y-maxPoleDist); j < player.defaultRightTarget.y+maxPoleDist; j++) {
+                if (arr2DReadAttempt(curLevelGrid, i, j)==4) {
+                  rightTargetGoalSelection.push(["pole", [i, j], new Vec2(i+0.5, j+0.5).sub(player.defaultRightTarget).len(), 0.5]);
+                }
+              }
+            }
+          }
+
+          var newTarget=undefined;
+          var curHighestImportance=0;
+          for (var i = 0; i < leftTargetGoalSelection.length; i++) {
+            var curImportance=(1-clamp(leftTargetGoalSelection[i][2]))*leftTargetGoalSelection[i][3];
+            if (curImportance>curHighestImportance) {
+              curHighestImportance=curImportance;
+              newTarget=leftTargetGoalSelection[i];
+            }
+          }
+          var targetMovementCoefficient=0.6;
+          var targetStrengthCoefficient=0.2;
+          if (newTarget && player.extendingLeftArm) {//target located and arm is extended
+
+            switch (newTarget[0]) {
+              case "enemy":
+                var newTargetPos=entities[newTarget[1]].pos;
+                break;
+              case "pole":
+                var newTargetPos=new Vec2(newTarget[1][0]+0.5, newTarget[1][1]+0.5);
+                break;
+            }
+            player.activelyTargetingLeft=true;
+            player.targetStrengthLeft=(player.targetStrengthLeft+0.9*targetStrengthCoefficient)/(1+targetStrengthCoefficient)
+            player.targetPosLeft=player.targetPosLeft.add(
+              newTargetPos.mult(targetMovementCoefficient)
+            ).div(1+targetMovementCoefficient);
+          }
+          else {//no target, go to default
+            player.activelyTargetingLeft=false;
+            player.targetStrengthLeft=(player.targetStrengthLeft+0.2*targetStrengthCoefficient)/(1+targetStrengthCoefficient)
+            player.targetPosLeft=player.targetPosLeft.add(
+              player.defaultLeftTarget.mult(targetMovementCoefficient)
+            ).div(1+targetMovementCoefficient);
+          }
+
+          var newTarget=undefined;
+          var curHighestImportance=0;
+          for (var i = 0; i < rightTargetGoalSelection.length; i++) {
+            var curImportance=(1-clamp(rightTargetGoalSelection[i][2]))*rightTargetGoalSelection[i][3];
+            if (curImportance>curHighestImportance) {
+              curHighestImportance=curImportance;
+              newTarget=rightTargetGoalSelection[i];
+            }
+          }
+          var targetMovementCoefficient=0.6;
+          var targetStrengthCoefficient=0.2;
+          if (newTarget && player.extendingRightArm) {//target located and arm is extended
+
+            switch (newTarget[0]) {
+              case "enemy":
+                var newTargetPos=entities[newTarget[1]].pos;
+                break;
+              case "pole":
+                var newTargetPos=new Vec2(newTarget[1][0]+0.5, newTarget[1][1]+0.5);
+                break;
+            }
+            player.activelyTargetingRight=true;
+            player.targetStrengthRight=(player.targetStrengthRight+0.9*targetStrengthCoefficient)/(1+targetStrengthCoefficient)
+            player.targetPosRight=player.targetPosRight.add(
+              newTargetPos.mult(targetMovementCoefficient)
+            ).div(1+targetMovementCoefficient);
+          }
+          else {//no target, go to default
+            player.activelyTargetingRight=false;
+            player.targetStrengthRight=(player.targetStrengthRight+0.2*targetStrengthCoefficient)/(1+targetStrengthCoefficient)
+            player.targetPosRight=player.targetPosRight.add(
+              player.defaultRightTarget.mult(targetMovementCoefficient)
+            ).div(1+targetMovementCoefficient);
+          }
+        }
+        if (loops% frameskip <1) draw();//animation
+        loops++;
+        window.requestAnimationFrame(update);
+      }
+    }
+
+    function draw() {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
+      var cameraSpeed=0.2;
+      // cameraOffset=new Vec2(player.pos.x-screenBlockWidth/2, player.pos.y-screenBlockHeight/2);
+      cameraOffset=cameraOffset.add(new Vec2(player.pos.x-screenBlockWidth/2, player.pos.y-screenBlockHeight/2).mult(cameraSpeed)).div(1+cameraSpeed);
+
+      // var curSquareSize=height/screenBlockHeight;//block size in pixels
+      for (var i = 0; i < screenBlockWidth+1; i++) {//draw blocks
+        var iReal=i+cameraOffset.x;
+        if (curLevelGrid[Math.floor(iReal)]!=undefined) {
+          for (var j = 0; j < screenBlockHeight+1; j++) {
+            var jReal=j+cameraOffset.y;
+            var curBlock=curLevelGrid[Math.floor(iReal)][Math.floor(jReal)];
+            // if (randProb(0.1) && loops==0) {
+            //   console.log(Math.floor(iReal), Math.floor(jReal));
+            // }
+            if (curBlock!=0 && curBlock!=undefined) {
+              // context.fillStyle=blockTypes.colors[curLevelGrid[i][j]].rgb();
+              // context.fillRect(Math.floor(i*curSquareSize), Math.floor(j*curSquareSize), Math.ceil(curSquareSize), Math.ceil(curSquareSize));
+              // quickVec2TopLeftScreenSquare(new Vec2(i, j), curSquareSize+1, blockTypes.colors[curBlock]);
+              // if (randProb(0.1) && loops==0) {
+              //   console.log(context.fillStyle, curBlock, blockTypes.colors[curLevelGrid[i][j]].rgb());
+              // }
+              context.fillStyle=blockTypes.colors[curBlock].rgb();
+
+              // context.fillRect((i-cameraOffset.x/2)*curSquareSize, (j-cameraOffset.y/2)*curSquareSize, Math.ceil(curSquareSize), Math.ceil(curSquareSize));
+              context.fillRect((i-mod(cameraOffset.x, 1))*curSquareSize, (j-mod(cameraOffset.y, 1))*curSquareSize, Math.ceil(curSquareSize), Math.ceil(curSquareSize));
+              if (randProb(0.1) && loops==0) {
+                // console.log(iReal*curSquareSize, jReal*curSquareSize, Math.ceil(curSquareSize), context.fillStyle, curBlock);
+              }
+              if (blockTypes.specialDraw[curBlock]!=undefined) {
+                // blockTypes.specialDraw[curBlock](i-cameraOffset.x%1, j-cameraOffset.y%1);// TODO: also block width?
+                // blockTypes.specialDraw[curBlock](i+mod(cameraOffset.x, 1), j+mod(cameraOffset.y, 1));
+                blockTypes.specialDraw[curBlock](i+Math.floor(cameraOffset.x), j+Math.floor(cameraOffset.y));
+                // blockTypes.specialDraw[curBlock](i, j);
+              }
+            }
+          }
+        }
+      }
+
+      for (var i = 0; i < entities.length; i++) {
+        entities[i].draw();
+      }
+
+      player.draw();
+      if (true) {//draw targets
+        var pos=player.targetPosLeft.screen();
+        context.strokeStyle="rgb(200, 210, 255, "+player.targetStrengthLeft+")";
+        context.lineWidth=3;
+        context.beginPath();
+        context.arc(pos.x, pos.y, curSquareSize*0.4, 0, TAU);
+        context.stroke();
+        var pos=player.targetPosRight.screen();
+        context.strokeStyle="rgb(200, 210, 255, "+player.targetStrengthRight+")";
+        context.lineWidth=3;
+        context.beginPath();
+        context.arc(pos.x, pos.y, curSquareSize*0.4, 0, TAU);
+        context.stroke();
+      }
+
+      for (var i = 0; i < particles.length; i++) {//update and draw particles
+        var p=particles[i];
+        if (p.age+1>p.maxAge) {//delete if too old
+          particles.splice(i, 1);
+          i--;
+          continue;
+        }
+        p.update();
+      }
+      for (var i = 0; i < logPoints.length; i++) {
+        quickVec2ScreenSquare(logPoints[i]);
+      }
+    }
+
+    function restart() {// TODO: maybe useless
+      loops=0;
+    }
+    function resize() {
+      canvas.width=window.innerWidth;
+      height=canvas.height=window.innerHeight;
+      curSquareSize=height/screenBlockHeight;//block size in pixels
+      screenBlockWidth=screenBlockHeight*canvas.width/canvas.height;
+      restart();// TODO: maybe will cause problems with animation, probably useless
+    }
+    resize();
+    update();
+
+    // canvas.addEventListener("mousemove",function(){
+    //   // lastx=event.clientX;
+    //   // lasty=event.clientY;
+    //   var n=1;
+    //   lastx=(event.clientX+lastx*n)/(n+1);
+    //   lasty=(event.clientY+lasty*n)/(n+1);
+    // });
+    canvas.addEventListener("mouseup",function(){lastButtons=event.buttons});
+    canvas.addEventListener("mousedown",function() {lastButtons=event.buttons});
+    // window.addEventListener("dblclick", function() {location.reload()});
+    window.addEventListener("keyup",function(){
+      var curKey=event.keyCode;
+      keys[curKey]=false;
+      // console.log(keys);
+    });
+    window.addEventListener("keydown",function(){
+      var curKey=event.keyCode;
+      keys[curKey]=true;
+      // console.log(keys);
+      // console.log(curKey);
+      switch (curKey) {
+        case 32://space
+          paused=!paused;
+          console.log(paused?"Paused":"Unpaused");
+          update();
+          break;
+        // case 37://left
+        //   move.left();
+        //   break;
+      }
+    });
+    window.addEventListener("resize",function(){resize();})
+  </script>
+</body>
+</html>

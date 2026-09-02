@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>3D snowflakes</title>
+    <style media="screen">
+      body{
+        overflow: hidden;
+      }
+      canvas {
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="300" height="300"></canvas>
+    <script type="text/javascript">
+      "use strict";
+      function rand(max=1) {
+        return Math.random()*max;
+      }
+      
+      var canvas=document.getElementById("canvas");
+      var context=canvas.getContext("2d");
+      var height;
+      var paused=false;
+      var frameSkip= 1 ;
+      var fReqsModFrameSkip=frameSkip;
+      var animationFrameRequest;
+      var fReqs=0;
+      var keys=[];
+      var mousePos=new Vec2();
+      var mouseDown=false;
+      var resizeRequested=false;
+      var framesSinceResize=0;
+      var minFramesSinceResize=20;
+      
+      var updateOnlyOnMouseMove=false;
+      
+      const TAU=2*Math.PI;
+      const PI=Math.PI;
+      const HPI=Math.PI/2;
+      const PHI=(Math.sqrt(5)+1)/2;
+      const ROOT2=Math.sqrt(2);
+      const ROOT3=Math.sqrt(3);
+      const HALFROOT3=Math.sqrt(3)/2;
+        
+      const colors={
+        bg: "#000",
+        
+        lowVis: "#444",
+        hiVis: "#ddd",
+        maxVis: "#fff",
+        
+        red: "#f00",
+        orange: "#f70",
+        yellow: "#ff0",
+        lime: "#6f0",
+        green: "#0d0",
+        teal: "#088",
+        bluegreen: "#176",
+        cyan: "#0ff",
+        blue: "#03f",
+      }
+      document.getElementsByTagName("body")[0].style.backgroundColor=colors.bg;
+      
+      function Vec2(x=0, y=0) {
+        this.x=x;
+        this.y=y;
+        this.copy=function() {
+          return new Vec2(this.x, this.y);
+        }
+        this.add=function(v1, v2) {// FIXME: doesn't always work with both values
+          if (v2!=undefined) {
+            return new Vec2(this.x+v1, this.y+v2);
+          }
+          return new Vec2(this.x+v1.x, this.y+v1.y);
+        }
+        this.sub=function(v) {
+          return new Vec2(this.x-v.x, this.y-v.y);
+        }
+        this.mult=function(n) {
+          return new Vec2(this.x*n, this.y*n);
+        }
+        this.div=function(n) {
+          return new Vec2(this.x/n, this.y/n);
+        }
+        this.dot=function(v) {
+          return v.x*this.x + v.y*this.y;
+        }
+        this.iHatLanding=function(v) {
+          return new Vec2(v.x*this.x-v.y*this.y, v.x*this.y+v.y*this.x);
+        }
+        this.len=function() {
+          return Math.sqrt(this.x**2+this.y**2);
+        }
+        this.sqLen=function() {
+          return this.x**2+this.y**2;
+        }
+        this.dist=function(v) {
+          return Math.sqrt((this.x-v.x)**2+(this.y-v.y)**2);
+        }
+        this.sqDist=function(v) {
+          return (this.x-v.x)**2+(this.y-v.y)**2;
+        }
+        this.unit=function() {
+          var len=Math.sqrt(this.x**2+this.y**2);
+          return new Vec2(this.x/len, this.y/len);
+        }
+        this.ang=function() {//angle to x axis in radians
+          return Math.atan2(this.y, this.x);
+        }
+        this.taxi=function() {//taxicab distance
+          return this.x+this.y;
+        }
+        this.screen=function() {//coordinates for drawing
+          // return new Vec2(this.x-0.5*this.y, this.y*HALFROOT3);
+          return new Vec2(0.85*this.x*height/2+canvas.width/2, height/2-0.85*this.y*height/2);
+          // return new Vec2(0.5*(this.x*height+canvas.width), ((this.y+1)*0.5)*height);
+        }
+        // this.unscreen=function() {//coordinates for mouse interaction
+        //   return new Vec2((this.x-canvas.width/2)*2/height, (height/2-this.y)*2/height);
+        // }
+        this.rotate=function(a) {
+          return new Vec2(this.x*Math.cos(a)-this.y*Math.sin(a), this.x*Math.sin(a)+this.y*Math.cos(a));
+        }
+      }
+      function Vec2FromAngleAndLength(ang, len=1) {
+        return new Vec2(len*Math.cos(ang), len*Math.sin(ang));
+      }
+      
+      function Vec3(x=0, y=0, z=0) {
+        if (typeof x=="number") {
+          this.x=x;
+          this.y=y;
+          this.z=z;
+        }
+        else {
+          this.x=x[0];
+          this.y=x[1];
+          this.z=x[2];
+        }
+        this.copy=function() {
+          return new Vec3(this.x, this.y, this.z);
+        }
+        this.neg=function() {
+          return new Vec3(-this.x, -this.y, -this.z);
+        }
+        this.sub=function(v) {
+          return new Vec3(this.x-v.x, this.y-v.y, this.z-v.z);
+        }
+        this.add=function(v) {
+          return new Vec3(this.x+v.x, this.y+v.y, this.z+v.z);
+        }
+        this.mult=function(sc) {
+          return new Vec3(this.x*sc, this.y*sc, this.z*sc);
+        }
+        this.len=function() {
+          return Math.sqrt(this.x**2+this.y**2+this.z**2);
+        }
+        this.unit=function(sc) {
+          var len=this.len();
+          return new Vec3(this.x/len, this.y/len, this.z/len);
+        }
+        this.div=function(sc) {
+          return new Vec3(this.x/sc, this.y/sc, this.z/sc);
+        }
+        this.cross=function(v) {
+          return new Vec3(this.y*v.z-this.z*v.y, -(this.x*v.z-this.z*v.x), this.x*v.y-this.y*v.x);
+        }
+        this.dot=function(v) {
+          return this.x*v.x+this.y*v.y+this.z*v.z;
+        }
+        this.dist=function(v) {
+          return Math.sqrt((this.x-v.x)**2+(this.y-v.y)**2+(this.z-v.z)**2);
+        }
+        this.sqDist=function(v) {
+          return (this.x-v.x)**2+(this.y-v.y)**2+(this.z-v.z)**2;
+        }
+        this.rotateX=function(a) {
+          return new Vec3(this.x, this.y*Math.cos(a)-this.z*Math.sin(a), this.y*Math.sin(a)+this.z*Math.cos(a));
+        }
+        this.rotateY=function(a) {
+          return new Vec3(this.z*Math.sin(a)+this.x*Math.cos(a), this.y, this.z*Math.cos(a)-this.x*Math.sin(a));
+        }
+        this.rotateZ=function(a) {
+          return new Vec3(this.x*Math.cos(a)-this.y*Math.sin(a), this.x*Math.sin(a)+this.y*Math.cos(a), this.z);
+        }
+        this.rotateAxis=function(u, t) {//rotates this vector around the axis u by an angle t. Formula from http://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
+          let temp1=1-Math.cos(t);
+          return new Vec3(
+            this.x*(Math.cos(t)+u.x**2*temp1) + this.y*(u.x*u.y*temp1-u.z*Math.sin(t)) + this.z*(u.x*u.z*temp1+u.y*Math.sin(t)),
+            this.x*(u.y*u.x*temp1+u.z*Math.sin(t)) + this.y*(Math.cos(t)+u.y**2*temp1) + this.z*(u.y*u.z*temp1-u.x*Math.sin(t)),
+            this.x*(u.z*u.x*temp1-u.y*Math.sin(t)) + this.y*(u.z*u.y*temp1+u.x*Math.sin(t)) + this.z*(Math.cos(t)+u.z**2*temp1)
+          );
+        }
+        this.randNudge=function(a) {
+          return new Vec3(this.x+rand0(a), this.y+rand0(a), this.z+rand0(a));
+        }
+        this.screen=function(hor, vert) {
+          return new Vec2(this.dot(hor), this.dot(vert)).screen();
+        }
+      }
+      function sphericalToVec3(hor, ver, mag=1) {
+        return new Vec3(Math.cos(ver)*Math.cos(hor)*mag, Math.sin(ver)*mag, Math.cos(ver)*Math.sin(hor)*mag);
+      }
+      
+      function drawSquare(pos, w=4) {
+        pos=pos.screen();
+        context.fillRect(pos.x-w/2, pos.y-w/2, w, w);
+      }
+      function drawLine(p1, p2) {
+        p1=p1.screen();
+        p2=p2.screen();
+        context.beginPath();
+        context.moveTo(p1.x, p1.y);
+        context.lineTo(p2.x, p2.y);
+        context.stroke();
+      }
+      function drawDisk(x, y, r=4, ctx=context) {
+        ctx.beginPath();
+        let screenPos=new Vec2(x, y).screen();
+        ctx.moveTo(screenPos.x, screenPos.y);
+        ctx.arc(screenPos.x, screenPos.y, r/2+0.5, 0, TAU);
+        ctx.fill();
+      }
+      
+      function drawTextInBox(text, x, y, w, h, color, font=sqInnerSize*0.3+"px sans-serif") {
+        context.fillStyle=color;
+        context.font=font;
+        context.textAlign="center";
+        context.textBaseline="middle";
+        context.fillText(text, x+w/2, y+h/2, w);
+        
+        //vertical flip
+        // context.save();
+        // context.scale(1, -1);
+        // context.fillText(text, x+w/2, -(y+h/2), w);
+        // context.restore();
+        
+        //horizontal flip
+        // context.scale(-1, 1);
+        // context.fillText(text, -(x+w/2), y+h/2, w);
+        // context.scale(-1, 1);
+        
+      }
+      function drawTextInLevelGrid(text, i, j, color=colors.textDefault.rgb(), font=undefined) {
+        let pos=gridSquareToScreen(i+rand0(0.01), j+rand0(0.01));
+        drawTextInBox(text, pos.x, pos.y, sqInnerSize, sqInnerSize, color, font)
+      }
+      
+      var testSurfacePoints=[];
+      // let numPoints=100;
+      // for (var i = 0; i < numPoints; i++) {
+      //   let trigParam=2*Math.PI*2*i/numPoints;
+      //   testSurfacePoints.push(new Vec3(Math.sin(trigParam), Math.cos(3*trigParam), Math.sin(0.5*trigParam)).mult(0.5));
+      // }
+      for (var i = -20; i <= 20; i++) {
+        for (var j = -20; j <= 20; j++) {
+          let xi=(Math.random()-0.5)*2*20;
+          let zi=(Math.random()-0.5)*2*20;
+          
+          let yi=(xi**2*3-30*zi+(zi*0.7)**3)*0.01;
+          
+          testSurfacePoints.push(new Vec3(xi, yi, zi).mult(1/40));
+        }
+      }
+      
+      function arcify(x) {//takes the length of a chord of length x and gives the angle (or arc length) it makes in a unit sphere
+        return 2*Math.asin(x/2);
+      }
+      const cubeEdgeLen=2/ROOT3;//edge length of a cube inscribed in a unit sphere
+      const cubeEdgeArc=arcify(cubeEdgeLen);
+      const angForSymmCube=1.5*cubeEdgeArc;
+      const symmCubeCoordsLong=Math.sin(angForSymmCube);
+      const symmCubeCoordsShort=Math.cos(angForSymmCube)/ROOT2;
+      
+      let knownCubeVertexes=[
+        new Vec3(-1, -1, -1).unit(),
+        new Vec3(1, -1, -1).unit(),
+        new Vec3(-1, 1, -1).unit(),
+        new Vec3(1, 1, -1).unit(),
+        new Vec3(-1, -1, 1).unit(),
+        new Vec3(1, -1, 1).unit(),
+        new Vec3(-1, 1, 1).unit(),
+        new Vec3(1, 1, 1).unit(),
+      ]
+      let symmCubeVertexes=[
+        new Vec3(-1, -1, -1).unit(),
+        new Vec3(1, 1, 1).unit(),
+        new Vec3(symmCubeCoordsShort, symmCubeCoordsShort, symmCubeCoordsLong),
+        new Vec3(-symmCubeCoordsShort, -symmCubeCoordsShort, -symmCubeCoordsLong),
+        new Vec3(symmCubeCoordsShort, symmCubeCoordsLong, symmCubeCoordsShort),
+        new Vec3(-symmCubeCoordsShort, -symmCubeCoordsLong, -symmCubeCoordsShort),
+        new Vec3(symmCubeCoordsLong, symmCubeCoordsShort, symmCubeCoordsShort),
+        new Vec3(-symmCubeCoordsLong, -symmCubeCoordsShort, -symmCubeCoordsShort),
+      ]
+      
+      let knownRotVerts=[];
+      for (var p of knownCubeVertexes) {
+        // knownRotVerts.push(p.rotateZ(TAU/8));
+        knownRotVerts.push(p.rotateX(TAU/8));
+      }
+      
+      let compVerts=[
+        new Vec3(0, 1, ROOT2).unit(),
+        new Vec3(0, -1, ROOT2).unit(),
+        new Vec3(0, 1, -ROOT2).unit(),
+        new Vec3(0, -1, -ROOT2).unit(),
+      ];
+      for (var i = 0; i < 4; i++) {
+        let v=compVerts[i];
+        compVerts.push(new Vec3(v.y, v.x, v.z));
+        compVerts.push(new Vec3(v.y, v.z, v.x));
+        compVerts.push(new Vec3(v.z, v.y, v.x));
+        compVerts.push(new Vec3(v.z, v.x, v.y));
+        compVerts.push(new Vec3(v.x, v.z, v.y));
+      }
+      
+      ;//🪞🔳
+        let newlyKnownVertexSets=[];
+        function getSymmPointsCentral(arr) {//apply central symmetry
+          let res=[];
+          for (var p of arr) {
+            res.push(p.copy());
+            res.push(p.neg());
+          }
+          return res;
+        }
+        function getSymmPointsMirror(arr) {//apply a mirror symmetry along an edge
+          let res=[];
+          for (var p of arr) {
+            res.push(p.copy());
+            res.push(new Vec3(p.z, p.y, p.x));
+          }
+          return res;
+        }
+        function getSymmPointsRotFace(arr) {//apply 4-way rotational symmetry on one of the faces
+          let res=[];
+          let faceCenterAxis=symmCubeVertexes[1].add(symmCubeVertexes[7]).unit();
+          for (var p of arr) {
+            res.push(p.copy());
+            res.push(p.rotateAxis(faceCenterAxis, TAU*0.25));
+            res.push(p.rotateAxis(faceCenterAxis, TAU*0.5));
+            res.push(p.rotateAxis(faceCenterAxis, TAU*0.75));
+          }
+          return res;
+        }
+        function getSymmPointsRotDiagonal(arr) {//apply 3-way rotational symmety around one of the main diagonals
+          let res=[];
+          for (var p of arr) {
+            res.push(p.copy());
+            res.push(p.rotateAxis(new Vec3(1, 1, 1).unit(), TAU/3));
+            res.push(p.rotateAxis(new Vec3(1, 1, 1).unit(), -TAU/3));
+          }
+          return res;
+        }
+        function getSymmPoints(arr) {//apply all the symmetries of the symmCube to the given point, return the set of 48 new points
+          // let res=[]; let resLen;
+          // for (var p of arr) {
+          //   res.push(p.copy());
+          // }
+          // for (var i = 0; i < resLen; i++) {
+          //   res.concat(res[i].get)
+          // }
+          // return res;
+          return getSymmPointsMirror(getSymmPointsRotDiagonal(getSymmPointsCentral(getSymmPointsRotFace(arr))));
+        }
+        // let symmTestPoints=getSymmPoints([new Vec3(1, 4, 2).unit().mult(0.85)]);
+        let symmTestPoints=[];
+        let numSymmTestPoints=30;
+        for (var i = -1; i <= 1; i+=2/numSymmTestPoints) {
+          symmTestPoints=symmTestPoints.concat(getSymmPoints([new Vec3(i, 1, 1).mult(0.5*cubeEdgeLen)]));
+          symmTestPoints=symmTestPoints.concat(getSymmPoints([new Vec3(i, -1, 1).mult(0.5*cubeEdgeLen)]));
+          // symmTestPoints=symmTestPoints.concat(new Vec3(i, 1, 1)]));
+        }
+        let symmTestPointsShifted=[];
+        for (var p of symmTestPoints) {
+          symmTestPointsShifted.push(p.add(new Vec3(0, -cubeEdgeLen, 0)));
+        }
+        
+        let nonlinearEdgePoints=[];
+        let numNonlinearEdgePoints=30;
+        for (var i = 0; i <= 1; i+=1/numSymmTestPoints) {
+        nonlinearEdgePoints=nonlinearEdgePoints.concat(getSymmPoints([new Vec3(1, 1, 1).unit().add(new Vec3(-1, 0.2, 0.2).unit().mult(i*0.65))]));
+      }
+      
+      ;//🧊
+        var pherSize=70
+        var pherGrid=[]
+        var pherCentralPoints=[]
+        var pherPointCount=0
+        var pherPointDrawingScale=0.03
+        var pherDrawingOffsetMultiplier=3
+        // var pherDrawingOffsetI=new Vec3(1, 0, 0); var pherDrawingOffsetJ=new Vec3(0, 1, 0); var pherDrawingOffsetK=new Vec3(0, 0, 1)
+        var pherDrawingOffsetI=new Vec3(2, 2, 1); var pherDrawingOffsetJ=new Vec3(-2, 1, 2); var pherDrawingOffsetK=new Vec3(-1, 2, -2)
+        // var pherDrawingOffsetI=new Vec3(0, 0, 5); var pherDrawingOffsetJ=new Vec3(3, 4, 0); var pherDrawingOffsetK=new Vec3(4, -3, 0)
+        // var pherDrawingOffsetI=new Vec3(6, 3, 2); var pherDrawingOffsetJ=new Vec3(-3, 2, 6); var pherDrawingOffsetK=new Vec3(-2, 6, -3)//with multiplier=1 this fills 89% of the plane
+        // var pherDrawingOffsetI=new Vec3(7, 4, 4); var pherDrawingOffsetJ=new Vec3(-4, -1, 8); var pherDrawingOffsetK=new Vec3(-4, 8, -1)
+        // var pherDrawingOffsetI=new Vec3(12, 9, 8); var pherDrawingOffsetJ=new Vec3(1, -12, 12); var pherDrawingOffsetK=new Vec3(12, -8, -9)
+        // var pherDrawingOffsetI=new Vec3(19, 8, 4); var pherDrawingOffsetJ=new Vec3(-8, 11, 16); var pherDrawingOffsetK=new Vec3(-4, 16, -13)
+        // var pherDrawingOffsetI=new Vec3(20, 15, 0); var pherDrawingOffsetJ=new Vec3(-12, 16, -15); var pherDrawingOffsetK=new Vec3(9, -12, -20)
+        var pherDrawingOffsetI=pherDrawingOffsetI.mult(pherDrawingOffsetMultiplier)
+        var pherDrawingOffsetJ=pherDrawingOffsetJ.mult(pherDrawingOffsetMultiplier)
+        var pherDrawingOffsetK=pherDrawingOffsetK.mult(pherDrawingOffsetMultiplier)
+        var pherDrawingOffsetLen=pherDrawingOffsetI.len()
+        var pherFlakeVolume=pherDrawingOffsetLen**3
+        // console.log("pherFlakeVolume", pherFlakeVolume);
+        var pherDrawingOffsets=[]
+        // var pherDrawingOffsets=[[0, 1, rand()], [1, 0, rand()], [1, 1, rand()], [2, 0, rand()], [3, 0, rand()], [4, 0, rand()], [3, -1, rand()], [4, -1, rand()]]
+        for (var i = -2; i <= 2; i++) {
+          for (var j = -2; j <= 2; j++) {
+            for (var k = -2; k <= 2; k++) {
+        // for (var i = -3; i <= 3; i++) {
+        //   for (var j = -3; j <= 3; j++) {
+        //     for (var k = -3; k <= 3; k++) {
+        // for (var i = -4; i <= 4; i++) {
+        //   for (var j = -4; j <= 4; j++) {
+        //     for (var k = -4; k <= 4; k++) {
+        // for (var i = -5; i <= 5; i++) {
+        //   for (var j = -5; j <= 5; j++) {
+        //     for (var k = -5; k <= 5; k++) {
+              if (i==0 && j==0 && k==0) continue
+              // pherDrawingOffsets.push([i,j,rand(),rand(),rand()])
+              let curDrawingOffset=pherDrawingOffsetI.mult(i).add(pherDrawingOffsetJ.mult(j)).add(pherDrawingOffsetK.mult(k))
+              pherDrawingOffsets.push([curDrawingOffset, rand(), rand(), rand()])
+            }
+          }
+        }
+        
+        // var pherOffsets=[[pherOffsetX, pherOffsetY], [-pherOffsetY, pherOffsetX], [pherOffsetY, -pherOffsetX]]// TODO: are these the only ones that can be closest to a point in the first quadrant?
+        var pherOffsets=pherDrawingOffsets
+        
+        var curDustPos=new Vec3(0, 0, 0)
+        var dustPixelSize=4
+        // var dustNumLayersVert=9; var dustNumLayersHor=16
+        var dustNumLayersVert=3; var dustNumLayersHor=4
+        // var dustNumLayersVert=4; var dustNumLayersHor=6
+        // var dustNumLayersVert=6; var dustNumLayersHor=9
+        var dustNumLayersTot=dustNumLayersVert*dustNumLayersHor
+        
+        function getPher(pos) {
+          if (pos.x>=0 && pos.x<pherSize && pos.y>=0 && pos.y<pherSize && pos.z>=0 && z<pherSize) {
+            return pherGrid[pos.x][pos.y][pos.z];
+          }
+        }
+        function getPher3AbsCoords(x,y,z) {
+          if (x<pherSize && y<pherSize && z<pherSize) {
+            return pherGrid[x][y][z];
+          }
+        }
+        function getPherAllOctants(pos) {
+          if (Math.abs(pos.x)<pherSize && Math.abs(pos.y)<pherSize && Math.abs(pos.z)<pherSize) {
+            return pherGrid[Math.abs(pos.x)][Math.abs(pos.y)][Math.abs(pos.z)];
+          }
+        }
+        // function writePher(val, pos) {
+        //   if (pos.x>=0 && pos.x<pherSize && pos.y>=0 && pos.y<pherSize && pos.z>=0 && z<pherSize) {
+        //     pherGrid[pos.x][pos.y][pos.z]=val;
+        //   }
+        // }
+        function writePherWithSymm(val, pos) {
+          if (pos.x>=0 && pos.x<pherSize && pos.y>=0 && pos.y<pherSize && pos.z>=0 && pos.z<pherSize) {
+            pherGrid[pos.x][pos.y][pos.z]=val;
+            pherGrid[pos.x][pos.z][pos.y]=val;
+            pherGrid[pos.y][pos.x][pos.z]=val;
+            pherGrid[pos.y][pos.z][pos.x]=val;
+            pherGrid[pos.z][pos.x][pos.y]=val;
+            pherGrid[pos.z][pos.y][pos.x]=val;
+          }
+        }
+        for (var i = 0; i < pherSize; i++) {//blank initial grid
+          pherGrid[i]=[]
+          for (var j = 0; j < pherSize; j++) {
+            pherGrid[i][j]=[]
+            for (var k = 0; k < pherSize; k++) {
+              pherGrid[i][j][k]=0
+            }
+          }
+        }
+        function getPherPositiveSymPoints(p) {
+          return [
+            new Vec3( p.x,  p.y,  p.z),
+            new Vec3( p.x,  p.z,  p.y),
+            new Vec3( p.y,  p.x,  p.z),
+            new Vec3( p.y,  p.z,  p.x),
+            new Vec3( p.z,  p.x,  p.y),
+            new Vec3( p.z,  p.y,  p.x),
+          ];
+        }
+        function getPherSymPointArr(p) {
+          return [
+            new Vec3( p.x,  p.y,  p.z),
+            new Vec3( p.x,  p.z,  p.y),
+            new Vec3( p.y,  p.x,  p.z),
+            new Vec3( p.y,  p.z,  p.x),
+            new Vec3( p.z,  p.x,  p.y),
+            new Vec3( p.z,  p.y,  p.x),
+            new Vec3( p.x,  p.y, -p.z),
+            new Vec3( p.x,  p.z, -p.y),
+            new Vec3( p.y,  p.x, -p.z),
+            new Vec3( p.y,  p.z, -p.x),
+            new Vec3( p.z,  p.x, -p.y),
+            new Vec3( p.z,  p.y, -p.x),
+            new Vec3( p.x, -p.y,  p.z),
+            new Vec3( p.x, -p.z,  p.y),
+            new Vec3( p.y, -p.x,  p.z),
+            new Vec3( p.y, -p.z,  p.x),
+            new Vec3( p.z, -p.x,  p.y),
+            new Vec3( p.z, -p.y,  p.x),
+            new Vec3( p.x, -p.y, -p.z),
+            new Vec3( p.x, -p.z, -p.y),
+            new Vec3( p.y, -p.x, -p.z),
+            new Vec3( p.y, -p.z, -p.x),
+            new Vec3( p.z, -p.x, -p.y),
+            new Vec3( p.z, -p.y, -p.x),
+            new Vec3(-p.x,  p.y,  p.z),
+            new Vec3(-p.x,  p.z,  p.y),
+            new Vec3(-p.y,  p.x,  p.z),
+            new Vec3(-p.y,  p.z,  p.x),
+            new Vec3(-p.z,  p.x,  p.y),
+            new Vec3(-p.z,  p.y,  p.x),
+            new Vec3(-p.x,  p.y, -p.z),
+            new Vec3(-p.x,  p.z, -p.y),
+            new Vec3(-p.y,  p.x, -p.z),
+            new Vec3(-p.y,  p.z, -p.x),
+            new Vec3(-p.z,  p.x, -p.y),
+            new Vec3(-p.z,  p.y, -p.x),
+            new Vec3(-p.x, -p.y,  p.z),
+            new Vec3(-p.x, -p.z,  p.y),
+            new Vec3(-p.y, -p.x,  p.z),
+            new Vec3(-p.y, -p.z,  p.x),
+            new Vec3(-p.z, -p.x,  p.y),
+            new Vec3(-p.z, -p.y,  p.x),
+            new Vec3(-p.x, -p.y, -p.z),
+            new Vec3(-p.x, -p.z, -p.y),
+            new Vec3(-p.y, -p.x, -p.z),
+            new Vec3(-p.y, -p.z, -p.x),
+            new Vec3(-p.z, -p.x, -p.y),
+            new Vec3(-p.z, -p.y, -p.x),
+          ];
+        }
+        function getPherSymPointArrFromArray(arr) {
+          let res=[]
+          for (var p of arr) {
+            res.push(
+              new Vec3( p.x,  p.y,  p.z),
+              new Vec3( p.x,  p.z,  p.y),
+              new Vec3( p.y,  p.x,  p.z),
+              new Vec3( p.y,  p.z,  p.x),
+              new Vec3( p.z,  p.x,  p.y),
+              new Vec3( p.z,  p.y,  p.x),
+              new Vec3( p.x,  p.y, -p.z),
+              new Vec3( p.x,  p.z, -p.y),
+              new Vec3( p.y,  p.x, -p.z),
+              new Vec3( p.y,  p.z, -p.x),
+              new Vec3( p.z,  p.x, -p.y),
+              new Vec3( p.z,  p.y, -p.x),
+              new Vec3( p.x, -p.y,  p.z),
+              new Vec3( p.x, -p.z,  p.y),
+              new Vec3( p.y, -p.x,  p.z),
+              new Vec3( p.y, -p.z,  p.x),
+              new Vec3( p.z, -p.x,  p.y),
+              new Vec3( p.z, -p.y,  p.x),
+              new Vec3( p.x, -p.y, -p.z),
+              new Vec3( p.x, -p.z, -p.y),
+              new Vec3( p.y, -p.x, -p.z),
+              new Vec3( p.y, -p.z, -p.x),
+              new Vec3( p.z, -p.x, -p.y),
+              new Vec3( p.z, -p.y, -p.x),
+              new Vec3(-p.x,  p.y,  p.z),
+              new Vec3(-p.x,  p.z,  p.y),
+              new Vec3(-p.y,  p.x,  p.z),
+              new Vec3(-p.y,  p.z,  p.x),
+              new Vec3(-p.z,  p.x,  p.y),
+              new Vec3(-p.z,  p.y,  p.x),
+              new Vec3(-p.x,  p.y, -p.z),
+              new Vec3(-p.x,  p.z, -p.y),
+              new Vec3(-p.y,  p.x, -p.z),
+              new Vec3(-p.y,  p.z, -p.x),
+              new Vec3(-p.z,  p.x, -p.y),
+              new Vec3(-p.z,  p.y, -p.x),
+              new Vec3(-p.x, -p.y,  p.z),
+              new Vec3(-p.x, -p.z,  p.y),
+              new Vec3(-p.y, -p.x,  p.z),
+              new Vec3(-p.y, -p.z,  p.x),
+              new Vec3(-p.z, -p.x,  p.y),
+              new Vec3(-p.z, -p.y,  p.x),
+              new Vec3(-p.x, -p.y, -p.z),
+              new Vec3(-p.x, -p.z, -p.y),
+              new Vec3(-p.y, -p.x, -p.z),
+              new Vec3(-p.y, -p.z, -p.x),
+              new Vec3(-p.z, -p.x, -p.y),
+              new Vec3(-p.z, -p.y, -p.x),
+            )
+          }
+          return res
+        }
+        // var potentialCoords=[[0, 0, 0]]
+        // var allDone=false
+        
+        var pherGridMax=[]//for each z=pherGridMax[x][y], z is the largest z-coordinate of all points in pherGrid that have the given x and y. Actually, all permutations of x, y and z work the same, so only one array is needed
+        for (var i = 0; i < pherSize; i++) {
+          pherGridMax[i]=[]
+          for (var j = 0; j < pherSize; j++) {
+            pherGridMax[i][j]=-1
+          }
+        }
+        
+        function getMaxPher(c1, c2) {
+          c1=Math.abs(c1)
+          c2=Math.abs(c2)
+          if (c1<pherSize && c2<pherSize) {
+            return pherGridMax[c1][c2];
+          }
+        }
+        
+        function addPointToCentral(p) {//force a point into central (without updating potentialCoords)
+          writePherWithSymm(1, p)
+          pherCentralPoints.push(p.mult(pherPointDrawingScale))
+          // let symmPoints=getPherSymPointArr(p)
+          // for (var newCent of symmPoints) {//all symmetries of the new central cell
+          //   // drawGridSquare(newCent[0], newCent[1], "navy")
+          //   for (var offset of pherDrawingOffsets) {
+          //     let newOuter=[newCent[0]+offset[0], newCent[1]+offset[1]]
+          //   }
+          // }
+          
+          //update maximums (pherGridMax, pherGridMaxY, pherGridMaxZ)
+          for (var symP of getPherPositiveSymPoints(p)) {
+            if (symP.x>getMaxPher(symP.y, symP.z)) {
+              pherGridMax[symP.y][symP.z]=symP.x
+            }
+          }
+        }
+        function isInCentral(p) {
+          if (getPher3AbsCoords(Math.abs(p.x), Math.abs(p.y), Math.abs(p.z))==1) {
+            return true;
+          }
+          return false;
+        }
+        function addPointIfNoCollision(p) {
+          let runningMinSqDist=Infinity
+          let minFromNewPixels=Infinity
+          for (var curOffset of pherOffsets) {//when adding this point, would any of the outer flake new points collide with the central flake's new points?
+            let centralSymPoints=getPherPositiveSymPoints(p)
+            // let centralSymPoints=getPherSymPointArr(p)
+            for (var curCentralSymPoint of centralSymPoints) {
+              // let outerSymPoints=getPherPositiveSymPoints(p)// TODO: Why would this have worked????
+              let outerSymPoints=getPherSymPointArr(p)
+              for (var curOuterSymPoint of outerSymPoints) {
+                let curSqDist=curCentralSymPoint.sqDist(curOuterSymPoint.add(curOffset[0]))
+                if (curSqDist<minFromNewPixels) minFromNewPixels=curSqDist
+              }
+            }
+          }
+          
+          runningMinSqDist=minFromNewPixels
+          
+          for (var curOffset of pherOffsets) {//does the central flake's new point coincide with a stable point on an outer flake?
+            // let centralSymPoints=getPherPositiveSymPoints(p)// TODO: Why would this have worked????
+            let centralSymPoints=getPherSymPointArr(p)
+            for (var curCentralSymPoint of centralSymPoints) {
+              if (isInCentral(curCentralSymPoint.sub(curOffset[0]))) runningMinSqDist=0
+            }
+          }
+          
+          // console.log(runningMinSqDist);
+          if (runningMinSqDist!=0) {
+            addPointToCentral(p)
+            
+            let newPointCount
+            let numZeros= (p.x==0) + (p.y==0) + (p.z==0)
+            if (numZeros==0) {
+              if (p.x==p.y && p.x==p.z) {
+                newPointCount=8
+              }
+              else if (p.x==p.y || p.x==p.z || p.y==p.z) {
+                newPointCount=24
+              }
+              else {
+                newPointCount=48
+              }
+            }
+            else if (numZeros==1) {
+              if (p.x==p.y || p.x==p.z || p.y==p.z) {
+                newPointCount=12
+              }
+              else {
+                newPointCount=24
+              }
+            }
+            else if (numZeros==2) {
+              newPointCount=6
+            }
+            else if (numZeros==3) {
+              newPointCount=1
+            }
+            pherPointCount+=newPointCount
+            
+            return true;
+          }
+          return false;
+        }
+        function drawDustPoint(p) {
+          let layerHeight=Math.floor(canvas.height/dustNumLayersVert)
+          let layerWidth=Math.floor(canvas.width/dustNumLayersHor)
+          for (var curOffset of pherOffsets.concat([[new Vec3(), 1, 1, 1]])) {
+            // context.fillStyle="hsl(140, 100%, "+(curOffset*0.5+0.25)*100+"%)"
+            // context.fillStyle="hsl(140, 100%, "+Math.floor((curOffset[1]*0.5+0.25)*100)+"%)"
+            context.fillStyle="hsl("+(curOffset[2]*80+100)+", 80%, "+Math.floor((curOffset[1]*0.4+0.07)*100)+"%)"
+            // if (curOffset[0].len()==0) {//zero offset => different colors
+            //   context.fillStyle="hsl(0, 100%, 100%)"
+            // }
+            for (var curPointWithoutOffset of getPherSymPointArr(p)) {
+              let curPoint=curPointWithoutOffset.add(curOffset[0])
+              curPoint=new Vec3(curPoint.y, curPoint.x, curPoint.z)//reorder coordinates (different slice to draw)
+              if (curPoint.z>=0 && curPoint.z<dustNumLayersTot) {
+                let layerShiftVert=curPoint.z%dustNumLayersVert
+                let layerShiftHor=Math.floor(curPoint.z/dustNumLayersVert)
+                let planarPos=new Vec2(Math.floor((curPoint.x-0.5)*dustPixelSize), Math.floor((curPoint.y-0.5)*dustPixelSize))
+                if (planarPos.y>-layerHeight/2 && planarPos.y<=layerHeight/2 && planarPos.x>-layerWidth/2 && planarPos.x<=layerWidth/2) {
+                  context.fillRect(Math.floor(planarPos.x+layerWidth*(layerShiftHor+0.5)), Math.floor(planarPos.y+layerHeight*(layerShiftVert+0.5)), dustPixelSize, dustPixelSize)
+                }
+              }
+            }
+          }
+        }
+        function evaluateNextDustPoint() {
+          let addedSuccessfully=addPointIfNoCollision(curDustPos)
+          let res=false
+          if (addedSuccessfully) {
+            res=curDustPos.copy()
+          }
+          curDustPos.x++
+          if (curDustPos.x>curDustPos.y) {
+            curDustPos.x=0
+            curDustPos.y++
+          }
+          if (curDustPos.y>curDustPos.z) {
+            curDustPos.y=0
+            curDustPos.z++
+          }
+          
+          return res;
+        }
+        
+        // for (var i = 0; i < 200; i++) {
+        // for (var i = 0; i < 15; i++) {
+        //   let pos=evaluateNextDustPoint()
+        //   // if (pos) drawDustPoint(pos) //doesn't work because reset clears the canvas
+        // }
+        
+        // console.log("pherPointCount", pherPointCount);
+      
+      function drawForFrame() {//🔄 clear the canvas and draw all of the things that change every frame
+        // let useStereo=false;
+        let useStereo=true;
+        
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        // let proj=0.08*fReqs/frameSkip;
+        // let projNormVec=sphericalToVec3(proj, 0.1, 1);
+        let projNormVec=sphericalToVec3(TAU*1.5*mousePos.x/canvas.width, PI*(mousePos.y/canvas.height-0.5), 1);
+        let projHorVec=new Vec3(0, 1, 0).cross(projNormVec).unit();
+        let projVertVec=projNormVec.cross(projHorVec).unit();
+        
+        //👀
+        let perspectiveAng=0.25;
+        let projHorVecL=projHorVec.rotateAxis(projVertVec, perspectiveAng);
+        let projHorVecR=projHorVec.rotateAxis(projVertVec, -perspectiveAng);
+        let quarterCanvasWidth=canvas.width/4;
+        
+        function getPerspectiveScaling(p) {
+          return 1.7/(2.5-projNormVec.dot(p));
+        }
+        function draw3dPoint(p, col=colors.hiVis, extraScaling=1) {
+          context.fillStyle=col;
+          
+          if (!useStereo) {//👁‍🗨
+            let sqSize=7*extraScaling*getPerspectiveScaling(p);
+            let pos=p.screen(projHorVec, projVertVec);
+            context.fillRect(pos.x-sqSize/2, pos.y-sqSize/2, sqSize, sqSize);
+            // drawSquare(testSurfacePoints[i]);
+          }
+          else {//👀 stereoscopic
+            let sqSize=12*extraScaling*getPerspectiveScaling(p);
+            
+            let posL=p.screen(projHorVecL, projVertVec)
+              // .sub(new Vec2(canvas.width/2, canvas.height/2))
+              // // .mult(0.5)
+              // .add(new Vec2(canvas.width*0.25, canvas.height/2));
+            context.fillRect(posL.x-quarterCanvasWidth-sqSize/2, posL.y-sqSize/2, sqSize, sqSize);
+            
+            let posR=p.screen(projHorVecR, projVertVec)
+            //   .sub(new Vec2(canvas.width/2, canvas.height/2))
+            //   // .mult(0.5)
+            //   .add(new Vec2(canvas.width*0.75, canvas.height/2));
+            // context.fillRect(posR.x-sqSize/2, posR.y-sqSize/2, sqSize, sqSize);
+            context.fillRect(posR.x+quarterCanvasWidth-sqSize/2, posR.y-sqSize/2, sqSize, sqSize);
+          }
+        }
+        function draw3dPoly(poly, col=colors.hiVis) {
+          context.fillStyle=col;
+          
+          if (!useStereo) {//👁‍🗨
+            context.beginPath()
+            for (var p of poly) {//left image
+              let pos=p.screen(projHorVec, projVertVec)
+              context.lineTo(pos.x, pos.y);
+            }
+            context.fill()
+          }
+          else {//👀 stereoscopic
+            context.beginPath()
+            for (var p of poly) {//left image
+              let pos=p.screen(projHorVecL, projVertVec)
+              context.lineTo(pos.x-quarterCanvasWidth, pos.y);
+            }
+            context.fill()
+            
+            // context.fillStyle=col
+            // context.beginPath()
+            // context.moveTo(100, 100)
+            // context.moveTo(100, 100)
+            // context.fill()
+            
+            context.beginPath()
+            for (var p of poly) {//left image
+              let pos=p.screen(projHorVecR, projVertVec)
+              context.lineTo(pos.x+quarterCanvasWidth, pos.y);
+            }
+            context.fill()
+          }
+        }
+        function draw3dSegment(p1, p2, col=colors.hiVis, extraScaling=1) {
+          context.strokeStyle=col;
+          let midpoint=p1.add(p2).mult(0.5);
+          
+          if (!useStereo) {
+            let lineWidthAvg=5*extraScaling*getPerspectiveScaling(midpoint);
+            context.lineWidth=lineWidthAvg;
+            
+            let pos1=p1.screen(projHorVec, projVertVec);
+            let pos2=p2.screen(projHorVec, projVertVec);
+            context.beginPath();
+            context.moveTo(pos1.x, pos1.y);
+            context.lineTo(pos2.x, pos2.y);
+            context.stroke();
+            // context.fillRect(pos.x-sqSize/2, pos.y-sqSize/2, sqSize, sqSize);
+            // drawSquare(testSurfacePoints[i]);
+          }
+          else {//👀 stereoscopic
+            let lineWidthAvg=8*extraScaling*getPerspectiveScaling(midpoint);
+            context.lineWidth=lineWidthAvg;
+            
+            // let perspectiveAng=0.1;
+            // let projHorVecL=projHorVec.rotateAxis(projVertVec, perspectiveAng);
+            // let projHorVecR=projHorVec.rotateAxis(projVertVec, -perspectiveAng);
+            
+            // let pos1L=p1.screen(projHorVecL, projVertVec)
+            //   .sub(new Vec2(canvas.width/2, canvas.height/2))
+            //   // .mult(0.5)
+            //   .add(new Vec2(canvas.width*0.25, canvas.height/2));
+            // let pos2L=p2.screen(projHorVecL, projVertVec)
+            //   .sub(new Vec2(canvas.width/2, canvas.height/2))
+            //   // .mult(0.5)
+            //   .add(new Vec2(canvas.width*0.25, canvas.height/2));
+            // context.beginPath();
+            // context.moveTo(pos1L.x, pos1L.y);
+            // context.lineTo(pos2L.x, pos2L.y);
+            // context.stroke();
+            // let pos1L=p1.screen(projHorVecL, projVertVec)
+            //   .sub(new Vec2(canvas.width/2, canvas.height/2))
+            //   // .mult(0.5)
+            //   .add(new Vec2(canvas.width*0.25, canvas.height/2));
+            // let pos2L=p2.screen(projHorVecL, projVertVec)
+            //   .sub(new Vec2(canvas.width/2, canvas.height/2))
+            //   // .mult(0.5)
+            //   .add(new Vec2(canvas.width*0.25, canvas.height/2));
+            // context.beginPath();
+            // context.moveTo(pos1L.x, pos1L.y);
+            // context.lineTo(pos2L.x, pos2L.y);
+            // context.stroke();
+            //
+            // let pos1R=p1.screen(projHorVecR, projVertVec)
+            //   .sub(new Vec2(canvas.width/2, canvas.height/2))
+            //   // .mult(0.5)
+            //   .add(new Vec2(canvas.width*0.75, canvas.height/2));
+            // let pos2R=p2.screen(projHorVecR, projVertVec)
+            //   .sub(new Vec2(canvas.width/2, canvas.height/2))
+            //   // .mult(0.5)
+            //   .add(new Vec2(canvas.width*0.75, canvas.height/2));
+            // context.beginPath();
+            // context.moveTo(pos1R.x, pos1R.y);
+            // context.lineTo(pos2R.x, pos2R.y);
+            // context.stroke();
+            
+            
+            let pos1L=p1.screen(projHorVecL, projVertVec)
+            let pos2L=p2.screen(projHorVecL, projVertVec)
+            context.beginPath();
+            context.moveTo(pos1L.x-quarterCanvasWidth, pos1L.y);
+            context.lineTo(pos2L.x-quarterCanvasWidth, pos2L.y);
+            context.stroke();
+            let pos1R=p1.screen(projHorVecR, projVertVec)
+            let pos2R=p2.screen(projHorVecR, projVertVec)
+            context.beginPath();
+            context.moveTo(pos1R.x+quarterCanvasWidth, pos1R.y);
+            context.lineTo(pos2R.x+quarterCanvasWidth, pos2R.y);
+            context.stroke();
+          }
+        }
+        
+        function drawPointArray(arr, col, extraScaling) {
+          for (var p of arr) {
+            draw3dPoint(p, col, extraScaling);
+          }
+        }
+        function drawAllEdgesWithRoughLength(arr, len, col, extraScaling, prec=0.001) {
+          for (var i = 0; i < arr.length; i++) {
+            for (var j = i+1; j < arr.length; j++) {
+              if (Math.abs(arr[i].dist(arr[j])-len)<prec) {
+                draw3dSegment(arr[i], arr[j], col, extraScaling);
+              }
+            }
+          }
+        }
+        
+        //📈
+        // drawPointArray(testSurfacePoints, colors.green);
+        var orientationAxisLengths=0.2; draw3dSegment(new Vec3(), new Vec3(orientationAxisLengths,0,0), colors.red); draw3dSegment(new Vec3(), new Vec3(0,orientationAxisLengths,0), colors.green); draw3dSegment(new Vec3(), new Vec3(0,0,orientationAxisLengths), colors.blue);
+        
+        //🟩🟩🟩 Base cube, these points are assumed to belong to the boundary
+        // drawPointArray(knownCubeVertexes, colors.green, 1.4);
+        // drawAllEdgesWithRoughLength(knownCubeVertexes, cubeEdgeLen, colors.green, 1);
+        
+        //🟦🟦🟦 Cube representing the symmetries of the boundary
+        // drawPointArray(symmCubeVertexes, colors.blue, 3);
+        // drawAllEdgesWithRoughLength(symmCubeVertexes, cubeEdgeLen, colors.blue, 1.5);
+        // drawAllEdgesWithRoughLength(symmCubeVertexes, cubeEdgeLen, colors.blue, 0.4);
+        
+        //⬜⬜⬜ Misc
+        // drawPointArray(symmTestPoints, colors.hiVis, 0.5);
+        // drawPointArray(symmTestPointsShifted, colors.yellow, 0.5);//🟨🟨🟨
+        // drawPointArray(nonlinearEdgePoints, colors.hiVis, 0.5);
+        // var randomPoints=[new Vec3(0, 0.6, 0)];
+        // draw3dPoint(randomPoints[0], colors.white, 1.7);
+        // drawPointArray(getSymmPoints(randomPoints), colors.yellow, 0.6);//🟨🟨🟨
+        // var randomPointDistance=0.5
+        // var randomPoints=[pherDrawingOffsetI.unit().mult(randomPointDistance), pherDrawingOffsetI.neg().unit().mult(randomPointDistance), pherDrawingOffsetJ.unit().mult(randomPointDistance), pherDrawingOffsetJ.neg().unit().mult(randomPointDistance), pherDrawingOffsetK.unit().mult(randomPointDistance), pherDrawingOffsetK.neg().unit().mult(randomPointDistance)];
+        // var randomPoints=[new Vec3(0, 1, 1.1).mult(0.3)];
+        // drawPointArray(randomPoints, colors.yellow, 1.6);//🟨🟨🟨
+        // drawPointArray(getPherSymPointArrFromArray(randomPoints), colors.yellow, 1.6);//🟨🟨🟨
+        // drawPointArray(pherCentralPoints, colors.orange, 3.6);//🟧🟧🟧
+        // drawPointArray(getPherSymPointArrFromArray(pherCentralPoints), colors.orange, 16*pherPointDrawingScale);//🟧🟧🟧
+        // drawPointArray(getPherSymPointArrFromArray(pherCentralPoints), "rgba(255, 127, 0, 0.3)", 16*pherPointDrawingScale);//🟧🟧🟧
+        
+        // Polys
+        // draw3dPoly([new Vec3(0.5, 0, 0), new Vec3(0, 0.5, 0), new Vec3(0, 0, 0.5)])
+        
+        // for (var curPolyX = -curDustPos.z; curPolyX <= curDustPos.z; curPolyX++) {
+        //   for (var curPolyY = -curDustPos.z; curPolyY <= curDustPos.z; curPolyY++) {
+        //     let curZ=getMaxPher(curPolyX, curPolyY)
+        //     if (curZ>=0) {
+        //       draw3dPoly([
+        //         new Vec3(curPolyX-0.5, curPolyY-0.5, curZ+0.5).mult(pherPointDrawingScale),
+        //         new Vec3(curPolyX+0.5, curPolyY-0.5, curZ+0.5).mult(pherPointDrawingScale),
+        //         new Vec3(curPolyX+0.5, curPolyY+0.5, curZ+0.5).mult(pherPointDrawingScale),
+        //         new Vec3(curPolyX-0.5, curPolyY+0.5, curZ+0.5).mult(pherPointDrawingScale),
+        //       ], colors.blue)
+        //     }
+        //   }
+        // }
+        // for (var curPolyX = -curDustPos.z; curPolyX <= curDustPos.z; curPolyX++) {
+        //   for (var curPolyZ = -curDustPos.z; curPolyZ <= curDustPos.z; curPolyZ++) {
+        //     let curY=getMaxPher(curPolyX, curPolyZ)
+        //     if (curY>=0) {
+        //       draw3dPoly([
+        //         new Vec3(curPolyX-0.5, curY+0.5, curPolyZ-0.5).mult(pherPointDrawingScale),
+        //         new Vec3(curPolyX+0.5, curY+0.5, curPolyZ-0.5).mult(pherPointDrawingScale),
+        //         new Vec3(curPolyX+0.5, curY+0.5, curPolyZ+0.5).mult(pherPointDrawingScale),
+        //         new Vec3(curPolyX-0.5, curY+0.5, curPolyZ+0.5).mult(pherPointDrawingScale),
+        //       ], colors.green)
+        //     }
+        //   }
+        // }
+        // for (var curPolyY = -curDustPos.z; curPolyY <= curDustPos.z; curPolyY++) {
+        //   for (var curPolyZ = -curDustPos.z; curPolyZ <= curDustPos.z; curPolyZ++) {
+        //     let curX=getMaxPher(curPolyY, curPolyZ)
+        //     if (curX>=0) {
+        //       draw3dPoly([
+        //         new Vec3(curX+0.5, curPolyY-0.5, curPolyZ-0.5).mult(pherPointDrawingScale),
+        //         new Vec3(curX+0.5, curPolyY+0.5, curPolyZ-0.5).mult(pherPointDrawingScale),
+        //         new Vec3(curX+0.5, curPolyY+0.5, curPolyZ+0.5).mult(pherPointDrawingScale),
+        //         new Vec3(curX+0.5, curPolyY-0.5, curPolyZ+0.5).mult(pherPointDrawingScale),
+        //       ], colors.red)
+        //     }
+        //   }
+        // }
+        
+        let polyArr=[]// TODO: inefficient, ideally sorting like this would not be needed
+        for (var curPolyX = -curDustPos.z; curPolyX <= curDustPos.z; curPolyX++) {
+          for (var curPolyY = -curDustPos.z; curPolyY <= curDustPos.z; curPolyY++) {
+            let curZ=getMaxPher(curPolyX, curPolyY)
+            if (curZ>=0) {
+              polyArr.push([
+                new Vec3(curPolyX, curPolyY, curZ+0.5).dot(projNormVec),
+                [
+                  new Vec3(curPolyX-0.5, curPolyY-0.5, curZ+0.5).mult(pherPointDrawingScale),
+                  new Vec3(curPolyX+0.5, curPolyY-0.5, curZ+0.5).mult(pherPointDrawingScale),
+                  new Vec3(curPolyX+0.5, curPolyY+0.5, curZ+0.5).mult(pherPointDrawingScale),
+                  new Vec3(curPolyX-0.5, curPolyY+0.5, curZ+0.5).mult(pherPointDrawingScale),
+                ],
+                colors.blue
+              ])
+              polyArr.push([
+                -new Vec3(curPolyX, curPolyY, curZ+0.5).dot(projNormVec),
+                [
+                  new Vec3(curPolyX-0.5, curPolyY-0.5, curZ+0.5).mult(-pherPointDrawingScale),
+                  new Vec3(curPolyX+0.5, curPolyY-0.5, curZ+0.5).mult(-pherPointDrawingScale),
+                  new Vec3(curPolyX+0.5, curPolyY+0.5, curZ+0.5).mult(-pherPointDrawingScale),
+                  new Vec3(curPolyX-0.5, curPolyY+0.5, curZ+0.5).mult(-pherPointDrawingScale),
+                ],
+                colors.blue
+              ])
+            }
+          }
+        }
+        for (var curPolyX = -curDustPos.z; curPolyX <= curDustPos.z; curPolyX++) {
+          for (var curPolyZ = -curDustPos.z; curPolyZ <= curDustPos.z; curPolyZ++) {
+            let curY=getMaxPher(curPolyX, curPolyZ)
+            if (curY>=0) {
+              polyArr.push([
+                new Vec3(curPolyX, curY+0.5, curPolyZ).dot(projNormVec),
+                [
+                  new Vec3(curPolyX-0.5, curY+0.5, curPolyZ-0.5).mult(pherPointDrawingScale),
+                  new Vec3(curPolyX+0.5, curY+0.5, curPolyZ-0.5).mult(pherPointDrawingScale),
+                  new Vec3(curPolyX+0.5, curY+0.5, curPolyZ+0.5).mult(pherPointDrawingScale),
+                  new Vec3(curPolyX-0.5, curY+0.5, curPolyZ+0.5).mult(pherPointDrawingScale),
+                ],
+                colors.green
+              ])
+              polyArr.push([
+                -new Vec3(curPolyX, curY+0.5, curPolyZ).dot(projNormVec),
+                [
+                  new Vec3(curPolyX-0.5, curY+0.5, curPolyZ-0.5).mult(-pherPointDrawingScale),
+                  new Vec3(curPolyX+0.5, curY+0.5, curPolyZ-0.5).mult(-pherPointDrawingScale),
+                  new Vec3(curPolyX+0.5, curY+0.5, curPolyZ+0.5).mult(-pherPointDrawingScale),
+                  new Vec3(curPolyX-0.5, curY+0.5, curPolyZ+0.5).mult(-pherPointDrawingScale),
+                ],
+                colors.green
+              ])
+            }
+          }
+        }
+        for (var curPolyY = -curDustPos.z; curPolyY <= curDustPos.z; curPolyY++) {
+          for (var curPolyZ = -curDustPos.z; curPolyZ <= curDustPos.z; curPolyZ++) {
+            let curX=getMaxPher(curPolyY, curPolyZ)
+            if (curX>=0) {
+              polyArr.push([
+                new Vec3(curX+0.5, curPolyY, curPolyZ).dot(projNormVec),
+                [
+                  new Vec3(curX+0.5, curPolyY-0.5, curPolyZ-0.5).mult(pherPointDrawingScale),
+                  new Vec3(curX+0.5, curPolyY+0.5, curPolyZ-0.5).mult(pherPointDrawingScale),
+                  new Vec3(curX+0.5, curPolyY+0.5, curPolyZ+0.5).mult(pherPointDrawingScale),
+                  new Vec3(curX+0.5, curPolyY-0.5, curPolyZ+0.5).mult(pherPointDrawingScale),
+                ],
+                colors.red
+              ])
+              polyArr.push([
+                -new Vec3(curX+0.5, curPolyY, curPolyZ).dot(projNormVec),
+                [
+                  new Vec3(curX+0.5, curPolyY-0.5, curPolyZ-0.5).mult(-pherPointDrawingScale),
+                  new Vec3(curX+0.5, curPolyY+0.5, curPolyZ-0.5).mult(-pherPointDrawingScale),
+                  new Vec3(curX+0.5, curPolyY+0.5, curPolyZ+0.5).mult(-pherPointDrawingScale),
+                  new Vec3(curX+0.5, curPolyY-0.5, curPolyZ+0.5).mult(-pherPointDrawingScale),
+                ],
+                colors.red
+              ])
+            }
+          }
+        }
+        polyArr.sort((a, b) => a[0]-b[0])
+        for (var curPoly of polyArr) {
+          draw3dPoly(curPoly[1], curPoly[2])
+        }
+        
+        // for (var curPolyX = -curDustPos.z; curPolyX <= curDustPos.z; curPolyX++) {
+        //   for (var curPolyY = -curDustPos.z; curPolyY <= curDustPos.z; curPolyY++) {
+        //     for (var curPolyZ = -curDustPos.z; curPolyZ <= curDustPos.z; curPolyZ++) {
+        //       let curZ=getMaxPher(curPolyX, curPolyY)
+        //       if (curZ>=0) {
+        //         draw3dPoly([
+        //           new Vec3(curPolyX-0.5, curPolyY-0.5, curZ+0.5).mult(pherPointDrawingScale),
+        //           new Vec3(curPolyX+0.5, curPolyY-0.5, curZ+0.5).mult(pherPointDrawingScale),
+        //           new Vec3(curPolyX+0.5, curPolyY+0.5, curZ+0.5).mult(pherPointDrawingScale),
+        //           new Vec3(curPolyX-0.5, curPolyY+0.5, curZ+0.5).mult(pherPointDrawingScale),
+        //         ], colors.blue)
+        //       }
+        //     }
+        //   }
+        // }
+        
+        
+      }
+      
+      function update() {//🔄 main loop, runs every frame
+        if (!paused) {
+          if (fReqsModFrameSkip>=frameSkip) {
+            for (var i = 0; i < 1; i++) {
+              let pos=evaluateNextDustPoint()
+              if (pos) {
+                drawDustPoint(pos)
+              }
+            }
+            
+            // drawForFrame();
+            
+            fReqs++;
+            fReqsModFrameSkip-=frameSkip;
+          }
+          fReqsModFrameSkip++;
+          if (!updateOnlyOnMouseMove) animationFrameRequest=window.requestAnimationFrame(update);
+        }
+        // else {//game is paused, show appropriate symbol
+        //   drawPauseSymbol();
+        // }
+      }
+      
+      resize();
+      function resizeWithWait() {//💠 call this in the resize event. on the event it sets a timer (minFramesSinceResize frames in length) after which it calls resize()
+        if (framesSinceResize<minFramesSinceResize) {
+          framesSinceResize++;
+          window.requestAnimationFrame(resizeWithWait);
+        }
+        else {
+          if (resizeRequested) {
+            resize();
+            resizeRequested=false;
+          }
+          framesSinceResize=0;
+        }
+      }
+      function resize() {//💠 resize the canvas, change the grid sizing
+        canvas.width=window.innerWidth;
+        height=canvas.height=window.innerHeight;
+        
+        window.cancelAnimationFrame(animationFrameRequest);
+        fReqsModFrameSkip=frameSkip;
+        update();
+      }
+      
+      window.addEventListener("resize", function() {
+        if (!resizeRequested) {
+          resizeRequested=true;
+          resizeWithWait();
+        }
+      });
+      window.addEventListener("mousemove", function() {
+        // if (!paused) {
+          mousePos.x=event.clientX;
+          // mousePos.x+=20*(event.clientX/canvas.width-0.5);
+          mousePos.y=event.clientY;
+          if (updateOnlyOnMouseMove) update();
+          // mousePos=new Vec2(
+          //   (event.clientX+mousePos.x*mouseSlowingFactor)/(mouseSlowingFactor+1),
+          //   (event.clientY+mousePos.y*mouseSlowingFactor)/(mouseSlowingFactor+1)
+          // );
+        // }
+      });
+      
+      window.addEventListener("keyup", function() {
+        var curKey=event.keyCode;
+        keys[curKey]=false;
+        // console.log(keys);
+      });
+      window.addEventListener("keydown",function(){
+        var curKey=event.keyCode;
+        keys[curKey]=true;
+        // console.log(keys);
+        // console.log(curKey);
+        switch (curKey) {
+          case 32://space - pause
+          case 80://p - pause
+            paused=!paused;
+            if (paused) {
+              console.log("Paused");
+              // TODO: doesn't remain after resizing
+              // context.fillStyle="rgba(50, 50, 50, 0.3)";
+              // context.fillRect(0, 0, canvas.width, canvas.height);
+              // context.fillStyle="navy";
+              // context.fillRect(20, 20, 20, 55);
+              // context.fillRect(55, 20, 20, 55);
+            }
+            else {
+              console.log("Unpaused");
+              update();
+            }
+            // update();
+            break;
+          // case 82://r - restart
+          //   initializeLevel();
+          //   break;
+          // case 90://z - undo
+          //   if(paused)break;
+          //   if (level.moves.length>0) {
+          //     gameStates[level.moves.length-1].restore();
+          //   }
+          //   level.parseActiveRules();
+          //   drawAll();
+          //   break;
+          // case 89://y - redo
+          //   if(paused)break;
+          //   if (gameStates.length>level.moves.length+1) {
+          //     gameStates[level.moves.length+1].restore();
+          //   }
+          //   level.parseActiveRules();
+          //   drawAll();
+          //   break;
+          // case 37: case 65: //left or a
+          //   if(paused)break;
+          //   level.moves.push("l");
+          //   playerMove(0, -1, "l");
+          //   break;
+          // case 38: case 87: //up or w
+          //   if(paused)break;
+          //   level.moves.push("u");
+          //   playerMove(-1, 0, "u");
+          //   break;
+          // case 39: case 68: //right or d
+          //   if(paused)break;
+          //   level.moves.push("r");
+          //   playerMove(0, 1, "r");
+          //   break;
+          // case 40: case 83: //down or s
+          //   if(paused)break;
+          //   level.moves.push("d");
+          //   playerMove(1, 0, "d");
+          //   break;
+          // case 32: //space - idle
+          //   if(paused)break;
+          //   level.moves.push("-");
+          //   playerMove(0, 0);
+          //   break;
+        }
+      });
+    </script>
+  </body>
+</html>

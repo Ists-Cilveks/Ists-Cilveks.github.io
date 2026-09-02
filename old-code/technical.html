@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>4D technical drawing</title>
+  <style media="screen">
+    /* TODO: too many different units (vh, rem, px) */
+
+    body {
+      /* background-color: rgb(10,15,30); */
+      background-color: rgb(0,0,0);
+      /* color: rgb(200, 200, 200); */
+      /* color: rgb(10, 10, 10); */
+      font-family: sans-serif;
+      font-size: 2.5vh;
+      overflow: hidden;
+    }
+    canvas {
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+    div, span {
+      color: white;
+      /* padding: 5px 15px; */
+      font-size: 16px;
+      /* min-width: 90px; */
+      /* min-height: 15px; */
+      text-decoration: none;
+      /* display: block; */
+    }
+
+    button {
+      user-select: none;
+    }
+    .noSelect {
+      -webkit-touch-callout: none; /* iOS Safari */
+      -webkit-user-select: none; /* Safari */
+      -khtml-user-select: none; /* Konqueror HTML */
+      -moz-user-select: none; /* Old versions of Firefox */
+      -ms-user-select: none; /* Internet Explorer/Edge */
+      user-select: none; /* Non-prefixed version, currently
+      supported by Chrome, Edge, Opera and Firefox */
+    }
+
+
+
+    .drop-btn {/* Style The Dropdown Button */
+      background-color: #237;
+      /* background-color: #0000; */
+      /* color: white; */
+      /* padding: 0; */
+      /* font-size: 16px; */
+      width: 30px;
+      height: 30px;
+      border: none;
+      cursor: pointer;
+      position: absolute;
+      left: 0;
+      top: 0;
+      padding: 0;
+      /* font-size: 30px; */
+      font-size: 20px;
+    }
+
+    .dropdown {/* The container div - needed to position the dropdown content */
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      display: inline-block;
+      background-color: #222a;
+      /* outline: 2px solid black; */
+    }
+
+    .dropdown-content {/* Dropdown Content (Hidden by Default) */
+      display: none;
+      /* display: inline-block; */ /* uncomment this to make the dropdown content always visible */
+      /* position: absolute; */
+      /* background-color: #237; */
+      /* box-shadow: 0px 8px 16px 0px #0004); */
+      /* padding: 6px 0px; */
+      z-index: 1;
+      vertical-align: top;
+      padding: 6px;
+    }
+
+    /* .dropdown-content div {/* Links inside the dropdown */
+
+    /*.dropdown-content div:hover {background-color: #335}/* Change color of dropdown links on hover */
+
+
+    .dropdown:hover .drop-btn {/* Hide the dropdown button while dropdown is being hovered */
+      display: none;
+    }
+    .dropdown:hover .dropdown-content {/* Display the dropdown content while the dropdown is being hovered */
+      display: inline-block;
+    }
+
+    .simple-button {
+      background-color: #237;
+    }
+    .simple-button:hover {
+      background-color: #124;
+    }
+
+    #draw-size-container {
+      padding: 0;
+      background-color: transparent;
+    }
+    .draw-size-option {
+      padding: 5px 10px;
+    }
+
+    #mirror-angle-setting-container {
+      margin-bottom: 1.5%;
+    }
+
+    .mirror-angle-input-option {
+      /* outline: 1px solid black; */
+      border-radius: 6px 6px 0 0;
+      margin-right: 1px;
+      padding: 5px 3.5% 1.5% 3.5%;
+    }
+
+    .mirror-angle-number-input {
+      width: 30%;
+      margin-left: 3px;
+      margin-right: 3px;
+    }
+    .mirror-angle-number-input-container {
+      /* outline: 2px dashed yellow; */
+      /* width: 200%; */ /* TODO: this doesn't work */
+      display: none;
+      background-color: #237;
+      border-radius: 0 0px 6px 6px;
+      padding: 5px 15px;
+    }
+
+    #mirror-angle-value-container {
+      color: white;
+      /* padding: 15px 5px; */
+      /* margin-top: 4px; */
+      margin-bottom: 2%;
+    }
+
+    #tiling-type-input {
+      color: white;
+    }
+
+    #use-mirrors-button {
+      padding: 0.8% 4%;
+      color: white;
+      border-radius: 0.25rem;
+      text-align: center;
+      width: 25%;
+    }
+
+    .color-select-option {
+      width: 13vw;
+      height: 3.5vh;
+    }
+
+
+
+    .uiContainer {
+      text-align: right;
+
+      /* font-family: cursive; */
+      /* position: absolute; */
+      left: 1.6vh;
+      top: 1.6vh;
+      z-index: 2;
+      background-color: hsl(0,0%,30%);
+      padding: 1vh;
+      border-radius: 1vh;
+      line-height: 3.5vh;
+      overflow: auto;
+      margin-bottom: 1rem;
+      color: rgb(200, 200, 200);
+    }
+    .uiSubContainer {
+      text-align: left;
+      background-color: hsl(0,0%,85%);
+      padding: 0.6vh;
+      margin: 0.3vh;
+      border-radius: 0.6vh;
+      color: rgb(10, 10, 10);
+    }
+
+    .gameSettingsNumbers {
+      width: 4.5vh;
+      /* background-color: hsl(0,0%,75%); */
+      background-color: inherit;
+      border-radius: 0.4vh;
+      border: 1px solid gray;
+    }
+    .inlineNumber {
+      display: inline;
+    }
+    #schlafli-input-container {
+       padding-bottom:3px;
+       padding-top:3px;
+       color: black;
+    }
+
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="300" height="300"></canvas>
+  <script type="text/javascript">
+    "use strict";
+    function rand(max=1) {
+      return Math.random()*max;
+    }
+    function rand0(max=1) {
+      return (Math.random()-0.5)*max*2;
+    }
+    function randInt(max=2) {
+      return Math.floor(Math.random()*max);
+    }
+    function randProb(p=0.5) {
+      return p>Math.random();
+    }
+    function randRange(a, b) {
+      return Math.random()*(b-a)+a;
+    }
+    function clamp(num, val=1) {//num to clamp, special value
+      return 1-(val/(num+val));
+    }
+    function colorLerp(n1, n2, x=0.5) {
+      return n2.sub(n1).mult(x).add(n1);
+    }
+    function cutoff(x, min, max) {
+      if (min!=undefined && x<min) {
+        return min;
+      }
+      if (max!=undefined && x>max) {
+        return max;
+      }
+      return x;
+    }
+    function round(v, p=2) {
+      return Math.round(v*10**p+Number.EPSILON)/10**p;
+    }
+    function lerp(x, v1, v2) {
+      return x*(v2-v1)+v1;
+    }
+    function map(x, a1, a2, b1, b2) {
+      return (x-a1)/(a2-a1)*(b2-b1)+b1;
+    }
+    function arrayContains(arr, val) {
+      for (var i = 0; i < arr.length; i++) {
+        if (arr[i]==val) return true;
+      }
+      return false;
+    }
+    function indexOfElement(arr, val) {
+      for (var i = 0; i < arr.length; i++) {
+        if (arr[i]==val) return i;
+      }
+    }
+    function arraysShallowEqual(a, b) {
+      var i = a.length;
+      if (i != b.length) return false;
+      while (i--) {
+        if (a[i] !== b[i]) return false;
+      }
+      return true;
+    };
+    function arrayPush(arr, el) {//pushes el to arr and returns arr
+      arr.push(el);
+      return arr;
+    }
+    function mod(v, m) {//%, but works properly with negative numbers
+      return (v%m+m)%m;
+    }
+    function setPropIfDef(obj, prop, val) {//if the object obj is defined, set its property prop to val
+      if (obj) {
+        obj[prop]=val;
+      }
+    }
+    
+    var frameSkip= 1 ;
+    // var frameSkip= 20 ;
+    
+    var canvas=document.getElementById("canvas");
+      var context=canvas.getContext("2d");
+      
+      const TAU=2*Math.PI;
+        const PI=Math.PI;
+        const HPI=Math.PI/2;
+        const PHI=(Math.sqrt(5)+1)/2;
+        const ROOT2=Math.sqrt(2);
+        const ROOT3=Math.sqrt(3);
+        const HALFROOT3=Math.sqrt(3)/2;
+      var paused=false;
+      var fReqs=frameSkip;
+      var colorChangeSteps=0;
+      var keys=[];
+      var mousePos=new Vec2();
+      var mouseDown=false;
+      var height=100;
+      
+      var mousePositions=[];//mouse locations as Vec2 for individual points
+      const minFramesSinceResize=20;//if the window is being constantly resized (slow dragging), resize the canvas every minFramesSinceResize frames
+      var framesSinceResize=0;
+      var resizeRequested=false;//has the window been resized while the canvas hasn't yet?
+      const mouseSlowingFactor=1.5;//0-infinity, sets how much mouse movement is smoothed out, see equation in mousemove event
+      
+      var globalScaling=0.8
+    
+    ;//COLORS
+      function Color(r=255, g=0, b=255, a=1) {
+        this.r=r;
+        this.g=g;
+        this.b=b;
+        this.a=a;
+        this.copy=function() {
+          return new Color(this.r, this.g, this.b, this.a);
+        }
+        this.each=function(f) {
+          return new Color(f(this.r), f(this.g), f(this.b));
+        }
+        this.modify=function(amp) {
+          return this.each(function(n) {
+            var x=n+rand0(amp);
+            if (x>255) {
+              return 255;
+            }
+            else if (x<0) {
+              return 0;
+            }
+            else {
+              return x;
+            }
+          });
+        }
+        this.add=function(v) {
+          return new Color(this.r+v.r, this.g+v.g, this.b+v.b);
+        }
+        this.lighten=function(v) {
+          return new Color(v*(256-this.r)+this.r, v*(256-this.g)+this.g, v*(256-this.b)+this.b);
+        }
+        this.sub=function(v) {
+          return new Color(this.r-v.r, this.g-v.g, this.b-v.b);
+        }
+        this.mult=function(v) {
+          return new Color(this.r*v, this.g*v, this.b*v);
+        }
+        this.multColor=function(c) {
+          return new Color(this.r*c.r/256, this.g*c.g/256, this.b*c.b/256);
+        }
+        this.rgb=function() {
+          return "rgb("+this.r+","+this.g+","+this.b+")";
+        }
+        this.hex=function() {
+          return "#" + ((1 << 24) + (this.r << 16) + (this.g << 8) + this.b).toString(16).slice(1); //from https://stackoverflow.com/a/5624139/10630826 on 26.12.2021
+        }
+        this.square=function() {
+          return new Color(this.r**2, this.g**2, this.b**2, this.a);
+        }
+        this.sqrt=function() {
+          return new Color(Math.sqrt(this.r), Math.sqrt(this.g), Math.sqrt(this.b), this.a);
+        }
+        this.grayen=function(amp) {
+          return this.each(function(n){
+            return n*(1-amp)+128*amp;
+          });
+        }
+      }
+      function ColorFromHSL(h=5/6, s=1, l=0.5, a=1) {
+        // TODO: need a reference
+        h=(h%1+1)%1;
+        let c = (1 - Math.abs(2 * l - 1)) * s,
+            x = c * (1 - Math.abs((h*6) % 2 - 1)),
+            m = l - c/2,
+            r = 0,
+            g = 0,
+            b = 0;
+
+        if (0 <= h && h < 1/6) {
+          r = c; g = x; b = 0;
+        }
+        else if (1/6 <= h && h < 1/3) {
+          r = x; g = c; b = 0;
+        } else if (1/3 <= h && h < 1/2) {
+          r = 0; g = c; b = x;
+        } else if (1/2 <= h && h < 2/3) {
+          r = 0; g = x; b = c;
+        } else if (2/3 <= h && h < 5/6) {
+          r = x; g = 0; b = c;
+        } else if (5/6 <= h && h < 1) {
+          r = c; g = 0; b = x;
+        }
+        r = Math.round((r + m) * 255);
+        g = Math.round((g + m) * 255);
+        b = Math.round((b + m) * 255);
+
+        return new Color(r, g, b, a);
+      }
+      function ColorFromHex(hex) { //from https://stackoverflow.com/a/5624139/10630826 on 26.12.2021
+        // // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+        // var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+        // hex = hex.replace(shorthandRegex, function(m, r, g, b) {
+        //   return r + r + g + g + b + b;
+        // });
+
+        var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? new Color(
+          parseInt(result[1], 16),
+          parseInt(result[2], 16),
+          parseInt(result[3], 16)
+        ) : null;
+      }
+      function randColorString() {
+        return "rgb("+randInt(256)+","+randInt(256)+","+randInt(256)+")";
+      }
+      function Gradient(v) {
+        this.colors=[];
+        this.values=[];
+        for (var i = 0; i < v.length; i+=2) {
+          this.colors[i/2]=v[i];
+          this.values[i/2]=v[i+1];
+        }
+        this.get=function(x) {
+          for (var i = 0; i < this.values.length; i++) {
+            if (this.values[i]>x) {
+              if (i==0) {
+                return this.colors[0].copy();
+              }
+              else {
+                // return this.colors[i].sub(this.colors[i-1]).mult((x-this.values[i-1])/(this.values[i]-this.values[i-1])).add(this.colors[i-1]); // simple, ugly mixing
+                return this.colors[i].square().sub(this.colors[i-1].square()).mult((x-this.values[i-1])/(this.values[i]-this.values[i-1])).add(this.colors[i-1].square()).sqrt(); // complicated, expesive, prettier mixing
+              }
+            }
+          }
+          return this.colors[this.colors.length-1].copy();
+        }
+      }
+      var colors={//list of all predefined colors
+        // mist: new Color(110, 130, 210),
+        // sky: new Color(50, 150, 210),
+        // darkBrown: new Color(40, 17, 2),
+        // lightBrown: new Color(200, 160, 60),
+        // sand: new Color(200, 170, 120),
+
+        white: new Color(255, 255, 255),
+        black: new Color(0, 0, 0),
+        red: new Color(255, 0, 0),
+        green: new Color(0, 255, 0),
+        blue: new Color(0, 0, 255),
+        yellow: new Color(255, 255, 0),
+        magenta: new Color(255, 0, 255),
+        cyan: new Color(0, 255, 255),
+
+        darkRed: new Color(127, 0, 0),
+        darkGreen: new Color(0, 127, 0),
+        darkBlue: new Color(0, 0, 127),
+        darkYellow: new Color(127, 127, 0),
+        darkMagenta: new Color(127, 0, 127),
+        darkCyan: new Color(0, 127, 127),
+        // veryDarkRed: new Color(63, 0, 0),
+        // veryDarkGreen: new Color(0, 63, 0),
+        // veryDarkBlue: new Color(0, 0, 63),
+        // veryDarkYellow: new Color(63, 63, 0),
+        // veryDarkMagenta: new Color(63, 0, 63),
+        // veryDarkCyan: new Color(0, 63, 63),
+
+        orange: new Color(255, 127, 0),
+        gray: new Color(127, 127, 127),
+        darkGray: new Color(63, 63, 63),
+        darkGray: new Color(63, 63, 63),
+        slate: new Color(50, 67, 127)
+        // brown: new Color(64, 32, 0)
+      }
+      var gradients={
+        leafy: new Gradient([colors.veryDarkGreen, 0, colors.green, 0.5, colors.yellow, 1]),
+        rainbow: new Gradient([colors.black, 0, colors.red, 0.1, colors.yellow, 0.26, colors.green, 0.42, colors.cyan, 0.58, colors.blue, 0.74, colors.magenta, 0.9, colors.white, 1]),
+        natural: new Gradient([colors.black, 0, colors.green, 0.6, colors.yellow, 0.8, colors.white, 0.9, colors.red, 1]),
+        Tech: new Gradient([colors.black, 0, colors.darkBlue, 0.3, colors.cyan, 0.6, colors.white, 1]),
+        flame: new Gradient([colors.black, 0, colors.darkBlue, 0.1, colors.white, 0.24, colors.yellow, 0.38, colors.red, 0.7, colors.black, 1]),
+        middleBand: new Gradient([colors.black, 0.4, colors.white, 0.401, colors.white, 0.599, colors.black, 0.6]),
+        middleNarrowBand: new Gradient([colors.white, 0.47, colors.black, 0.472, colors.black, 0.528, colors.white, 0.53]),
+        blendingTest: new Gradient([colors.red, 0, colors.green, 1])
+      }
+      var useGradient=gradients.Tech;
+
+      // var takeColors=[[255,255,0],
+      //   [213, 94, 0],
+      //   [0, 114, 178],
+      //   [230, 220, 60],
+      //   [204, 121, 167],
+      //   [0, 158, 115],
+      //   [86, 180, 233],
+      //   [230, 159, 0]
+      // ]
+      // for (var i = 0; i < takeColors.length; i++) {
+      //   var curColor=new Color(takeColors[i][0], takeColors[i][1], takeColors[i][2]);
+      //   var curFaceColor=curColor.rgb();
+      //   curFaceColor=curFaceColor.substring(0, curFaceColor.length-1)+",30%)";
+      //   takeColors[i]={
+      //     vertex: curColor.rgb(),
+      //     edge: curColor.rgb(),
+      //     face: curFaceColor
+      //   }
+      // }
+
+      // var drawColors=[];
+      // for (const col in colors) {//initialize drawColors with all predefined colors
+      //   drawColors.push(colors[col]);
+      // }
+      // for (var i = 0; i < drawColors.length; i++) {//add color select elements
+      //   document.getElementById("color-select-dropdown").innerHTML+="<div class='color-select-option' style='background-color: "+drawColors[i].rgb()+"' onclick='selectDrawColor(drawColors["+i+"])'> </div>";
+      // }
+      
+      var boundaryCircleColor="hsla(0, 0%, 100%, 0.7)";
+      var hypPolyEdgeColor="rgb(110, 110, 110)";
+      var hypPolyVertDefaultColor="rgb(220, 220, 220)";
+    
+      // var BGColor=new Color(0, 0, 0);
+      // var defaultDrawColor=new Color(255, 255, 255);
+      var BGColor=new Color(255, 255, 255);
+      let defaultDrawColor=new Color(0, 0, 0);
+      var edgeColor=defaultDrawColor;
+      
+      // var BGColor=new Color(0, 100, 200);
+      // var defaultDrawColor=new Color(51, 189, 176);
+      // var defaultDrawColor=new Color(5, 39, 106);
+      
+      var drawColor=defaultDrawColor.copy();
+      var drawColorWithErase=drawColor;//temporary color (same as drawColor except when erasing, then it's the background color)
+      
+      document.body.style.backgroundColor=BGColor.rgb();
+    
+    function Vec2(x=0, y=0) {
+      this.x=x;
+      this.y=y;
+      this.copy=function() {
+        return new Vec2(this.x, this.y);
+      }
+      this.add=function(v1, v2) {// FIXME: doesn't always work with both values
+        if (v2!=undefined) {
+          return new Vec2(this.x+v1, this.y+v2);
+        }
+        return new Vec2(this.x+v1.x, this.y+v1.y);
+      }
+      this.sub=function(v) {
+        return new Vec2(this.x-v.x, this.y-v.y);
+      }
+      this.mult=function(n) {
+        return new Vec2(this.x*n, this.y*n);
+      }
+      this.div=function(n) {
+        return new Vec2(this.x/n, this.y/n);
+      }
+      this.dot=function(v) {
+        return v.x*this.x + v.y*this.y;
+      }
+      this.iHatLanding=function(v) {
+        return new Vec2(v.x*this.x-v.y*this.y, v.x*this.y+v.y*this.x);
+      }
+      this.len=function() {
+        return Math.sqrt(this.x**2+this.y**2);
+      }
+      this.sqLen=function() {
+        return this.x**2+this.y**2;
+      }
+      this.dist=function(v) {
+        return Math.sqrt((this.x-v.x)**2+(this.y-v.y)**2);
+      }
+      this.sqDist=function(v) {
+        return (this.x-v.x)**2+(this.y-v.y)**2;
+      }
+      this.unit=function() {
+        var len=Math.sqrt(this.x**2+this.y**2);
+        return new Vec2(this.x/len, this.y/len);
+      }
+      this.ang=function() {//angle to x axis in radians
+        return Math.atan2(this.y, this.x);
+      }
+      this.taxi=function() {//taxicab distance
+        return this.x+this.y;
+      }
+      this.screen=function() {//coordinates for drawing
+        // return new Vec2(this.x-0.5*this.y, this.y*HALFROOT3);
+        return new Vec2(globalScaling*this.x*height/2+canvas.width/2, height/2-globalScaling*this.y*height/2);
+        // return new Vec2(0.5*(this.x*height+canvas.width), ((this.y+1)*0.5)*height);
+      }
+      this.unscreen=function() {//coordinates for mouse interaction
+        return new Vec2((this.x-canvas.width/2)*2/height/globalScaling, (height/2-this.y)*2/height/globalScaling);
+      }
+      this.rotate=function(a) {
+        return new Vec2(this.x*Math.cos(a)-this.y*Math.sin(a), this.x*Math.sin(a)+this.y*Math.cos(a));
+      }
+      this.negateY=function() {
+        return new Vec2(this.x, -this.y);
+      }
+    }
+    function Vec2FromAngleAndLength(ang, len=1) {
+      return new Vec2(len*Math.cos(ang), len*Math.sin(ang));
+    }
+    
+    function drawSquare(pos, w=4) {
+      pos=pos.screen();
+      context.fillRect(pos.x-w/2, pos.y-w/2, w, w);
+    }
+    function drawLine(p1, p2) {
+      p1=p1.screen();
+      p2=p2.screen();
+      context.beginPath();
+      context.moveTo(p1.x, p1.y);
+      context.lineTo(p2.x, p2.y);
+      context.stroke();
+    }
+    function drawDisk(x, y, r=4, ctx=context) {
+      ctx.beginPath();
+      let screenPos=new Vec2(x, y).screen();
+      ctx.moveTo(screenPos.x, screenPos.y);
+      ctx.arc(screenPos.x, screenPos.y, r/2+0.5, 0, TAU);
+      ctx.fill();
+    }
+    function drawRing(x, y, r=7, ctx=context) {
+      ctx.beginPath();
+      let screenPos=new Vec2(x, y).screen();
+      // ctx.moveTo(screenPos.x, screenPos.y);
+      ctx.arc(screenPos.x, screenPos.y, r/2+0.5, 0, TAU);
+      
+      //fill with white to reduce clutter and to make overlapping points easier to differentiate
+      ctx.fillStyle="white"
+      ctx.fill()
+      
+      // let strokeStyle=ctx.strokeStyle
+      // ctx.lineWidth+=0.5
+      // ctx.strokeStyle="black"
+      // ctx.stroke();
+      // ctx.lineWidth-=0.5
+      // ctx.strokeStyle=strokeStyle
+      
+      ctx.stroke();
+    }
+    
+    
+    
+    function Vec3(x=0, y=0, z=0) {
+      this.x=x
+      this.y=y
+      this.z=z
+      
+      this.copy=function() {
+        return new Vec3(this.x, this.y, this.z);
+      }
+      this.add=function(v) {
+        return new Vec3(this.x+v.x, this.y+v.y, this.z+v.z);
+      }
+      this.sub=function(v) {
+        return new Vec3(this.x-v.x, this.y-v.y, this.z-v.z);
+      }
+      this.dot=function(v) {
+        return this.x*v.x + this.y*v.y + this.z*v.z;
+      }
+      this.mult=function(scale) {
+        return new Vec3(this.x*scale, this.y*scale, this.z*scale);
+      }
+      this.len=function() {
+        return Math.sqrt(this.x**2+this.y**2+this.z**2);
+      }
+      this.unit=function() {
+        return this.mult(1/this.len());
+      }
+      this.cross=function(v) {
+        return new Vec3(this.y*v.z-this.z*v.y, this.z*v.x-this.x*v.z, this.x*v.y-this.y*v.x);
+      }
+    }
+    function Vec4(x=0, y=0, z=0, w=0) {
+      this.x=x
+      this.y=y
+      this.z=z
+      this.w=w
+      
+      this.copy=function() {
+        return new Vec4(this.x, this.y, this.z, this.w);
+      }
+      this.add=function(v) {
+        return new Vec4(this.x+v.x, this.y+v.y, this.z+v.z, this.w+v.w);
+      }
+      this.sub=function(v) {
+        return new Vec4(this.x-v.x, this.y-v.y, this.z-v.z, this.w-v.w);
+      }
+      this.dot=function(v) {
+        return this.x*v.x + this.y*v.y + this.z*v.z + this.w*v.w;
+      }
+      this.mult=function(scale) {
+        return new Vec4(this.x*scale, this.y*scale, this.z*scale, this.w*scale);
+      }
+      this.multElementwise=function(v) {
+        return new Vec4(this.x*v.x, this.y*v.y, this.z*v.z, this.w*v.w);
+      }
+      this.divElementwise=function(v) {
+        return new Vec4(this.x/v.x, this.y/v.y, this.z/v.z, this.w/v.w);
+      }
+      this.len=function() {
+        return Math.sqrt(this.x**2+this.y**2+this.z**2+this.w**2);
+      }
+      this.unit=function() {
+        return this.mult(1/this.len());
+      }
+    }
+    
+    var cam={
+      // 'xVec': new Vec3(1,0.3,0.5).unit(),
+      // 'yVec': new Vec3(0.2,0.3,1).unit(),
+      'xVec': new Vec3(),
+      'yVec': new Vec3(),
+      'camVec': new Vec3(),
+      'project': function(p) {
+        return new Vec2(this.xVec.dot(p), this.yVec.dot(p));
+      },
+      'screen': function(p) {
+        return this.project(p).screen();
+      },
+      'setCamVec': function() {
+        this.camVec=this.xVec.cross(this.yVec).unit();
+      },
+      'camDistance': function(p) {
+        return this.camVec.dot(p);
+      },
+      'camAngle': function(p) {//angle between camera direction and point. angle==0 => looking straight at the point
+        return Math.acos(this.camDistance(p.unit()));
+      },
+    }
+    
+    function TechProjection(xVec, yVec, zVec, projVec) {//one of 4 projections from 4d (the native space of the shapes) to 3d (the space in which the drawing exists)
+      this.xVec=xVec
+      this.yVec=yVec
+      this.zVec=zVec
+      this.projVec=projVec
+      
+      this.apply=function(p) {
+        return new Vec3(xVec.dot(p), yVec.dot(p), zVec.dot(p));
+      }
+    }
+    var techProjections=[//do not change these, they are assumed to be like this elsewhere in the code
+      new TechProjection(
+        new Vec4( 1,  0,  0,  0),
+        new Vec4( 0,  1,  0,  0),
+        new Vec4( 0,  0,  1,  0),
+        new Vec4( 0,  0,  0,  1),
+      ),
+      new TechProjection(
+        new Vec4( 0,  0,  0, -1),
+        new Vec4( 0,  1,  0,  0),
+        new Vec4( 0,  0,  1,  0),
+        new Vec4( 1,  0,  0,  0),
+      ),
+      new TechProjection(
+        new Vec4( 1,  0,  0,  0),
+        new Vec4( 0,  0,  0, -1),
+        new Vec4( 0,  0,  1,  0),
+        new Vec4( 0,  1,  0,  0),
+      ),
+      new TechProjection(
+        new Vec4( 1,  0,  0,  0),
+        new Vec4( 0,  1,  0,  0),
+        new Vec4( 0,  0,  0, -1),
+        new Vec4( 0,  0,  1,  0),
+      ),
+      // TODO: add a fifth "perspective" projection?
+    ]
+    
+    
+    
+    function TechHelperLine(p1, p2, color="#00ff33") {//a 3d helper line to show correspondences between dimensions
+      this.p1=p1
+      this.p2=p2
+      this.color=color
+      this.draw=function() {
+        context.strokeStyle=this.color
+        context.lineWidth=1
+        drawLine(cam.project(this.p1),cam.project(this.p2))
+      }
+      this.drawIndex=function() {return this.p1.add(this.p2).mult(0.5);}
+    }
+    function TechProjectedPoint(pos, color="#3300ff") {//a 3d point in a particular projection
+      this.pos=pos
+      this.color=color
+      this.draw=function() {
+        context.strokeStyle=this.color
+        context.lineWidth=2
+        drawRing(cam.project(this.pos).x, cam.project(this.pos).y)
+      }
+      this.drawIndex=function() {return this.pos;}
+    }
+    
+    function TechPoint(pos, color="#ff0033", drawHelpers=true) {//a 4d point with corresponding helper lines
+      this.pos=pos
+      this.color=color
+      this.getDrawables=function() {
+        let res = []
+        
+        if (drawHelpers) {
+          let tempPoint
+          let projPoints=techProjections.map(p => p.apply(this.pos))
+          res.push(new TechHelperLine(projPoints[0], projPoints[1], this.color))
+          res.push(new TechHelperLine(projPoints[0], projPoints[2], this.color))
+          res.push(new TechHelperLine(projPoints[0], projPoints[3], this.color))
+          tempPoint=projPoints[1].copy(); tempPoint.y=-this.pos.w;
+          res.push(new TechHelperLine(projPoints[1], tempPoint, this.color))
+          res.push(new TechHelperLine(projPoints[2], tempPoint, this.color))
+          tempPoint=projPoints[2].copy(); tempPoint.z=-this.pos.w;
+          res.push(new TechHelperLine(projPoints[2], tempPoint, this.color))
+          res.push(new TechHelperLine(projPoints[3], tempPoint, this.color))
+          tempPoint=projPoints[3].copy(); tempPoint.x=-this.pos.w;
+          res.push(new TechHelperLine(projPoints[3], tempPoint, this.color))
+          res.push(new TechHelperLine(projPoints[1], tempPoint, this.color))
+        }
+        
+        
+        for (var projection of techProjections) {
+          let projPoint=projection.apply(this.pos)
+          
+          // let screenPos=cam.screen(projPoint)
+          // context.fillRect(screenPos.x, screenPos.y, 4, 4)
+          res.push(new TechProjectedPoint(projPoint, this.color))
+          // drawRing(cam.project(projPoint).x, cam.project(projPoint).y)
+        }
+        
+        return res;
+      }
+      // this.drawIndex=function() {return this.pos;}
+    }
+    
+    function TechArrow(startPos, endPos, color="#000") {//a 3d arrow for showing projection axes
+      this.startPos=startPos
+      this.endPos=endPos
+      let arrowheadLength=0.05
+      this.connectionPos=this.startPos.add(this.endPos.sub(this.startPos).mult((this.endPos.sub(this.startPos).len()-arrowheadLength)/this.endPos.sub(this.startPos).len()))
+      this.color=color
+      this.draw=function() {
+        context.strokeStyle=this.color
+        context.fillStyle=this.color
+        context.lineWidth=2
+        let ellipseRadius=4
+        
+        drawLine(cam.project(this.startPos),cam.project(this.connectionPos))
+        
+        let ellipseCenter = cam.screen(this.connectionPos)
+        let ellipseSkewness = Math.abs(cam.camVec.dot(this.connectionPos.sub(this.startPos)))
+        let ellipseAngle = cam.project(this.connectionPos.sub(this.startPos)).ang()
+        context.beginPath();
+        context.ellipse(ellipseCenter.x, ellipseCenter.y, ellipseRadius*ellipseSkewness, ellipseRadius, -ellipseAngle, 0, 2 * Math.PI);
+        context.fill();
+        
+        let triangleTop=cam.screen(this.endPos.sub(this.startPos))
+        let triangleBase=cam.screen(this.connectionPos.sub(this.startPos))
+        let triangleLeft=triangleBase.add(cam.project(this.endPos.sub(this.startPos)).unit().rotate(HPI).mult(ellipseRadius).negateY())
+        let triangleRight=triangleBase.add(cam.project(this.endPos.sub(this.startPos)).unit().rotate(-HPI).mult(ellipseRadius).negateY())
+        
+        context.beginPath();
+        context.moveTo(triangleTop.x, triangleTop.y);
+        context.lineTo(triangleRight.x, triangleRight.y);
+        context.lineTo(triangleLeft.x, triangleLeft.y);
+        context.fill();
+        
+      }
+      this.drawIndex=function() {return this.connectionPos;}
+    }
+    function TechSymmetryLine(p1, p2, color="#000") {//a 3d dash-dot line for showing symmetries
+      this.p1=p1
+      this.p2=p2
+      this.color=color
+      this.draw=function() {
+        context.strokeStyle=this.color
+        context.lineWidth=2
+        let dashMultiplier=cam.project(this.p2.sub(this.p1).unit()).len()
+        context.setLineDash([15*dashMultiplier, 8*dashMultiplier, 3*dashMultiplier, 8*dashMultiplier]);
+        drawLine(cam.project(this.p1),cam.project(this.p2))
+        context.setLineDash([]);
+      }
+      this.drawIndex=function() {return this.p1.add(this.p2).mult(0.5);}
+    }
+    function TechPolyhedronEdge(p1, p2, dashed=false, color="#000") {//a 3d edge a polyhedron, which is the projection of a polychoron. --The edge's endpoints are specified along with two faces, so that the edge could be drawn dotted when behind the hull of the projection-- nevermind, dashed lines are reserved for the outlines of objects that are occluded from a 4d viewpoint
+      this.p1=p1
+      this.p2=p2
+      this.dashed=dashed
+      this.color=color
+      this.draw=function() {
+        context.strokeStyle=this.color
+        context.fillStyle=this.color
+        let dashMultiplier=cam.project(this.p2.sub(this.p1).unit()).len()
+        if (this.dashed) {
+          context.lineWidth=1
+          context.setLineDash([15*dashMultiplier, 8*dashMultiplier, 3*dashMultiplier, 8*dashMultiplier]);
+        }
+        else {
+          context.lineWidth=2
+        }
+        drawLine(cam.project(this.p1),cam.project(this.p2))
+        context.setLineDash([]);
+      }
+      this.drawIndex=function() {return this.p1.add(this.p2).mult(0.5);}
+    }
+    function TechPolyhedronTriangle(points, color="#0008") {
+      this.points=points
+      this.color=color
+      this.draw=function() {
+        // context.strokeStyle=this.color
+        context.fillStyle=this.color
+        // let dashMultiplier=cam.project(this.p2.sub(this.p1).unit()).len()
+        // if (this.dashed) {
+        //   context.lineWidth=1
+        //   context.setLineDash([15*dashMultiplier, 8*dashMultiplier, 3*dashMultiplier, 8*dashMultiplier]);
+        // }
+        // else {
+        //   context.lineWidth=2
+        // }
+        // drawLine(cam.project(this.p1),cam.project(this.p2))
+        // context.setLineDash([]);
+        let screenPoints=this.points.map(x=>cam.project(x)).map(x=>x.screen())
+        context.beginPath()
+        context.moveTo(screenPoints[0].x, screenPoints[0].y)
+        for (var i = 1; i < screenPoints.length; i++) {
+          context.lineTo(screenPoints[i].x, screenPoints[i].y)
+        }
+        context.closePath()
+        context.fill()
+      }
+      this.drawIndex=function() {return this.points[0].add(this.points[1]).add(this.points[2]).mult(1/3);} // TODO: 3 points
+    }
+    
+    function TechSlice(normal, offset) {//(in 4d) a 3d slicing hyperplane
+      this.normal=normal//we'll assume it's a unit vector
+      this.offset=offset
+      this.dist=function(p) {
+        return this.normal.dot(p)-this.offset;
+      }
+      this.contains=function(p, fudge=0) {//does the half-space defined by this plane contain p?
+        return this.normal.dot(p)<this.offset-fudge;
+      }
+      // this.xyzToVec4=function(p) {//given a Vec4 with only xyz coordinates, find the Vec4 that is on this plane
+      //   console.log("in xyzToVec4");
+      //   // console.log(p);
+      //   let pVec4=new Vec4(p.x,p.y,p.z,0)
+      //   let moveDir=new Vec4(0,0,0,1)
+      //   console.log(moveDir.dot(pVec4));
+      //   // // console.log(((this.normal.dot(p)-this.offset) * this.normal.dot(new Vec4(0,0,0,1))));
+      //   // // console.log(((this.normal.dot(pVec4))));
+      //   // // console.log(((this.normal.dot(pVec4)-this.offset)));
+      //   // console.log((this.normal.dot(new Vec4(0,0,0,1))));
+      //   // // console.log(((this.normal.dot(pVec4)-this.offset) * this.normal.dot(new Vec4(0,0,0,1))));
+      //   // return pVec4.add(new Vec4(0,0,0,1).mult((this.normal.dot(pVec4)-this.offset) * this.normal.dot(new Vec4(0,0,0,1))));
+      // }
+      this.getProjection=function(p) {
+        return p.sub(this.normal.mult(this.normal.dot(p)-this.offset));
+      }
+      this.skin=function(p, delta=0.02) {//does the plane roughly contain p?
+        return Math.abs(this.normal.dot(p)-this.offset)<delta;
+      }
+    }
+    
+    // var sliceAlpha=new TechSlice(new Vec4(-1, 1, -1, 0).unit(), -0.4)
+    var sliceAlpha=new TechSlice(new Vec4(-1, 0, -1, 0).unit(), -0.83)
+    // var sliceAlpha=new TechSlice(new Vec4(-1, 0, -1, 0).unit(), -0.9)
+    function isInSliceAlpha(pos, fudge=0) {//check whether the given point belongs to the half-space Alpha.
+      // pos.y-0.5*pos.z > 0.2
+      // return -pos.x+pos.y-pos.z < -0.6-fudge
+      return sliceAlpha.contains(pos, fudge)
+    }
+    
+    // var BetaPos=0.55
+    // function isInSliceBeta(pos, fudge=0) {
+    //   // pos.y-0.5*pos.z > 0.2
+    //   return pos.x < BetaPos-fudge
+    // }
+    
+    function isInConfiguration(p) {//true if the point is not sliced away by whatever planes are used
+      if (isInSliceAlpha(p)) return true;
+      // if (isInSliceBeta(p)) return true;
+      // return true;
+      return false;
+    }
+    
+    
+    
+    function TechDicone(pos, scaling) {//a 4d cone, whose base is a 3d cone. pos is the center of the circle (the base of the 3d cone) and scaling is applied to the abject if its radiuses and heights are 1
+      this.pos=pos
+      this.scaling=scaling
+      this.radius=scaling.x //assuming both radiuses will be the same
+      this.xMin=this.pos.x-this.scaling.x
+      this.xMax=this.pos.x+this.scaling.x
+      this.yMin=this.pos.y-this.scaling.y
+      this.yMax=this.pos.y+this.scaling.y
+      this.getDrawables=function() {
+        let res=[]
+        
+        if (true) {//make symmetry lines
+          let symmetryLineOverhang=0.1
+          
+          let symmetryLineXMin=techProjections[0].apply(this.pos); symmetryLineXMin.x-=this.scaling.x+symmetryLineOverhang
+          let symmetryLineXMax=techProjections[0].apply(this.pos); symmetryLineXMax.x+=this.scaling.x+symmetryLineOverhang
+          res.push(new TechSymmetryLine(symmetryLineXMin, symmetryLineXMax))
+          let symmetryLineYMin=techProjections[0].apply(this.pos); symmetryLineYMin.y-=this.scaling.y+symmetryLineOverhang
+          let symmetryLineYMax=techProjections[0].apply(this.pos); symmetryLineYMax.y+=this.scaling.y+symmetryLineOverhang
+          res.push(new TechSymmetryLine(symmetryLineYMin, symmetryLineYMax))
+          let symmetryLineZMin=techProjections[0].apply(this.pos); symmetryLineZMin.z-=symmetryLineOverhang
+          let symmetryLineZMax=techProjections[0].apply(this.pos); symmetryLineZMax.z+=this.scaling.z+symmetryLineOverhang
+          res.push(new TechSymmetryLine(symmetryLineZMin, symmetryLineZMax))
+          let symmetryLineWMin=techProjections[3].apply(this.pos); symmetryLineWMin.z+=symmetryLineOverhang
+          let symmetryLineWMax=techProjections[3].apply(this.pos); symmetryLineWMax.z-=this.scaling.w+symmetryLineOverhang
+          res.push(new TechSymmetryLine(symmetryLineWMin, symmetryLineWMax))
+          let symmetryLineX2Min=techProjections[3].apply(this.pos); symmetryLineX2Min.x-=this.scaling.x+symmetryLineOverhang
+          let symmetryLineX2Max=techProjections[3].apply(this.pos); symmetryLineX2Max.x+=this.scaling.x+symmetryLineOverhang
+          res.push(new TechSymmetryLine(symmetryLineX2Min, symmetryLineX2Max))
+          let symmetryLineY2Min=techProjections[3].apply(this.pos); symmetryLineY2Min.y-=this.scaling.y+symmetryLineOverhang
+          let symmetryLineY2Max=techProjections[3].apply(this.pos); symmetryLineY2Max.y+=this.scaling.y+symmetryLineOverhang
+          res.push(new TechSymmetryLine(symmetryLineY2Min, symmetryLineY2Max))
+        }
+        
+        let zTip=this.pos.copy()
+        zTip.z+=this.scaling.z
+        let wTip=this.pos.copy()
+        wTip.w+=this.scaling.w
+        let trueTip=this.pos.copy()
+        trueTip.z+=this.scaling.z
+        trueTip.w+=this.scaling.w
+        res.push(new TechPolyhedronEdge(techProjections[1].apply(zTip), techProjections[1].apply(trueTip)))
+        res.push(new TechPolyhedronEdge(techProjections[1].apply(wTip), techProjections[1].apply(trueTip)))
+        res.push(new TechPolyhedronEdge(techProjections[2].apply(zTip), techProjections[2].apply(trueTip)))
+        res.push(new TechPolyhedronEdge(techProjections[2].apply(wTip), techProjections[2].apply(trueTip)))
+        
+        let basePosY=this.pos.copy()
+        basePosY.y+=this.scaling.y
+        let baseNegY=this.pos.copy()
+        baseNegY.y-=this.scaling.y
+        res.push(new TechPolyhedronEdge(techProjections[1].apply(basePosY), techProjections[1].apply(zTip)))
+        res.push(new TechPolyhedronEdge(techProjections[1].apply(baseNegY), techProjections[1].apply(zTip)))
+        res.push(new TechPolyhedronEdge(techProjections[1].apply(basePosY), techProjections[1].apply(wTip)))
+        res.push(new TechPolyhedronEdge(techProjections[1].apply(baseNegY), techProjections[1].apply(wTip)))
+        res.push(new TechPolyhedronEdge(techProjections[1].apply(baseNegY), techProjections[1].apply(basePosY)))
+        let basePosX=this.pos.copy()
+        basePosX.x+=this.scaling.x
+        let baseNegX=this.pos.copy()
+        baseNegX.x-=this.scaling.x
+        res.push(new TechPolyhedronEdge(techProjections[2].apply(basePosX), techProjections[2].apply(zTip)))
+        res.push(new TechPolyhedronEdge(techProjections[2].apply(baseNegX), techProjections[2].apply(zTip)))
+        res.push(new TechPolyhedronEdge(techProjections[2].apply(basePosX), techProjections[2].apply(wTip)))
+        res.push(new TechPolyhedronEdge(techProjections[2].apply(baseNegX), techProjections[2].apply(wTip)))
+        res.push(new TechPolyhedronEdge(techProjections[2].apply(baseNegX), techProjections[2].apply(basePosX)))
+        
+        
+        
+        return res;
+      }
+      this.getAssortedPoints=function() {//return a set of points on the surface of the dicone which show its shape well
+        let res=[]
+        
+        // let numPointsOnCircle=10; let numVerticalPoints=12; let angStepSize=(TAU)/numPointsOnCircle-0.0001; let verticalStepSize=1/numVerticalPoints-0.0001;
+        let numPointsOnCircle=20; let numVerticalPoints=6; let angStepSize=(TAU)/numPointsOnCircle-0.0001; let verticalStepSize=1/numVerticalPoints-0.0001;
+        // let numPointsOnCircle=24; let numVerticalPoints=10; let angStepSize=(TAU)/numPointsOnCircle-0.0001; let verticalMax=0.8; let verticalMin=0.2; let verticalStepSize=(verticalMax-verticalMin)/numVerticalPoints-0.0001; let radius=0.3;
+        for (var ang = 0; ang <= TAU; ang+=angStepSize) {//dicone (a cone whose base is a cone)
+          for (var z0 = 0; z0 <= 1; z0+=verticalStepSize) {
+            for (var w0 = 0; w0 <= 1; w0+=verticalStepSize) {
+              // if (Math.random()<0.3) continue;
+              
+              let curRadius=(z0-1)*(w0-1)
+              
+              let pos = new Vec4(curRadius*Math.cos(ang),curRadius*Math.sin(ang),z0,w0).multElementwise(this.scaling).add(this.pos)
+              .add(new Vec4(rand0(0.001),rand0(0.001),rand0(0.001),rand0(0.001)))
+              // let pos = new Vec4(0.5+curRadius*Math.cos(ang),w0,z0,0.5+curRadius*Math.sin(ang))
+              
+              // if (!isInSliceAlpha(pos)) continue
+              // if (isInSliceAlpha(pos, 0.045)) continue
+              // if (!(isInSliceBeta(pos) && !isInSliceBeta(pos, 0.045))) continue
+              if (!isInConfiguration(pos)) continue
+              
+              let color=randColorString()
+              // let color="black"
+              // if (isInSliceAlpha(pos) && !isInSliceAlpha(pos, 0.045)) color="red"
+              // if (pos.x>0.6 && pos.z>0.6) color="red"
+              // if (!(pos.x>0.55 && pos.z>0.55)) continue;
+              // if (!(0.35<pos.x && pos.x<0.4)) continue;
+              // if (!(0.35<pos.x && pos.x<0.4) && !(1-0.35>pos.x && pos.x>1-0.4)) continue;
+              // if (!(0.35<pos.x && pos.x<0.37)) continue;
+              // if (!(0.45<pos.x && pos.x<0.47)) continue;
+              // if (!(0.47<pos.x && pos.x<0.496)) continue;
+              
+              res.push(new TechPoint(
+                pos,
+                color,
+                false,
+              ))
+            }
+          }
+        }
+        
+        return res;
+      }
+      this.getGridPoints=function() {//return a set of points on the surface of the dicone which show its shape well
+        let res=[]
+        
+        let numPointsPerDim=8; let stepSize=1/numPointsPerDim-0.0001;
+        for (var x0 = -1; x0 <= 1; x0+=2*stepSize) {
+          for (var y0 = -1; y0 <= 1; y0+=2*stepSize) {
+            for (var z0 = 0; z0 <= 1; z0+=stepSize) {
+              for (var w0 = 0; w0 <= 1; w0+=stepSize) {
+                // if (Math.random()<0.3) continue;
+                
+                let curRadius=(z0-1)*(w0-1)
+                // console.log("sd");
+                if (x0**2+y0**2>curRadius**2) continue;
+                
+                let pos = new Vec4(x0,y0,z0,w0).multElementwise(this.scaling).add(this.pos)
+                .add(new Vec4(rand0(0.001),rand0(0.001),rand0(0.001),rand0(0.001)))
+                // let pos = new Vec4(0.5+curRadius*Math.cos(ang),w0,z0,0.5+curRadius*Math.sin(ang))
+                
+                // if (!isInSliceAlpha(pos)) continue
+                // if (isInSliceAlpha(pos, 0.045)) continue
+                // if (!(isInSliceBeta(pos) && !isInSliceBeta(pos, 0.045))) continue
+                if (!isInConfiguration(pos)) continue
+                
+                let color=randColorString()
+                // let color="black"
+                // if (isInSliceAlpha(pos) && !isInSliceAlpha(pos, 0.045)) color="red"
+                // if (pos.x>0.6 && pos.z>0.6) color="red"
+                // if (!(pos.x>0.55 && pos.z>0.55)) continue;
+                // if (!(0.35<pos.x && pos.x<0.4)) continue;
+                // if (!(0.35<pos.x && pos.x<0.4) && !(1-0.35>pos.x && pos.x>1-0.4)) continue;
+                // if (!(0.35<pos.x && pos.x<0.37)) continue;
+                // if (!(0.45<pos.x && pos.x<0.47)) continue;
+                // if (!(0.47<pos.x && pos.x<0.496)) continue;
+                
+                res.push(new TechPoint(
+                  pos,
+                  color,
+                  false,
+                ))
+              }
+            }
+          }
+        }
+        
+        return res;
+      }
+      this.isPointInsideUnsliced=function(p) {//return whether the given Vec4 is contained in this shape (ignoring slices)
+        p=p.sub(this.pos).divElementwise(this.scaling)
+        if (p.z>=0 && p.z<=1 && p.w>=0 && p.w<=1) {
+          if (p.x**2+p.y**2 <= ((1-p.z)*(1-p.w))**2) {
+            return true;
+          }
+        }
+        return false;
+      }
+    }
+    function TechTesseractoid(pos, size) {//a 4d cuboid, a prism whose base is a cuboid. pos is the corner closest to the origin
+      this.pos=pos
+      this.size=size
+      this.getDrawables=function() {
+        let res=[]
+        
+        let verts=[]
+        for (var i = 0; i < 16; i++) {
+          verts[i]=this.pos.add(this.size.multElementwise(new Vec4(i&1, (i&2)/2, (i&4)/4, (i&8)/8)))
+        }
+        // console.log(verts);
+        
+        if (true) {//make all the edges
+          res.push(new TechPolyhedronEdge(techProjections[0].apply(verts[0]), techProjections[0].apply(verts[1])))
+          res.push(new TechPolyhedronEdge(techProjections[0].apply(verts[2]), techProjections[0].apply(verts[3])))
+          res.push(new TechPolyhedronEdge(techProjections[0].apply(verts[4]), techProjections[0].apply(verts[5])))
+          res.push(new TechPolyhedronEdge(techProjections[0].apply(verts[6]), techProjections[0].apply(verts[7])))
+          res.push(new TechPolyhedronEdge(techProjections[0].apply(verts[0]), techProjections[0].apply(verts[2])))
+          res.push(new TechPolyhedronEdge(techProjections[0].apply(verts[1]), techProjections[0].apply(verts[3])))
+          res.push(new TechPolyhedronEdge(techProjections[0].apply(verts[4]), techProjections[0].apply(verts[6])))
+          res.push(new TechPolyhedronEdge(techProjections[0].apply(verts[5]), techProjections[0].apply(verts[7])))
+          res.push(new TechPolyhedronEdge(techProjections[0].apply(verts[0]), techProjections[0].apply(verts[4])))
+          res.push(new TechPolyhedronEdge(techProjections[0].apply(verts[1]), techProjections[0].apply(verts[5])))
+          res.push(new TechPolyhedronEdge(techProjections[0].apply(verts[2]), techProjections[0].apply(verts[6])))
+          res.push(new TechPolyhedronEdge(techProjections[0].apply(verts[3]), techProjections[0].apply(verts[7])))
+          
+          res.push(new TechPolyhedronEdge(techProjections[1].apply(verts[0]), techProjections[1].apply(verts[1+8])))
+          res.push(new TechPolyhedronEdge(techProjections[1].apply(verts[2]), techProjections[1].apply(verts[3+8])))
+          res.push(new TechPolyhedronEdge(techProjections[1].apply(verts[4]), techProjections[1].apply(verts[5+8])))
+          res.push(new TechPolyhedronEdge(techProjections[1].apply(verts[6]), techProjections[1].apply(verts[7+8])))
+          res.push(new TechPolyhedronEdge(techProjections[1].apply(verts[0]), techProjections[1].apply(verts[2])))
+          res.push(new TechPolyhedronEdge(techProjections[1].apply(verts[1+8]), techProjections[1].apply(verts[3+8])))
+          res.push(new TechPolyhedronEdge(techProjections[1].apply(verts[4]), techProjections[1].apply(verts[6])))
+          res.push(new TechPolyhedronEdge(techProjections[1].apply(verts[5+8]), techProjections[1].apply(verts[7+8])))
+          res.push(new TechPolyhedronEdge(techProjections[1].apply(verts[0]), techProjections[1].apply(verts[4])))
+          res.push(new TechPolyhedronEdge(techProjections[1].apply(verts[1+8]), techProjections[1].apply(verts[5+8])))
+          res.push(new TechPolyhedronEdge(techProjections[1].apply(verts[2]), techProjections[1].apply(verts[6])))
+          res.push(new TechPolyhedronEdge(techProjections[1].apply(verts[3+8]), techProjections[1].apply(verts[7+8])))
+          
+          res.push(new TechPolyhedronEdge(techProjections[2].apply(verts[0]), techProjections[2].apply(verts[1])))
+          res.push(new TechPolyhedronEdge(techProjections[2].apply(verts[2+8]), techProjections[2].apply(verts[3+8])))
+          res.push(new TechPolyhedronEdge(techProjections[2].apply(verts[4]), techProjections[2].apply(verts[5])))
+          res.push(new TechPolyhedronEdge(techProjections[2].apply(verts[6+8]), techProjections[2].apply(verts[7+8])))
+          res.push(new TechPolyhedronEdge(techProjections[2].apply(verts[0]), techProjections[2].apply(verts[2+8])))
+          res.push(new TechPolyhedronEdge(techProjections[2].apply(verts[1]), techProjections[2].apply(verts[3+8])))
+          res.push(new TechPolyhedronEdge(techProjections[2].apply(verts[4]), techProjections[2].apply(verts[6+8])))
+          res.push(new TechPolyhedronEdge(techProjections[2].apply(verts[5]), techProjections[2].apply(verts[7+8])))
+          res.push(new TechPolyhedronEdge(techProjections[2].apply(verts[0]), techProjections[2].apply(verts[4])))
+          res.push(new TechPolyhedronEdge(techProjections[2].apply(verts[1]), techProjections[2].apply(verts[5])))
+          res.push(new TechPolyhedronEdge(techProjections[2].apply(verts[2+8]), techProjections[2].apply(verts[6+8])))
+          res.push(new TechPolyhedronEdge(techProjections[2].apply(verts[3+8]), techProjections[2].apply(verts[7+8])))
+          
+          res.push(new TechPolyhedronEdge(techProjections[3].apply(verts[0]), techProjections[3].apply(verts[1])))
+          res.push(new TechPolyhedronEdge(techProjections[3].apply(verts[2]), techProjections[3].apply(verts[3])))
+          res.push(new TechPolyhedronEdge(techProjections[3].apply(verts[4+8]), techProjections[3].apply(verts[5+8])))
+          res.push(new TechPolyhedronEdge(techProjections[3].apply(verts[6+8]), techProjections[3].apply(verts[7+8])))
+          res.push(new TechPolyhedronEdge(techProjections[3].apply(verts[0]), techProjections[3].apply(verts[2])))
+          res.push(new TechPolyhedronEdge(techProjections[3].apply(verts[1]), techProjections[3].apply(verts[3])))
+          res.push(new TechPolyhedronEdge(techProjections[3].apply(verts[4+8]), techProjections[3].apply(verts[6+8])))
+          res.push(new TechPolyhedronEdge(techProjections[3].apply(verts[5+8]), techProjections[3].apply(verts[7+8])))
+          res.push(new TechPolyhedronEdge(techProjections[3].apply(verts[0]), techProjections[3].apply(verts[4+8])))
+          res.push(new TechPolyhedronEdge(techProjections[3].apply(verts[1]), techProjections[3].apply(verts[5+8])))
+          res.push(new TechPolyhedronEdge(techProjections[3].apply(verts[2]), techProjections[3].apply(verts[6+8])))
+          res.push(new TechPolyhedronEdge(techProjections[3].apply(verts[3]), techProjections[3].apply(verts[7+8])))
+        }
+        
+        
+        
+        return res;
+      }
+      this.getAssortedPoints=function() {//return a set of points on the surface of the tesseractoid which show its shape well
+        let res=[]
+        
+        let numPointsPerDim=6; let stepSize=1/numPointsPerDim-0.0001;
+        // let numPointsOnCircle=24; let numVerticalPoints=10; let angStepSize=(TAU)/numPointsOnCircle-0.0001; let verticalMax=0.8; let verticalMin=0.2; let verticalStepSize=(verticalMax-verticalMin)/numVerticalPoints-0.0001; let radius=0.3;
+        for (var x0 = 0; x0 <= 1; x0+=stepSize) {//dicone (a cone whose base is a cone)
+          for (var y0 = 0; y0 <= 1; y0+=stepSize) {
+            for (var z0 = 0; z0 <= 1; z0+=stepSize) {
+              for (var w0 = 0; w0 <= 1; w0+=stepSize) {
+                // if (Math.random()<0.3) continue;
+                
+                let curRadius=(z0-1)*(w0-1)
+
+                let pos = new Vec4(x0,y0,z0,w0).multElementwise(this.size).add(this.pos)
+                
+                // if (!isInSliceAlpha(pos)) continue
+                if (!isInConfiguration(pos)) continue
+                
+                let color=randColorString()
+                // let color="black"
+                // if (!isInSliceAlpha(pos, 0.1)) color="red"
+                // if (pos.x>0.6 && pos.z>0.6) color="red"
+                // if (!(pos.x>0.55 && pos.z>0.55)) continue;
+                // if (!(0.35<pos.x && pos.x<0.4)) continue;
+                // if (!(0.35<pos.x && pos.x<0.4) && !(1-0.35>pos.x && pos.x>1-0.4)) continue;
+                // if (!(0.35<pos.x && pos.x<0.37)) continue;
+                // if (!(0.45<pos.x && pos.x<0.47)) continue;
+                // if (!(0.47<pos.x && pos.x<0.496)) continue;
+                
+                res.push(new TechPoint(
+                  pos,
+                  color,
+                  false,
+                ))
+              }
+            }
+          }
+        }
+        
+        return res;
+      }
+      this.isPointInsideUnsliced=function(p) {//return whether the given Vec4 is contained in this shape (ignoring slices)
+        p=p.sub(this.pos).divElementwise(this.scaling)
+        if (p.x>=0 && p.x<=1 && p.y>=0 && p.y<=1 && p.z>=0 && p.z<=1 && p.w>=0 && p.w<=1) {
+          return true;
+        }
+        return false;
+      }
+    }
+    
+    
+    var drawables=[]
+    
+    drawables.push(new TechArrow(new Vec3(0,0,0), new Vec3(-1,0,0), "yellow"))
+    drawables.push(new TechArrow(new Vec3(0,0,0), new Vec3(0,-1,0), "yellow"))
+    drawables.push(new TechArrow(new Vec3(0,0,0), new Vec3(0,0,-1), "yellow"))
+    drawables.push(new TechArrow(new Vec3(0,0,0), new Vec3(1,0,0), "red"))
+    drawables.push(new TechArrow(new Vec3(0,0,0), new Vec3(0,1,0), "green"))
+    drawables.push(new TechArrow(new Vec3(0,0,0), new Vec3(0,0,1), "blue"))
+    
+    // for (var i = 0; i < 100; i++) {//(line segment) cross (square pyramid) and similar constructions
+    //   let pos = new Vec4(randRange(0.2, 0.8), randRange(0.2, 0.8), randRange(0.2, 0.8), randRange(0.2, 0.8))
+    //   pos.x=0.5-(pos.x-0.5)*(0.8-pos.z)/(0.6)
+    //   // pos.y=0.5-(pos.y-0.5)*(0.8-pos.z)/(0.6)
+    //   pos.w=0.5-(pos.w-0.5)*(0.8-pos.z)/(0.6)
+    //
+    //   drawables=drawables.concat(new TechPoint(
+    //     pos,
+    //     randColorString(),
+    //     false,
+    //   ).getDrawables())
+    // }
+    // let numPointsPerDim=12.3; let minPosition=0.2; let maxPosition=0.8; let stepSize=(maxPosition-minPosition)/numPointsPerDim-0.0001; let radius=(maxPosition-minPosition)/2; let lesserRadius=0.25
+    // for (var x0 = minPosition; x0 <= maxPosition; x0+=stepSize) {//disk cross disk
+    //   for (var y0 = minPosition; y0 <= maxPosition; y0+=stepSize) {
+    //     if ((x0-0.5)**2+(y0-0.5)**2>radius**2) continue;
+    //     if ((x0-0.5)**2+(y0-0.5)**2<lesserRadius**2) continue;
+    //     for (var x1 = minPosition; x1 <= maxPosition; x1+=stepSize) {
+    //       for (var y1 = minPosition; y1 <= maxPosition; y1+=stepSize) {
+    //         if ((x1-0.5)**2+(y1-0.5)**2>radius**2) continue;
+    //         if ((x1-0.5)**2+(y1-0.5)**2<lesserRadius**2) continue;
+    //
+    //         if (Math.random()<0.3) continue;
+    //
+    //         // let color=randColorString()
+    //         let color="black"
+    //         // if (y1>0.6 && x1>0.6) color="red"
+    //
+    //         drawables=drawables.concat(new TechPoint(
+    //           new Vec4(x0,y0,x1,y1),
+    //           color,
+    //           false,
+    //         ).getDrawables())
+    //       }
+    //     }
+    //   }
+    // }
+    // let numPointsPerCircle=20; let stepSize=(TAU)/numPointsPerCircle-0.0001; let radius=0.3;
+    // for (var ang1 = 0; ang1 <= TAU; ang1+=stepSize) {//circle cross circle
+    //   for (var ang2 = 0; ang2 <= TAU; ang2+=stepSize) {
+    //     // if (Math.random()<0.3) continue;
+    //
+    //     let pos = new Vec4(0.5+radius*Math.cos(ang1)+Math.random()*0.001,0.5+radius*Math.sin(ang1),0.5+radius*Math.cos(ang2)+Math.random()*0.001,0.5+radius*Math.sin(ang2))
+    //
+    //     let color=randColorString()
+    //     // let color="black"
+    //     // if (pos.x>0.6 && pos.z>0.6) color="red"
+    //     if (!(pos.x>0.55 && pos.z>0.55)) continue;
+    //
+    //     drawables=drawables.concat(new TechPoint(
+    //       pos,
+    //       color,
+    //       true,
+    //     ).getDrawables())
+    //   }
+    // }
+    
+    let dicone=new TechDicone(
+      new Vec4(0.6,0.5,0.5,0.3),
+      new Vec4(0.2,0.2,0.4,0.5),
+    )
+    // drawables=drawables.concat(...(dicone.getAssortedPoints().map(x => x.getDrawables())))
+    drawables=drawables.concat(...(dicone.getGridPoints().map(x => x.getDrawables())))
+    drawables=drawables.concat(dicone.getDrawables())
+    
+    drawables.push(new TechPolyhedronTriangle([new Vec3(0.5,0.5,0.5),new Vec3(0.7,0.5,0.7),new Vec3(0.5,0.7,0.5)]))
+    
+    // let gridStepSize=0.12//how much space is between points in the grid
+    let gridStepSize=0.03//how much space is between points in the grid
+    let visibilityStepSize=0.005//how large is the step in the positive direction to check whether that exists (and blocks the currently analyzed point)
+    let curProjection=techProjections[2]
+    for (var x0 = 0.1; x0 < 0.9; x0+=gridStepSize) {
+      for (var y0 = 0.1; y0 < 0.9; y0+=gridStepSize) {
+        for (var z0 = 0.1; z0 < 0.9; z0+=gridStepSize) {
+          for (var w0 = 0.1; w0 < 0.9; w0+=gridStepSize) {
+            // let curP=new Vec4(0.4,0.8,0.4,0.4)
+            let curP=new Vec4(x0,y0,z0,w0)
+            .add(new Vec4(rand(gridStepSize),rand(gridStepSize),rand(gridStepSize),rand(gridStepSize)))
+            
+            // console.log((sliceAlpha.xyzToVec4(curP)));
+            // if (!dicone.isPointInsideUnsliced(curP)) continue
+            // drawables.push(new TechProjectedPoint(curP))
+            // drawables.push(new TechProjectedPoint(techProjections[0].apply(sliceAlpha.xyzToVec4(curP))))
+            let projP=sliceAlpha.getProjection(curP)
+            let projPColor="lightgray"
+            if (dicone.isPointInsideUnsliced(projP)) projPColor="green"
+            else continue
+            if (dicone.isPointInsideUnsliced(projP.add(curProjection.projVec.mult(visibilityStepSize)))) {
+              // projPColor="red"
+              projPColor="#f00"
+              if (randProb(0.99)) continue
+              // continue
+            }
+            // drawables.push(new TechProjectedPoint(curProjection.apply(curP)))
+            drawables.push(new TechProjectedPoint(curProjection.apply(projP), projPColor))
+          }
+        }
+      }
+    }
+    
+    
+    let tesseractoid=new TechTesseractoid(
+      new Vec4(0.3,0.2,0.2,0.2),
+      new Vec4(0.6,0.7,0.3,0.5),
+    )
+    // drawables=drawables.concat(...(tesseractoid.getAssortedPoints().map(x => x.getDrawables())))
+    drawables=drawables.concat(tesseractoid.getDrawables())
+    
+    
+    
+    function update() {//main loop, runs every frame, handles drawing
+      if (!paused) {
+        if (fReqs>=frameSkip) {
+          let spinAng=-HPI-mousePos.x/canvas.width*TAU
+          let spinVertical=-2*(1-2*mousePos.y/canvas.height)
+          cam.xVec=new Vec3(Math.cos(spinAng), Math.sin(spinAng), 0).unit()
+          cam.yVec=new Vec3(-Math.sin(spinAng)*Math.sin(spinVertical), Math.cos(spinAng)*Math.sin(spinVertical), Math.cos(spinVertical)).unit()
+          // cam.camVec=new Vec3(-Math.sin(spinAng)*Math.sin(spinVertical), Math.cos(spinAng)*Math.sin(spinVertical), Math.cos(spinVertical)).unit()
+          cam.setCamVec()
+          
+          context.clearRect(0, 0, canvas.width, height);
+          context.lineCap="round"
+          
+          // console.log(drawables[0].drawIndex().sub(drawables[1].drawIndex()).dot(cam.camVec));
+          function comp(a, b) {
+            // if (Number.isNaN(a.drawIndex().sub(b.drawIndex()).dot(cam.camVec))) {
+            //   console.log(a.drawIndex().sub(b.drawIndex()), (cam.camVec));
+            // }
+            return a.drawIndex().sub(b.drawIndex()).dot(cam.camVec);
+          }
+          drawables.sort(comp)
+          for (var d of drawables) {
+            d.draw()
+          }
+          
+          colorChangeSteps++;
+          fReqs-=frameSkip;
+        }
+        fReqs++;
+        window.requestAnimationFrame(update);
+      }
+    }
+    
+    // function clearAll() {//clear the screen
+    //   context.clearRect(0, 0, canvas.width, canvas.height)
+    // }
+    function resizeWithWait() {//call this in the resize event. on the event it sets a timer (minFramesSinceResize frames in length) after which it calls resize()
+      if (framesSinceResize<minFramesSinceResize) {
+        framesSinceResize++;
+        window.requestAnimationFrame(resizeWithWait);
+      }
+      else {
+        if (resizeRequested) {
+          resize();
+          resizeRequested=false;
+        }
+        framesSinceResize=0;
+      }
+    }
+    function resize() {//resize the canvas, change the height variable, and redrawAll()
+      canvas.width=window.innerWidth;
+      height=canvas.height=window.innerHeight;
+    }
+    
+    
+    paused=false;
+    
+    resize();
+    update();
+    
+    function mouseUp(){
+      if (mouseDown) {
+        // mouseDown=false;
+        // movementColors.push(drawColorWithErase);
+        // movementSizes.push(drawSize);
+        // drawColorWithErase=drawColor;
+        // movements.push(mousePositions.length);
+      }
+    }
+
+    window.addEventListener("mousemove", function() {
+      // if (!paused) {
+        // mousePos.x=event.clientX;
+        // mousePos.y=event.clientY;
+        mousePos=new Vec2(
+          (event.clientX+mousePos.x*mouseSlowingFactor)/(mouseSlowingFactor+1),
+          (event.clientY+mousePos.y*mouseSlowingFactor)/(mouseSlowingFactor+1)
+        );
+      // }
+    });
+    canvas.oncontextmenu = function() { return false; }//so that right clicking doesn't open a menu
+    canvas.onmousedown = function() {
+      // mouseDown=true;
+      // if (event.buttons==1) {//RMB, draw
+      //   drawColorWithErase=drawColor;
+      // }
+      // else if (event.buttons==2) {//LMB, erase
+      //   drawColorWithErase=BGColor;
+      // }
+      // else {//multiple buttons or a weird button has been pressed, pretend the mouse was released
+      //   mouseUp();
+      //   return;
+      // }
+      // curMovement++;
+    }
+    canvas.onmouseup = mouseUp;
+
+    window.addEventListener("keyup", function() {
+      var curKey=event.keyCode;
+      keys[curKey]=false;
+      // console.log(keys);
+    });
+    window.addEventListener("keydown",function(){
+      var curKey=event.keyCode;
+      keys[curKey]=true;
+      // console.log(keys);
+      // console.log(curKey);
+      switch (curKey) {
+        case 32://space - pause
+          paused=!paused;
+          if (paused) {
+            console.log("Paused");
+            // dropBtn.innerHTML="⏸";
+            // changingCanvas.style.display="none";
+          }
+          else {
+            console.log("Unpaused");
+            update();
+            // dropBtn.innerHTML="";
+            // changingCanvas.style.display="";
+          }
+          break;
+        case 82://r - clear all
+          clearAll();
+          break;
+        // case 90://z - undo
+        //   if (curMovement>=0) {
+        //     mouseUp();
+        //     curMovement--;
+        //     let lastMovementVal=movements.pop();
+        //     movementColors.pop();
+        //     movementSizes.pop();
+        //     let curMovementVal=movements.length==0 ? 0 : movements[movements.length-1];
+        //     mousePositions.splice(curMovementVal, lastMovementVal-curMovementVal);
+        //   };
+        //   redrawAll();
+        //   break;
+      }
+    });
+    window.addEventListener("resize", function() {
+      if (!resizeRequested) {
+        resizeRequested=true;
+        resizeWithWait();
+      }
+    });
+  </script>
+</body>
+</html>

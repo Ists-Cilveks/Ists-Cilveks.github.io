@@ -34,45 +34,64 @@
 			<script src="/js/themes.js"></script>
 			<script src="/js/languages.js" data-page-languages="en"></script>
 
-			<p lang="en">This is a list of old JS coding projects that I couldn't be arsed to integrate into a different page. Mostly just little animations.</p>
+			<p lang="en">This is a list of old JS coding projects that I couldn't be arsed to integrate into a different page. Mostly just little animations. Roughly reverse chronological order.</p>
 
 			<nav>
 				<ul>
 					<li>
-						<a href="?file=planets">Multi body gravity simulation</a>
-						<template id="planets"><iframe src="planets.html"></iframe></template>
+						<a href="?file=mandelbrot">A mandelbrot set viewer</a>
+						<template id="mandelbrot"><iframe src="mandelbrot.html"></iframe></template>
 					</li>
+					<li>Ray tracers:</li>
+					<ul>
+						<li>
+							<a href="?file=3d-dark">A scene that warps the further you go</a>
+							<template id="3d-dark"><iframe src="3d-dark.html"></iframe></template>
+						</li>
+						<li>
+							<a href="?file=3d-balls">Balls</a>
+							<template id="3d-balls"><iframe src="3d-balls.html"></iframe></template>
+						</li>
+						<li>
+							<a href="?file=3d-octants">Balls with parts that glow</a>
+							<template id="3d-octants"><iframe src="3d-octants.html"></iframe></template>
+						</li>
+						<li>
+							<a href="?file=3d-snowman">A ray marched scene with a snowman</a>
+							<template id="3d-snowman"><iframe src="3d-snowman.html"></iframe></template>
+						</li>
+						<li>
+							<a href="?file=3d-stars">View from inside a dodecahedron with mirror faces</a>
+							<template id="3d-stars"><iframe src="3d-stars.html"></iframe></template>
+						</li>
+						<li>
+							<a href="?file=3d-stereo">A stereoscopic image pair with several objects</a>
+							<template id="3d-stereo"><iframe src="3d-stereo.html"></iframe></template>
+						</li>
+					</ul>
 					<li>
-						<a href="?file=icosahedron">An icosahedron with pretty lighting</a>
-						<template id="icosahedron"><iframe src="icosahedron.html"></iframe></template>
-					</li>
-					<li>
-						<a href="?file=3d-stars">View from inside a dodecahedron with mirror faces</a>
-						<template id="3d-stars"><iframe src="3d-stars.html"></iframe></template>
-					</li>
-					<li>
-						<a href="?file=3d-stereo">A stereoscopic image pair with several objects</a>
-						<template id="3d-stereo"><iframe src="3d-stereo.html"></iframe></template>
-					</li>
-					<li>
-						<a href="?file=cars">Some bouncy cars</a>
-						<template id="cars"><iframe src="cars.html"></iframe></template>
-					</li>
-					<li>
-						<a href="?file=evolution">A little evolution simulator</a>
-						<template id="evolution"><iframe src="evolution.html"></iframe></template>
-					</li>
-					<li>
-						<a href="?file=flowers">Drawing flowers</a>
-						<template id="flowers"><iframe src="flowers.html"></iframe></template>
+						<a href="?file=collatz">Tree visualization of the Collatz conjecture</a>
+						<template id="collatz"><iframe src="collatz.html"></iframe></template>
 					</li>
 					<li>
 						<a href="?file=tree">Spinny tree</a>
 						<template id="tree"><iframe src="tree.html"></iframe></template>
 					</li>
 					<li>
-						<a href="?file=metasquares">Metasquares on a hyperbolic grid</a>
-						<template id="metasquares"><iframe src="metasquares.html"></iframe></template>
+						<a href="?file=evolution">A little evolution simulator</a>
+						<template id="evolution"><iframe src="evolution.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=icosahedron">An icosahedron mesh with pretty lighting</a>
+						<template id="icosahedron"><iframe src="icosahedron.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=planets">Multi body gravity simulation</a>
+						<template id="planets"><iframe src="planets.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=flowers">Drawing flowers</a>
+						<template id="flowers"><iframe src="flowers.html"></iframe></template>
 					</li>
 					<li>
 						<a href="?file=lines-circle">Modular multiplication on a circle</a>
@@ -81,6 +100,38 @@
 					<li>
 						<a href="?file=lines-hexagonal">Modular multiplication with hexagonal symmetry</a>
 						<template id="lines-hexagonal"><iframe src="lines-hexagonal.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=cars">Some bouncy cars</a>
+						<template id="cars"><iframe src="cars.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=noise">A neat pattern from playing with perlin noise</a>
+						<template id="noise"><iframe src="noise.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=parkour">Proof of concept for a weird movement system with swinging around poles</a>
+						<template id="parkour"><iframe src="parkour.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=fourier">A visualization of the Fourier decomposition of a square wave</a>
+						<template id="fourier"><iframe src="fourier.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=metasquares">Metasquares on a hyperbolic grid</a>
+						<template id="metasquares"><iframe src="metasquares.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=technical">What a 4D creature's technical drawing would look like</a>
+						<template id="technical"><iframe src="technical.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=cubeflakes">Attempt to grow a 3D analog of tilable snowflakes</a>
+						<template id="cubeflakes"><iframe src="cubeflakes.html"></iframe></template>
+					</li>
+					<li>
+						<a href="?file=fluid">Attempt to digitally write the concept "UNLWS but like water ripples"</a>
+						<template id="fluid"><iframe src="fluid.html"></iframe></template>
 					</li>
 				</ul>
 			</nav>
@@ -92,6 +143,8 @@
 				<li><kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd>: move cars</li>
 				<li><kbd>←</kbd><kbd>→</kbd>: change multiplier</li>
 				<li><kbd>1</kbd>–<kbd>9</kbd>: change raster size</li>
+				<li><kbd>+</kbd><kbd>-</kbd>: change mandelbrot depth</li>
+				<li><kbd>LMB</kbd><kbd>RMB</kbd>: grab</li>
 				<li><kbd>X</kbd>: toggle spinning or toggle antialiasing</li>
 				<li><kbd>R</kbd> or double click: reload</li>
 			</ul>

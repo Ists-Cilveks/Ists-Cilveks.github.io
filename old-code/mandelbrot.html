@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <style media="screen">
+      body{
+        background-color: black;
+        color: rgb(200, 200, 200);
+        font-size: 40px;
+        overflow: hidden;
+        font-size: 300%;
+      }
+      canvas{
+        position: absolute;
+        left: 0;
+        top: 0;
+        z-index: -1;
+      }
+      div{
+        /* position: absolute; */
+      }
+      #uicont{
+        position: absolute;
+        /* left: 5%; */
+        left: 3%;
+        width: 94%;
+        height: 10vh;
+        top: 0px;
+        font-size: 6vh;
+        background-color: rgba(75, 75, 75, 0.6);
+        text-align: center;
+      }
+      .uidiv{
+        position: relative;
+        background-color: rgba(0,0,0,0.6);
+        width: 10%;
+        height: 100%;
+        padding: 0vw;
+        z-index: 1;
+        display: inline-block;
+      }
+      #clickind{
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        color: rgba(0,0,0,0);
+        background-color: rgba(255,255,255,0);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="300" height="300"></canvas>
+    <div id="clickind"></div>
+    <!-- <div id="uicont">
+      <div class="uidiv" id="ui1">
+        1
+      </div>
+      <div class="uidiv" id="ui2">
+        2
+      </div>
+      <div class="uidiv" id="ui4">
+        4
+      </div>
+      <div class="uidiv" id="ui8">
+        8
+      </div>
+      <div class="uidiv" id="ui16">
+        16
+      </div>
+      <div class="uidiv" id="uiout">
+        o
+      </div>
+      <div class="uidiv" id="uiplus">
+        +
+      </div>
+      <div class="uidiv" id="uiminus">
+        -
+      </div>
+    </div> -->
+
+    <script type="text/javascript">
+      function rand(maxi) {
+        var max=maxi | 1;
+        return Math.random()*max;
+      }
+      function randint(max) {
+        return Math.floor(Math.random()*max);
+      }
+      function clamp(num) {
+        return 1+(1/(num+1));
+      }
+      function minval(v1,v2) {
+        if (v1<v2) {
+          return v1;
+        }
+        else {
+          return v2;
+        }
+      }
+      function maxval(v1,v2) {
+        if (v1>v2) {
+          return v1;
+        }
+        else {
+          return v2;
+        }
+      }
+
+      var canvas=document.getElementById("canvas");
+      var context=canvas.getContext("2d");
+      var clickind=document.getElementById("clickind");
+      var loops=0;//current drawn line count
+      var frames=0;//current drawn frame count (unused)
+      var x1=-2; //bounding rectangle|
+      var x2=1; //                   |
+      var y1=-1.2; //                |
+      var y2=1.2; //                 |
+      var movenum=360;
+      var clickx=0;//previous click position|
+      var clicky=0;//                       |
+      var click1done=false;
+      var pixsize=8;
+      var color=240;
+      var paused=false;
+
+      function Complex(real, imaginary) {
+        this.r=real;
+        this.i=imaginary;
+        this.mult=function (num) {
+          if ((typeof num)=="number") {
+            var r=this.r*num;
+            var i=this.i*num;
+            return new Complex(r,i);
+          }
+          else if ((typeof num)=="object"){
+
+          }
+          else {
+            alert("error");
+          }
+        }
+        this.square=function () {
+          var i = 2 * this.i * this.r;
+          var r = this.r ** 2 - this.i ** 2;
+          return new Complex(r, i);
+        }
+        this.add=function (num) {
+          var r=this.r+num.r;
+          var i=this.i+num.i;
+          return new Complex(r, i);
+        }
+      }
+
+      function draw() {
+        if (!paused) {
+          context.fillStyle="rgb(155,155,155)";
+          context.fillRect(0,loops*pixsize,canvas.width,1.2*pixsize);
+
+          //var pixsize=(canvas.width+canvas.height)/500;
+          var xfac=(x2-x1)/pixsize;
+          var yfac=(y2-y1)/pixsize;
+          var yoff=canvas.height/pixsize*y1;
+          var xoff=canvas.width/pixsize*x1;
+
+
+          //for (var i = 0; i < canvas.width/pixsize; i++) {
+          if (loops<canvas.height/pixsize) {
+            for (var i = 0; i < canvas.width/pixsize; i++) {
+              //   Y = X / B * (D-C)  + C
+              var pos = new Complex(i/(canvas.width/pixsize)*(x2-x1)+x1,
+                loops/(canvas.height/pixsize)*(y2-y1)+y1);
+              var comp = pos;
+              var done=false;
+              var mo=0;
+
+              while (mo < movenum && !done) {
+
+                //if outside
+                if (Math.sqrt((comp.r**2)+(comp.i**2))>1000) {
+                  done=true;
+                  var br=(/*360/movenum**/mo)%movenum;
+                  // context.fillStyle="rgb("+br+","+br/1.2+","+br/3+")";
+                  context.fillStyle="hsl("+br+",100%,50%)";
+                }
+
+                //if still inside
+                else {
+                  comp=comp.square().add(pos);
+                }
+                mo++;
+              }
+              if (mo>=movenum) {
+                context.fillStyle="rgb(0,0,0)";
+              }
+
+              context.fillRect(i*pixsize,loops*pixsize,pixsize,pixsize);
+            }
+          }
+          else {
+            //frames++;
+            // loops=0;
+            //movenum++;
+            // y1/=1.4;
+            // y2/=1.4;
+            // x2=(x2-x1)/1.3+x1;
+            // x1=(x1-x2)/1.06+x2;
+          }
+
+          if (click1done) {
+            clickind.style.backgroundColor="rgb(255,255,255,0.3)";
+          }
+          else {
+            clickind.style.backgroundColor="rgb(255,255,255,0)";
+          }
+
+          loops++;
+        }
+        window.requestAnimationFrame(draw);
+      }
+
+      function resize() {
+        canvas.width=window.innerWidth;
+        canvas.height=window.innerHeight;
+        loops=0;
+        click1done=false;
+        draw();
+      }
+      resize();
+
+      draw();
+
+      window.addEventListener("resize",function(){resize();});
+      window.addEventListener("click",function(){
+        if (click1done==false) {
+          clickx=event.clientX;
+          clicky=event.clientY;
+          clickind.style.left=clickx+"px";
+          clickind.style.top=clicky+"px";
+          clickind.style.width="0px";
+          clickind.style.height="0px";
+          click1done=true;
+        }
+        //   Y = X / B * (D-C)  + C
+        else {
+          var v1=clickx/canvas.width*(x2-x1)+x1;
+          var v2=event.clientX/canvas.width*(x2-x1)+x1;
+          x1=minval(v1,v2);
+          x2=maxval(v1,v2);
+          v1=clicky/canvas.height*(y2-y1)+y1;
+          v2=event.clientY/canvas.height*(y2-y1)+y1;
+          y1=minval(v1,v2);
+          y2=maxval(v1,v2);
+          click1done=false;
+          resize();
+        }
+      });
+      window.addEventListener("mousemove",function(){
+        if (click1done) {
+          var curx=event.clientX;
+          var cury=event.clientY;
+          clickind.style.left=minval(curx,clickx)+"px";
+          clickind.style.top=minval(cury,clicky)+"px";
+          clickind.style.width=maxval(curx,clickx)-minval(curx,clickx)+"px";
+          clickind.style.height=maxval(cury,clicky)-minval(cury,clicky)+"px";
+        }
+      });
+      window.addEventListener("keypress",function(){
+        var k=event.keyCode;
+        console.log(k);
+        if (k<58 && k>48) {
+          pixsize=2 ** (k-49);
+          resize();
+        }
+        else {
+          switch (k) {
+            case 119://w
+              var s=Math.abs(y2-y1)/10;
+              y2-=s;
+              y1-=s;
+              resize();
+              break;
+            case 97://a
+              var s=Math.abs(x2-x1)/10;
+              x2-=s;
+              x1-=s;
+              resize();
+              break;
+            case 115://s
+              var s=Math.abs(y2-y1)/10;
+              y2+=s;
+              y1+=s;
+              resize();
+              break;
+            case 100://d
+              var s=Math.abs(x2-x1)/10;
+              x2+=s;
+              x1+=s;
+              resize();
+              break;
+            case 111://o - zoom out
+              var zoom=(x2-x1)/2;
+              x1-=zoom;
+              x2+=zoom;
+              zoom=(y2-y1)/2;
+              y1-=zoom;
+              y2+=zoom;
+              resize();
+              break;
+            case 113://q - quit zoom
+              click1done=false;
+              break;
+            case 32://space - pause/unpause
+              paused=!paused;
+              break;
+            case 43://+ - increase move count
+              movenum*=1.1;
+              resize();
+              break;
+            case 45://- - decrease move count
+              movenum*=0.9;
+              resize();
+              break;
+          }
+        }
+
+      });
+      window.addEventListener("dblclick",function(){});
+      /*document.getElementById("uiout").addEventListener("click",function() {
+        var zoom=(x2-x1)/2;
+        x1-=zoom;
+        x2+=zoom;
+        zoom=(y2-y1)/2;
+        y1-=zoom;
+        y2+=zoom;
+        resize();
+      })
+      document.getElementById("uiplus").addEventListener("click",function() {
+        movenum*=1.1;
+        resize();
+      })
+      document.getElementById("uiminus").addEventListener("click",function() {
+        movenum*=0.9;
+        resize();
+      })
+      document.getElementById("ui1").addEventListener("click",function() {
+        pixsize=1;
+        resize();
+      })
+      document.getElementById("ui2").addEventListener("click",function() {
+        pixsize=2;
+        resize();
+      })
+      document.getElementById("ui4").addEventListener("click",function() {
+        pixsize=4;
+        resize();
+      })
+      document.getElementById("ui8").addEventListener("click",function() {
+        pixsize=8;
+        resize();
+      })
+      document.getElementById("ui16").addEventListener("click",function() {
+        pixsize=16;
+        resize();
+      })*/
+    </script>
+  </body>
+</html>

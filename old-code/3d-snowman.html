@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Rays 8</title>
+    <style media="screen">
+      body{
+        background-color: rgb(250,0,250);
+        color: rgb(200, 200, 200);
+        font-size: 40px;
+        overflow: hidden;
+        font-size: 300%;
+      }
+      canvas{
+        position: absolute;
+        left: 0;
+        top: 0;
+        outline: 2px dashed navy;
+      }
+      #panel{
+        position:absolute;
+        left: 0;
+        top: 0;
+        background-color: rgba(0,0,0,100);
+        color: rgb(255,255,255);
+      }
+
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="300" height="300"></canvas>
+    <script type="text/javascript">
+      function rand(max=1) {
+        return Math.random()*max;
+      }
+      function randint(max) {
+        return Math.floor(Math.random()*max);
+      }
+      function rand0(n=1) {
+        return (Math.random()*2-1)*n;
+      }
+      function clamp(num, val) {//num to clamp, special value
+        return 1+(val/(num+val));
+      }
+
+      var canvas=document.getElementById("canvas");
+        var context=canvas.getContext("2d");
+        var loops=0;
+        var TAU=6.2832;
+        var PI=3.1416;
+        var anghor=angver=rayx=rayy=rayz=stepx=stepy=stepz=fog=i=j=coldiv=0;
+        var hit=hitspec=paused=false;
+        var calc=true;
+        var pixsize=16;
+        var usew=useh=10;
+
+        var colors=32;
+
+        var vision=30;
+        var stepsize=0.1;
+        var fogging=255/vision;
+        // var fogging=0.05;
+        // var stepsize=vision*fogging/255;
+
+        var rval=gval=bval=255;
+        var e=0;
+        // var mods=new Array(3);
+
+        var arr=new Array(usew);
+
+      function Color(r=0, g=0, b=0) {
+        this.r=r;
+        this.g=g;
+        this.b=b;
+        this.mult=function (c) {
+          return new Color(this.r*c.r, this.g*c.g, this.b*c.b);
+        }
+        this.div=function(v) {
+          return new Color(this.r/v, this.g/v, this.b/v);
+        }
+        this.add=function(v) {
+          if (typeof v=="number") {
+            return new Color(this.r+v, this.g+v, this.b+v);
+          }
+          else {
+            return new Color(this.r+v.r, this.g+v.g, this.b+v.b);
+          }
+        }
+      }
+      var colpass=new Color();
+      var colres=new Color();
+
+      function Material(color, light) {
+        if (typeof color=="number") {
+          this.color=new Color(color, color, color);
+          }
+          else if (Array.isArray(color)) {
+            this.color=new Color(color[0], color[1], color[2]);
+          }
+          else {
+            this.color=color;
+          }
+        if (typeof light=="number") {
+          this.light=new Color(light, light, light);
+          }
+          else if (Array.isArray(light)) {
+            this.light=new Color(light[0], light[1], light[2]);
+          }
+          else {
+            this.light=light;
+          }
+        this.hit=function() {
+          console.log(colres);
+          colres=colres.add(colpass.mult(this.light));
+          console.log(colres);
+          colpass=colpass.mult(this.color);
+          rangle();
+          hitspec=true;
+          calc=true;
+        }
+      }
+
+      var m={
+        wall: new Material([0.8, 0, 0.8], 0),
+        lamp: new Material(0, [0.8, 0.8, 0])
+      }
+
+      function rangle() {
+        anghor=rand(TAU);
+        angver=Math.asin(rand0());
+      }
+      function stepcalc() {
+        stepx=stepsize*Math.cos(anghor)*Math.cos(angver);
+        stepy=stepsize*Math.sin(anghor)*Math.cos(angver);
+        stepz=stepsize*Math.sin(angver);
+      }
+
+      function draw() {
+        for (var i = 0; i < usew; i++) {
+          for (var j = 0; j < useh; j++) {
+            e=arr[i][j];
+            context.fillStyle="rgb("+e[0]/e[3]+","+e[1]/e[3]+","+e[2]/e[3]+")";
+            context.fillRect(i*pixsize,j*pixsize,pixsize,pixsize);
+          }
+        }
+      }
+      function update() {
+        if (!paused) {
+      		for(var n=0; n<15 && loops<usew*useh; n++){
+            i=loops%usew+Math.random();
+            j=(Math.floor(loops/usew))%useh+Math.random();
+                // var theta = u * 2.0 * Math.PI;
+                // var phi = Math.acos(2.0 * v - 1.0);
+            // anghor=TAU*(i-0.5)/5/usew+PI*1.2;
+            // angver=PI/2*(j-0.5)/useh-PI/4;
+      			// anghor=TAU*i/5/usew+PI*0.65;
+            // angver=PI/3*j/useh-PI/6;
+            anghor=TAU*i/usew;
+            angver=PI*j/useh-PI/2;
+            stepcalc();
+            rayx=-1.7;
+            rayy=1.5;
+            rayz=0;
+            e=rand(stepsize);
+            rayx+=stepx*e;
+            rayy+=stepy*e;
+            rayz+=stepz*e;
+            // rayx=1.97;
+            // rayy=1.21;
+            // rayz=0.3;
+            fog=0;
+            rval=gval=bval=255;
+            colpass=new Color(1,1,1);
+            colres=new Color();
+      			hit=hitspec=calc=false;
+            // mods=[false,false,false];
+      			while(fog<255){
+              if (calc) {
+                stepcalc();
+              }
+              rayx+=stepx;
+              rayy+=stepy;
+              rayz+=stepz;
+              e=0.1;
+              e=(rayx+1.3)**2+(rayy+1.3)**2;
+              if(Math.sqrt((rayx+3)**2+(rayy+3)**2)<0.6){//collumn
+                rval/=1.4;
+                gval*=1.4;
+                bval*=1.4;
+                break;
+              }
+              else if ((rayx)**2+(rayy+1.5)**2+(rayz/2+0.1)**2<0.6) {//ellipsoid
+                bval/=2;
+                rval/=2;
+                gval/=1.8;
+                break;
+              }
+              else if ((rayx+2.7)**2+(rayy-2)**2+(rayz/1.5+1.2)**2<0.7) {//ceiling "lamp"
+                m.lamp.hit();
+              }
+              else if (rayz<-2||rayz>2) {//floor and ceiling
+                rval/=2;
+                bval/=2;
+                break;
+              }//ceiling & floor
+              else if (rayy>3||rayx>3) {//wall
+                m.wall.hit();
+              }//walls
+              else if (rayx<-3) {//mirror
+                rval/=1.1;
+                gval/=1.4;
+                bval/=1.4;
+                anghor=-anghor+PI;
+                calc=true;
+              }//mirror
+              else if (rayy<-3) {//mirror
+                rval/=1.4;
+                gval/=1.4;
+                bval/=1.1;
+                anghor=-anghor+TAU;
+                calc=true;
+              }//mirror
+              else if (rayy+rayz<-4.7||rayx+rayz<-4.7||-rayy+rayz>4.7||-rayx+rayz>4.7) {//mirror outline
+                m.lamp.hit();
+              }
+              else if (e+(rayz/1.5-1.2)**2<0.1||e+(rayz/1.5-0.8)**2<0.05||e+(rayz/1.5-0.5)**2<0.03) {
+                break;
+              }
+
+              // if (Math.random()>0.998) {
+              //   anghor=rand(PI)-PI/2;
+              //   angver=rand(TAU);
+              //   calc=true;
+              // }
+
+              fog+=fogging*stepsize;
+              colpass.div(1.05);
+
+              if (colpass.r<0.01 && colpass.g<0.01 && colpass.b<0.01) {
+                break;
+              }
+      			}
+
+            i=Math.floor(i);
+            j=Math.floor(j);
+            e=30;
+            if (!hitspec) {
+              arr[i][j][0]+=rval/fog*e;
+              arr[i][j][1]+=gval/fog*e;
+              arr[i][j][2]+=bval/fog*e;
+            }
+            if (true) {
+              console.log(colres.r);
+              arr[i][j][0]+=colres.r*256;
+              arr[i][j][1]+=colres.g*256;
+              arr[i][j][2]+=colres.b*256;
+            }
+            arr[i][j][3]+=1;
+            e=arr[i][j];
+            context.fillStyle="rgba(0,0,0,0)";
+    				context.fillStyle="rgb("+e[0]/e[3]+","+e[1]/e[3]+","+e[2]/e[3]+")";
+            context.fillRect(i*pixsize,j*pixsize,pixsize,pixsize);
+            loops++;
+      		}
+          // if (loops<36000) {
+            window.requestAnimationFrame(update);
+          // }
+        }
+        else {
+          context.fillStyle="rgb(150,40,40)";
+          context.fillRect(10, 10, 20, 60);
+          context.fillRect(50, 10, 20, 60);
+        }
+      }
+
+      function restart() {
+        usew=Math.ceil(canvas.width/pixsize)+1;
+        useh=Math.ceil(canvas.height/pixsize)+1;
+        arr=new Array(usew);
+        for (var i = 0; i < arr.length; i++) {
+          arr[i]=new Array(useh);
+          for (var j = 0; j < arr[i].length; j++) {
+            arr[i][j]=[0,0,0,0];
+          }
+        }
+        loops=0;
+        update();
+      }
+      function resize() {
+        canvas.width=window.innerWidth;
+        canvas.height=window.innerHeight;
+        restart();
+      }
+      resize();
+
+      // window.addEventListener("resize",function(){resize();});
+      window.addEventListener("click",function(){});
+      window.addEventListener("dblclick",function(){location.reload();});
+      window.addEventListener("keypress",function(){
+        var k=event.keyCode;
+        //console.log(k);
+        if (k<58 && k>48) {
+          pixsize=2**(k-49);
+          console.log(pixsize);
+          restart();
+        }
+        else {
+          switch (k) {
+            case 119://w
+              break;
+            case 97://a
+              break;
+            case 115://s
+              break;
+            case 100://d
+              break;
+            case 111://o
+              break;
+            case 113://q
+              break;
+            case 114://r
+              console.log("Restart");
+              restart();
+              break;
+            case 32://space
+              paused=!paused;
+              if (!paused) {
+                draw();
+              }
+              update();
+              break;
+            case 43://+
+              stepsize*=1.1;
+              console.log("Step++");
+              restart();
+              break;
+            case 45://-
+              stepsize*=0.9;
+              console.log("Step--");
+              restart();
+              break;
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

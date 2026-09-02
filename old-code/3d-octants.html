@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Rays 10</title>
+    <style media="screen">
+      body{
+        background-color: rgb(20,20,20);
+        color: rgb(200, 200, 200);
+        font-size: 40px;
+        overflow: hidden;
+        font-size: 300%;
+      }
+      canvas{
+        position: absolute;
+        left: 0;
+        top: 0;
+        outline: 2px dashed navy;
+        z-index: 1;
+      }
+      .panel{
+        position:absolute;
+        background-color: rgba(150,0,0,1);
+        z-index: 2;
+        width: 2vmin;
+        height: 6vmin;
+        display: none;
+      }
+      #p1{
+        left: 1vmin;
+        top: 1vmin;
+      }
+      #p2{
+        left: 5vmin;
+        top: 1vmin;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="300" height="300"></canvas>
+    <div class="panel" id="p1"></div><div class="panel" id="p2"></div>
+    <script type="text/javascript">
+      function classels(classname) {
+        var a = [];
+        var re = new RegExp('(^| )'+classname+'( |$)');
+        var els = document.body.getElementsByTagName("*");
+        for(var i=0,j=els.length; i<j; i++)
+            if(re.test(els[i].className))a.push(els[i]);
+        return a;
+      }
+
+      function rand(max=1) {
+        return Math.random()*max;
+      }
+      function randint(max=2) {
+        return Math.floor(Math.random()*max);
+      }
+      function rand0(n=1) {
+        return (Math.random()*2-1)*n;
+      }
+      function clamp(num, val) {//num to clamp, special value
+        return 1+(val/(num+val));
+      }
+
+      var canvas=document.getElementById("canvas");
+        var context=canvas.getContext("2d");
+        var loops=0;
+        var TAU=6.2832;
+        var PI=3.1416;
+        var anghor=angver=rayx=rayy=rayz=stepx=stepy=stepz=fog=i=j=coldiv=0;
+        var paused=false;
+        var calc=true;
+        var pixsize=16;
+        var usew=useh=10;
+
+        var colors=32;
+
+        var vision=30;
+        var stepsize=0.2;
+        var fogging=255/vision;
+        // var fogging=0.05;
+        // var stepsize=vision*fogging/255;
+
+        var rval=gval=bval=255;
+        var e=0;
+
+        var startpos={x:1.02, y:0.43, z:0.11};
+        var arr=new Array(usew);
+
+      function Color(r=0, g=0, b=0) {
+        this.r=r;
+        this.g=g;
+        this.b=b;
+        this.mult=function (c) {
+          return new Color(this.r*c.r, this.g*c.g, this.b*c.b);
+        }
+        this.div=function(v) {
+          return new Color(this.r/v, this.g/v, this.b/v);
+        }
+        this.add=function(v) {
+          if (typeof v=="number") {
+            return new Color(this.r+v, this.g+v, this.b+v);
+          }
+          else {
+            return new Color(this.r+v.r, this.g+v.g, this.b+v.b);
+          }
+        }
+      }
+      var colpass=new Color();
+      var colres=new Color();
+
+      function Material(color, light, rang=true) {
+        if (typeof color=="number") {
+          this.color=new Color(color, color, color);
+          }
+          else if (Array.isArray(color)) {
+            this.color=new Color(color[0], color[1], color[2]);
+          }
+          else {
+            this.color=color;
+          }
+        if (light==undefined) {
+            this.light=new Color(this.color.r, this.color.g, this.color.b);
+          }
+          else if (typeof light=="number") {
+            this.light=new Color(light, light, light);
+          }
+          else if (Array.isArray(light)) {
+            this.light=new Color(light[0], light[1], light[2]);
+          }
+          else {
+            this.light=light;
+          }
+        this.hit=function() {
+          colres=colres.add(colpass.mult(this.light));
+          colpass=colpass.mult(this.color);
+          if (rang) {
+            rangle();
+          }
+          calc=true;
+        }
+      }
+
+      var m={
+        wall: new Material([0.7, 0.1, 0.5], 0),
+        lamp: new Material(0, [0.9, 0.9, 0.7]),
+        floor: new Material([0.1, 0.7, 0.5], 0),
+        mirror: new Material([0.1, 0.7, 0.5], 0, false),
+        collumn: new Material([0.1, 0.7, 0.9]),
+        white: new Material(0.9, 0),
+        black: new Material(0, 0, false)
+      }
+
+      function rangle() {
+        anghor=rand(TAU);
+        angver=Math.asin(rand0());
+      }
+      function stepcalc() {
+        stepx=stepsize*Math.cos(anghor)*Math.cos(angver);
+        stepy=stepsize*Math.sin(anghor)*Math.cos(angver);
+        stepz=stepsize*Math.sin(angver);
+      }
+
+      function draw() {
+        for (var i = 0; i < usew; i++) {
+          for (var j = 0; j < useh; j++) {
+            e=arr[i][j];
+            context.fillStyle="rgb("+e[0]/e[3]*256+","+e[1]/e[3]*256+","+e[2]/e[3]*256+")";
+            context.fillRect(i*pixsize,j*pixsize,pixsize,pixsize);
+          }
+        }
+      }
+      function update() {
+        if (!paused) {
+      		for(var n=0; n<30; n++){
+            i=loops%usew+Math.random();
+              j=(Math.floor(loops/usew))%useh+Math.random();
+              // anghor=TAU*(i-0.5)/5/usew-PI*0.4;
+              // angver=PI/2*(j-0.5)/useh-PI/4;
+        			// anghor=TAU*i/5/usew+PI*0.65;
+              // angver=PI/3*j/useh-PI/6;
+              anghor=TAU*(i+0.5)/usew+PI;
+              angver=PI*(j+0.5)/useh-PI/2;
+              stepcalc();
+              // rayx=0;
+              // rayy=0;
+              // rayz=0;
+              rayx=startpos.x;
+              rayy=startpos.y;
+              rayz=startpos.z;
+              e=Math.random();
+              rayx+=stepx*e;
+              rayy+=stepy*e;
+              rayz+=stepz*e;
+              fog=0;
+              rval=gval=bval=255;
+              colpass=new Color(1,1,1);
+              colres=new Color();
+        			calc=false;
+      			while(!(colpass.r<0.01 && colpass.g<0.01 && colpass.b<0.01)){
+              if (calc) {
+                stepcalc();
+              }
+              e= 2 ;
+              // rayx=(rayx+stepx%e+e)%e;
+              // rayy=(rayy+stepy%e+e)%e;
+              // rayz=(rayz+stepz%e+e)%e;
+              rayx+=stepx;
+              rayy+=stepy;
+              rayz+=stepz;
+
+              if(((rayx%2+2)%2-1)**2+((rayy%2+2)%2-1)**2+((rayz%2+2)%2-1)**2<1){
+                if ((((rayx+1)%4+4)%4)<2 && (((rayy+1)%4+4)%4)<2 && (((rayz+1)%4+4)%4)<2) {
+                  m.lamp.hit();
+                  // m.black.hit();
+                }
+                else {
+                  // m.black.hit();
+                  m.white.hit();
+                }
+              }
+
+              // if (Math.random()>0.995) {
+              //   anghor=rand(PI)-PI/2;
+              //   angver=rand(TAU);
+              //   calc=true;
+              // }
+
+              colpass=colpass.div(1.05);
+      			}
+
+            i=Math.floor(i);
+            j=Math.floor(j);
+            e=1/ 2 ;
+            arr[i][j][0]+=Math.pow(colres.r, e);
+            arr[i][j][1]+=Math.pow(colres.g, e);
+            arr[i][j][2]+=Math.pow(colres.b, e);
+            arr[i][j][3]+=1;
+            e=arr[i][j];
+            context.fillStyle="rgba(0,0,0,0)";
+    				context.fillStyle="rgb("+e[0]/e[3]*256+","+e[1]/e[3]*256+","+e[2]/e[3]*256+")";
+            context.fillRect(i*pixsize,j*pixsize,pixsize,pixsize);
+            loops++;
+      		}
+          // if (loops<36000) {
+            window.requestAnimationFrame(update);
+          // }
+        }
+      }
+
+      function restart() {
+        usew=Math.ceil(canvas.width/pixsize)+1;
+        useh=Math.ceil(canvas.height/pixsize)+1;
+        arr=new Array(usew);
+        for (var i = 0; i < arr.length; i++) {
+          arr[i]=new Array(useh);
+          for (var j = 0; j < arr[i].length; j++) {
+            arr[i][j]=[0,0,0,0];
+          }
+        }
+        loops=0;
+        update();
+      }
+      function resize() {
+        canvas.width=window.innerWidth;
+        canvas.height=window.innerHeight;
+        restart();
+      }
+      resize();
+
+      // window.addEventListener("resize",function(){resize();});
+      window.addEventListener("click",function(){});
+      window.addEventListener("dblclick",function(){location.reload();});
+      window.addEventListener("keypress",function(){
+        var k=event.keyCode;
+        //console.log(k);
+        if (k<58 && k>48) {
+          pixsize=2**(k-49);
+          console.log(pixsize);
+          restart();
+        }
+        else {
+          switch (k) {
+            case 119://w
+              startpos.x+=0.1;
+              restart();
+              break;
+            case 97://a
+              startpos.y-=0.1;
+              restart();
+              break;
+            case 115://s
+              startpos.x-=0.1;
+              restart();
+              break;
+            case 100://d
+              startpos.y+=0.1;
+              restart();
+              break;
+            case 111://o
+              break;
+            case 113://q
+              break;
+            case 114://r
+              console.log("Restart");
+              restart();
+              break;
+            case 32://space
+              paused=!paused;
+              if (paused) {
+                e=classels("panel")
+                for (var i=0; i<e.length; i++) {
+                  e[i].style.display="block";
+                }
+              }
+              if (!paused) {
+                e=classels("panel")
+                for (var i=0; i<e.length; i++) {
+                  e[i].style.display="none";
+                }
+                update();
+              }
+              break;
+            case 43://+
+              stepsize*=1.1;
+              console.log("Step++");
+              restart();
+              break;
+            case 45://-
+              stepsize*=0.9;
+              console.log("Step--");
+              restart();
+              break;
+            case 91:
+              startpos.z-=0.1;
+              restart();
+              break;
+            case 93:
+              startpos.z+=0.1;
+              restart();
+              break;
+            default:
+              console.log("Key: "+k);
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

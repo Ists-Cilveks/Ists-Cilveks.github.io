@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>n o i s e</title>
+  <style media="screen">
+    body{
+      background-color: rgb(10,50,40);
+      color: rgb(200, 200, 200);
+      font-size: 40px;
+      overflow: hidden;
+      font-size: 300%;
+    }
+    canvas{
+      position: absolute;
+      left: 0;
+      top: 0;
+      outline: 2px dashed navy;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="300" height="300"></canvas>
+  <script type="text/javascript">
+    "use strict";
+
+    function rand(max=1) {
+      return Math.random()*max;
+    }
+    function rand0(max=1) {
+      return (Math.random()-0.5)*max;
+    }
+    function randInt(max=2) {
+      return Math.floor(Math.random()*max);
+    }
+    function randProb(p=0.5) {
+      return p>Math.random();
+    }
+    function randRange(a, b) {
+      return Math.random()*(b-a)+a;
+    }
+    function clamp(num, val=1) {//num to clamp, special value
+      return 1-(val/(num+val));
+    }
+    function colorLerp(x, n1, n2) {
+      return n2.sub(n1).mult(x).add(n1);
+    }
+    function cutoff(x, min, max) {
+      if (min && x<min) {
+        return min;
+      }
+      if (max && x>max) {
+        return max;
+      }
+      return x;
+    }
+    function closenessPenalty(x, coefficient) { //what number to divide x by for to not reach 1
+      return 1-coefficient-coefficient/(x-1);
+    }
+    function round(v, p=2) {
+      return Math.round(v*10**p+Number.EPSILON)/10**p;
+    }
+
+    var canvas=document.getElementById("canvas");
+    var context=canvas.getContext("2d");
+    var TAU=2*Math.PI;
+    var PI=Math.PI;
+    var HPI=Math.PI/2;
+    var loops=0;
+    var paused=false;
+    var frameskip=4;
+    var cars=[];
+    var keys=[];
+    var height=100;
+
+    /* TODO:
+      numbers pseudorandomly generated on function call
+
+
+    */
+
+
+    function Color(r=255, g=0, b=255, a=1) {
+      this.r=r;
+      this.g=g;
+      this.b=b;
+      this.a=a;
+      this.each=function(f) {
+        return new Color(f(this.r), f(this.g), f(this.b));
+      }
+      this.modify=function(amp) {
+        return this.each(function(n) {
+          var x=n+rand0(amp);
+          if (x>255) {
+            return 255;
+          }
+          else if (x<0) {
+            return 0;
+          }
+          else {
+            return x;
+          }
+        });
+      }
+      this.add=function(v) {
+        return new Color(this.r+v.r, this.g+v.g, this.b+v.b);
+      }
+      this.sub=function(v) {
+        return new Color(this.r-v.r, this.g-v.g, this.b-v.b);
+      }
+      this.mult=function(v) {
+        return new Color(this.r*v, this.g*v, this.b*v);
+      }
+      this.rgb=function() {
+        return "rgb("+this.r+","+this.g+","+this.b+")";
+      }
+    }
+    function randColor(v=255) {
+      return new Color(randInt(v), randInt(v), randInt(v));
+    }
+    if (true) {//colors used
+      var colors={
+        mist: new Color(110, 130, 210),
+        sky: new Color(50, 150, 210),
+        darkBrown: new Color(40, 17, 2),
+        lightBrown: new Color(200, 160, 60),
+
+        white: new Color(255, 255, 255),
+        black: new Color(0, 0, 0),
+        red: new Color(255, 0, 0),
+        green: new Color(0, 255, 0),
+        blue: new Color(0, 0, 255),
+        yellow: new Color(255, 255, 0),
+        magenta: new Color(255, 0, 255),
+        cyan: new Color(0, 255, 255),
+
+        darkRed: new Color(127, 0, 0),
+        orange: new Color(255, 127, 0),
+        gray: new Color(127, 127, 127)
+      }
+      // var colleaf=new Color(60,220,30);
+      // var colbran1=new Color(40,10,10);
+      // var colbran2=new Color(90,60,40);
+      // var colbran2=new Color(40,10,10);
+      // var colbran1=new Color(10,10,10);
+      // var colbran2=new Color(30,40,20);
+    }
+
+    function Vec2(x=0, y=0) {
+      this.x=x;
+      this.y=y;
+      this.copy=function() {
+        return new Vec2(this.x, this.y);
+      }
+      this.add=function(v1, v2) {// FIXME: doesn't always work with both values
+        if (v2) {
+          return new Vec2(this.x+v1, this.y+v2);
+        }
+        return new Vec2(this.x+v1.x, this.y+v1.y);
+      }
+      this.sub=function(v) {
+        return new Vec2(this.x-v.x, this.y-v.y);
+      }
+      this.mult=function(n) {
+        return new Vec2(this.x*n, this.y*n);
+      }
+      this.div=function(n) {
+        return new Vec2(this.x/n, this.y/n);
+      }
+      this.dot=function(v) {
+        return v.x*this.x + v.y*this.y;
+      }
+      this.iHatLanding=function(v) {
+        return new Vec2(v.x*this.x-v.y*this.y, v.x*this.y+v.y*this.x);
+      }
+      this.len=function() {
+        return Math.sqrt(this.x**2+this.y**2);
+      }
+      this.dist=function(v) {
+        return Math.sqrt((this.x-v.x)**2+(this.y-v.y)**2);
+      }
+      this.sqDist=function(v) {
+        return (this.x-v.x)**2+(this.y-v.y)**2;
+      }
+      this.dir=function() {//angle to x axis in radians
+        return Math.atan2(this.y, this.x);
+      }
+      this.taxi=function() {//taxicab distance length
+        return this.x+this.y;
+      }
+      this.screen=function() {//coordinates for drawing
+        return new Vec2(this.x*height, this.y*height);
+      }
+    }
+    function rand0Vec2(v=1) {
+      return new Vec2(rand0(v), rand0(v));
+    }
+    function polarVec2(d, m=1) {//cartesian vector from polar coordinates
+      return new Vec2(Math.cos(d)*m, Math.sin(d)*m);
+    }
+
+    function quickVec2ScreenLine(p1, p2, width=2, color=colors.yellow) {
+      context.strokeStyle=color.rgb() || color;
+      context.lineWidth=width;
+      context.beginPath();
+      var e=p1.screen();
+      context.moveTo(e.x, e.y);
+      e=p2.screen();
+      context.lineTo(e.x, e.y);
+      context.stroke();
+    }
+    function quickVec2Line(p1, p2, width=2, color=colors.yellow) {
+      context.strokeStyle=color.rgb() || color;
+      context.lineWidth=width;
+      context.beginPath();
+      context.moveTo(p1.x, p1.y);
+      context.lineTo(p2.x, p2.y);
+      context.stroke();
+    }
+    function quickVec2ScreenSquare(p, width=4, color=colors.yellow) {
+      context.fillStyle=color.rgb() || color;
+      var e=p.screen();
+      context.fillRect(e.x-width/2, e.y-width/2, width, width);
+    }
+    function quickVec2CenteredSquare(p, width=4, color=colors.yellow) {
+      context.fillStyle=color.rgb() || color;
+      context.fillRect(p.x-width/2, p.y-width/2, width, width);
+    }
+    function quickVec2TopLeftSquare(p, width=4, color=colors.yellow) {
+      context.fillStyle=color.rgb() || color;
+      context.fillRect(p.x, p.y, width, width);
+    }
+    function quickVec2ScreenCircle(p, radius=2, color=colors.yellow) {
+      context.fillStyle=color.rgb() || color;
+      var e=p.screen();
+      context.beginPath();
+      context.ellipse(e.x, e.y, radius, radius, 0, 0, TAU);
+      context.fill();
+    }
+
+    var numbers=[];//2d random number array
+    var numArrSize=200;
+    for (var i = 0; i < numArrSize; i++) {
+      numbers[i]=[];
+      for (var j = 0; j < numArrSize; j++) {
+        numbers[i][j]=Math.random();
+      }
+    }
+
+    function smootherStep(x) {
+      return x * x * x * (x * (x * 6 - 15) + 10);
+    }
+
+    // function getSmoothWeightedAverage(x, v1=0, v2=1) {//lerp, but with smoothstep
+    //   return (3*x**2-2*x**3)*(v2-v1)+v1;
+    // }
+    function getSmoothWeightedAverage(x, v1=0, v2=1) {//lerp, but with smoothstep
+      return smootherStep(x)*(v2-v1)+v1;
+    }
+    // function getWeightedSquareAverage(x, y, v1, v2, v3, v4) {//lerp, not smooth (unless smoothed before input)
+    //   var topAvg=(v2-v1)*x+v1;
+    //   var botAvg=(v4-v3)*x+v3;
+    //   return (botAvg-topAvg)*y+topAvg;
+    // }
+    function getWeightedSquareAverage(x, y, v1, v2, v3, v4) {//smooth interpolation
+      return getSmoothWeightedAverage(y, getSmoothWeightedAverage(x, v1, v2), getSmoothWeightedAverage(x, v3, v4));
+    }
+
+    // function getNoise(i, j) {//interpolated white noise
+    //   i+=40;
+    //   j+=40;
+    //   var fi=Math.floor(i);
+    //   var fj=Math.floor(j);
+    //   return getWeightedSquareAverage(i%1, j%1, numbers[fi][fj], numbers[fi+1][fj], numbers[fi][fj+1], numbers[fi+1][fj+1]);
+    // }
+    function getNoise(i, j) {//perlin noise
+      i+=40;
+      j+=40;
+      var fi=Math.floor(i);
+      var fj=Math.floor(j);
+      var reli=i-fi;
+      var relj=j-fj;
+      function getCurrentDot(iOff, jOff) {
+        var ang=numbers[fi+iOff][fj+jOff]*TAU;
+        return Math.cos(ang)*(reli-iOff)+Math.cos(ang)*(relj-jOff);
+      }
+      return getWeightedSquareAverage(reli, relj, getCurrentDot(0, 0), getCurrentDot(1, 0), getCurrentDot(0, 1), getCurrentDot(1, 1))/0.57/2+0.5;
+      // TODO: is in range -0.57 - 0.57, get precise value to map onto 0 - 1
+
+    }
+
+    function draw() {
+      if (!paused) {
+        if (loops% frameskip <1) {//animation
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          // context.fillStyle=colors.sky.rgb();
+          // context.fillRect(0, 0, canvas.width, canvas.height);
+
+          /*  Draw mountains  */
+          // var maxDepth=15;
+          // var depthPrecision=maxDepth*0.01;
+          // var pixSize=0.005;
+          // for (var i = maxDepth; i >= 0; i-=depthPrecision) {
+          //   context.fillStyle=colorLerp(i/maxDepth, colors.green, colors.mist).rgb();
+          //   context.beginPath();
+          //   context.moveTo(0, canvas.height);
+          //   for (var j = 0; j < 1; j+=pixSize) {
+          //     context.lineTo(j*canvas.width, ((getNoise(i/2, j*10*(3*i/maxDepth))/(i/maxDepth)*0.1+0.6)-i/maxDepth/2)*canvas.height);
+          //   }
+          //   context.lineTo(canvas.width, canvas.height);
+          //   context.fill();
+          // }
+
+          /*  Fill screen with grid  */
+
+          // // var curNoiseMax=-Infinity;
+          // // var curNoiseMin=Infinity;
+          // var pixSize=3;
+          // var ang=0;
+          // var noiseScale=0.02;
+          // for (var i = 0; i < canvas.width; i+=pixSize) {
+          //   for (var j = 0; j < canvas.height; j+=pixSize) {
+          //     // var iRot=(i*Math.cos(ang)-j*Math.sin(ang))*noiseScale;
+          //     // var jRot=(i*Math.sin(ang)+j*Math.cos(ang))*noiseScale;
+          //     var iRot=i*noiseScale;
+          //     var jRot=j*noiseScale;
+          //     // if (getNoise(iRot/81, jRot/81)>curNoiseMax) {
+          //     //   curNoiseMax=getNoise(iRot/81, jRot/81);
+          //     // }
+          //     // if (getNoise(iRot/81, jRot/81)<curNoiseMin) {
+          //     //   curNoiseMin=getNoise(iRot/81, jRot/81);
+          //     // }
+          //     quickVec2TopLeftSquare(
+          //       new Vec2(i, j),
+          //       pixSize,
+          //       // colorLerp(getNoise(iRot, jRot), colors.black, colors.white) //just getNoise in grayscale
+          //       // colorLerp((getNoise(iRot, jRot)+getNoise(iRot*1.4-2*TAU, jRot*1.4+8.5))/2, colors.black, colors.white) //just noise
+          //       // colorLerp(Math.max(getNoise(iRot, jRot), getNoise(iRot-PI, jRot+2.5)), colors.black, colors.white) //max function, platoes with sharp valleys
+          //       // colorLerp(getNoise(iRot, jRot)**2, colors.black, colors.white) //darkened noise, more artifacts
+          //       // getNoise(iRot, jRot)<0.3 ? colors.darkBrown : colors.lightBrown //artifacted blobs
+          //       // Math.max(getNoise(iRot, jRot), getNoise(iRot*1.4-2*TAU, jRot*1.4+8.5))>0.8 ? colors.darkBrown : colors.lightBrown //thin, randomly spaced blobs
+          //       getNoise(iRot, jRot)+getNoise(iRot*1.4-2*TAU, jRot*1.4+8.5)<0.5 ? colors.darkBrown : colors.lightBrown //large 1:1 blobs (<1) to tiny randomly spaced blobs (<0.5)
+          //     );
+          //     //
+          //     // quickVec2TopLeftSquare(
+          //     //   new Vec2(i, j),
+          //     //   pixSize,
+          //     //   colorLerp(getNoise(i/41, j/41), colors.red, colors.black)
+          //     // );
+          //   }
+          // }
+          // // console.log(curNoiseMin, curNoiseMax);
+
+          var pixSize=2;
+          // var ang=0;
+          // var noiseScale=0.02;
+          var noiseScales=[];
+          var noiseRotations=[];
+          var noiseNum=3;
+          for (var i = 0; i < noiseNum; i++) {
+            noiseScales[i]=randRange(0.85, 1.2)*0.02;
+            noiseRotations[i]=rand(TAU);
+          }
+          for (var i = 0; i < canvas.width; i+=pixSize) {
+            for (var j = 0; j < canvas.height; j+=pixSize) {
+              var noises=[];
+              for (var k = 0; k < noiseNum; k++) {
+                var iRot=(i*Math.cos(noiseRotations[k])-j*Math.sin(noiseRotations[k]))*noiseScales[k];
+                var jRot=(i*Math.sin(noiseRotations[k])+j*Math.cos(noiseRotations[k]))*noiseScales[k];
+                // console.log(iRot, jRot);
+                noises[k]=getNoise(iRot, jRot);
+                // console.log(noises[k]);
+              }
+
+              i<canvas.width/2 ? quickVec2TopLeftSquare(
+                new Vec2(i, j),
+                pixSize,
+                // colorLerp(noises[0], colors.black, colors.white) //just getNoise in grayscale
+                // colorLerp((getNoise(iRot, jRot)+getNoise(iRot*1.4-2*TAU, jRot*1.4+8.5))/2, colors.black, colors.white) //just noise
+                // colorLerp(Math.max(getNoise(iRot, jRot), getNoise(iRot-PI, jRot+2.5)), colors.black, colors.white) //max function, platoes with sharp valleys
+                // colorLerp(getNoise(iRot, jRot)**2, colors.black, colors.white) //darkened noise, more grid artifacts
+                // getNoise(iRot, jRot)<0.3 ? colors.darkBrown : colors.lightBrown //artifacted blobs
+                // Math.max(getNoise(iRot, jRot), getNoise(iRot*1.4-2*TAU, jRot*1.4+8.5))>0.8 ? colors.darkBrown : colors.lightBrown //thin, randomly spaced blobs
+                // (noises[0]+noises[1])%0.1<0.05 ? colors.darkBrown : colors.lightBrown //large 1:1 blobs (<1) to tiny randomly spaced blobs (<0.5)
+                // (noises[0]+noises[1]+noises[2])%0.7<0.55 ? colors.green : colors.black //large 1:1 blobs (<1) to tiny randomly spaced blobs (<0.5)
+                (noises[0]+noises[1])%0.35<0.3 ? colors.green : colors.black //large 1:1 blobs (<1) to tiny randomly spaced blobs (<0.5)
+              ) :
+              quickVec2TopLeftSquare(
+                new Vec2(i, j),
+                pixSize,
+                colorLerp((noises[0]+noises[1])/2, colors.black, colors.white) //just getNoise in grayscale
+              );
+            }
+          }
+
+        }
+        loops++;
+        // window.requestAnimationFrame(draw);
+      }
+    }
+
+
+    function restart() {
+      loops=0;
+    }
+    function resize() {
+      canvas.width=window.innerWidth;
+      height=canvas.height=window.innerHeight;
+      restart();
+    }
+    resize();
+    draw();
+
+    // canvas.addEventListener("mousemove",function(){
+    //   // lastx=event.clientX;
+    //   // lasty=event.clientY;
+    //   var n=1;
+    //   lastx=(event.clientX+lastx*n)/(n+1);
+    //   lasty=(event.clientY+lasty*n)/(n+1);
+    // });
+    window.addEventListener("dblclick",function(){location.reload();});
+    window.addEventListener("keyup",function(){
+      var curKey=event.keyCode;
+      keys[curKey]=false;
+      // console.log(keys);
+    });
+    window.addEventListener("keydown",function(){
+      var curKey=event.keyCode;
+      keys[curKey]=true;
+      // console.log(keys);
+      // console.log(curKey);
+      switch (curKey) {
+        case 32://space
+          paused=!paused;
+          console.log(paused?"Paused":"Unpaused");
+          draw();
+          break;
+        // case 37://left
+        //   move.left();
+        //   break;
+      }
+    });
+    // window.addEventListener("resize",function(){resize();})
+  </script>
+</body>
+</html>

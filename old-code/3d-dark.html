@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Rays 6</title>
+    <style media="screen">
+      body{
+        background-color: rgb(50,50,50);
+        color: rgb(200, 200, 200);
+        font-size: 40px;
+        overflow: hidden;
+        font-size: 300%;
+      }
+      canvas{
+        position: absolute;
+        left: 0;
+        top: 0;
+        outline: 2px dashed navy;
+      }
+      #panel{
+        position:absolute;
+        left: 0;
+        top: 0;
+        background-color: rgba(0,0,0,100);
+        color: rgb(255,255,255);
+      }
+
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="300" height="300"></canvas>
+    <script type="text/javascript">
+      function rand(maxi) {
+        var max=maxi | 1;
+        return Math.random()*max;
+      }
+      function randint(max) {
+        return Math.floor(Math.random()*max);
+      }
+      function clamp(num, val) {//num to clamp, special value
+        return 1+(val/(num+val));
+      }
+
+      var canvas=document.getElementById("canvas");
+      var context=canvas.getContext("2d");
+      var loops=0;
+      var TAU=6.2832;
+      var PI=3.1416;
+      var anghor=angver=rayx=rayy=rayz=stepx=stepy=stepz=fog=0;
+      var hit=paused=false;
+      var calc=true;
+      var pixsize=8;
+      var usew=useh=10;
+
+      var vision=100;
+      var stepsize=0.01;
+      var fogging=255/vision*stepsize;
+      // var fogging=0.05;
+      // var stepsize=vision*fogging/255;
+
+      var rmod=gmod=bmod=0;
+      var e=0;
+      // var mods=new Array(3);
+
+      function stepcalc() {
+        stepx=stepsize*Math.cos(anghor)*Math.cos(angver);
+        stepy=stepsize*Math.sin(anghor)*Math.cos(angver);
+        stepz=stepsize*Math.sin(angver);
+      }
+
+    function draw() {
+      if (!paused) {
+        var j=loops;
+    		for(var i=0; i<usew; i++){
+    			anghor=TAU*i/5/usew+PI*0.65;
+          angver=PI/3*j/useh-PI/6;
+          // anghor=TAU*i/usew;
+          // angver=PI*j/useh-PI/2;
+          stepcalc();
+          // rayx=2;
+          // rayy=2;
+          // rayz=2;
+          rayx=1.97;
+          rayy=1.21;
+          rayz=0.3;
+          fog=0;
+          rmod=gmod=bmod=0;
+    			hit=calc=false;
+          // mods=[false,false,false];
+    			while(fog<255){
+            if (calc) {
+              stepcalc();
+            }
+            rayx+=stepx;
+            rayy+=stepy;
+            rayz+=stepz;
+            e=0.1;
+            // if (fog>fogging*(1/stepsize) && Math.abs(rayx)+Math.abs(rayy)+Math.abs(rayz)<1) {
+            //   hit=true;
+    				// 	break;
+            // }
+
+            if (rayx**2+rayy**2+rayz**2>7.5) {
+              hit=true;
+              break;
+            }
+            else {
+              var n=0.3;
+              if (rayx<-2) {
+                rayx+=4;
+                anghor+=n;
+                calc=true;
+              }
+              else if (rayx>2) {
+                rayx-=4;
+                anghor-=n;
+                calc=true;
+              }
+              if (rayy<-2) {
+                rayy+=4;
+                angver+=n;
+                calc=true;
+              }
+              else if (rayy>2) {
+                rayy-=4;
+                angver-=n;
+                calc=true;
+              }
+              if (rayz<-2) {
+                rayz+=4;
+                angver+=n;
+                calc=true;
+              }
+              else if (rayz>2) {
+                // rayz-=4;
+                // angver-=n;
+                hit=true;
+                break;
+              }
+            }
+
+            /*else{
+              if (rayx<-3||rayx>3) {
+                anghor=-anghor+PI;
+                mods[0]=!mods[0];
+              }
+              if (rayy<-3||rayy>3) {
+                anghor=-anghor;
+                mods[1]=!mods[1];
+              }
+              if (rayz<-3||rayz>3) {
+                angver=-angver;
+                mods[2]=!mods[2];
+              }
+            }*/
+
+            fog+=fogging;
+    			}
+    			if(hit){
+            //var br=Math.abs(255-len);
+            var br=Math.abs(fog);
+            // var br=clamp(len, -1000)*100;
+    				context.fillStyle="rgb("+(br+rmod)+","+(br+gmod)+","+(br+bmod)+")";
+            context.fillRect(i*pixsize,j*pixsize,pixsize,pixsize);
+    			}
+    			else{
+            //context.fillStyle="rgb(20,170,255)";
+            // context.fillStyle="rgb(0,0,0)";
+            context.fillStyle="rgb(255,255,255)";
+            context.fillRect(i*pixsize,j*pixsize,pixsize,pixsize);
+    			}
+    		}
+        loops++;
+        if (loops<useh) {
+          window.requestAnimationFrame(draw);
+        }
+      }
+    }
+
+      function restart() {
+        usew=canvas.width/pixsize;
+        useh=canvas.height/pixsize;
+        loops=0;
+        draw();
+      }
+      function resize() {
+        canvas.width=window.innerWidth;
+        canvas.height=window.innerHeight;
+        restart();
+      }
+      resize();
+
+      //window.addEventListener("resize",function(){resize();});
+      window.addEventListener("click",function(){});
+      window.addEventListener("dblclick",function(){location.reload();});
+      window.addEventListener("keypress",function(){
+        var k=event.keyCode;
+        //console.log(k);
+        if (k<58 && k>48) {
+          pixsize=2**(k-49);
+          console.log(pixsize);
+          restart();
+        }
+        else {
+          switch (k) {
+            case 119://w
+              break;
+            case 97://a
+              break;
+            case 115://s
+              break;
+            case 100://d
+              break;
+            case 111://o
+              break;
+            case 113://q
+              break;
+            case 114://r
+              restart();
+              break;
+            case 32://space
+              paused=!paused;
+              draw();
+              break;
+            case 43://+
+              stepsize*=1.1;
+              restart();
+              break;
+            case 45://-
+              stepsize*=0.9;
+              restart();
+              break;
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

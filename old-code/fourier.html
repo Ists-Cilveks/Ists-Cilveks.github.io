@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Raycasting</title>
+    <style media="screen">
+      body{
+        background-color: rgb(20,20,20);
+        color: rgb(200, 200, 200);
+        font-size: 40px;
+        overflow: hidden;
+        font-size: 300%;
+      }
+      canvas{
+        position: absolute;
+        left: 0;
+        top: 0;
+        outline: 2px dashed navy;
+        z-index: 1;
+      }
+      .panel{
+        position:absolute;
+        background-color: rgba(150,0,0,1);
+        z-index: 2;
+        width: 2vmin;
+        height: 6vmin;
+        display: none;
+      }
+      #p1{
+        left: 1vmin;
+        top: 1vmin;
+      }
+      #p2{
+        left: 5vmin;
+        top: 1vmin;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="300" height="300"></canvas>
+    <div class="panel" id="p1"></div><div class="panel" id="p2"></div>
+    <script type="text/javascript">
+      "use strict";
+
+      function classels(classname) {//get all HTML elements with given class name
+        var a = [];
+        var re = new RegExp('(^| )'+classname+'( |$)');
+        var els = document.body.getElementsByTagName("*");
+        for (var i=0, j=els.length; i<j; i++)
+          if(re.test(els[i].className))a.push(els[i]);
+        return a;
+      }
+      function rand(max=1) {//random number in range [0, max)
+        return Math.random()*max;
+      }
+      function randInt(max=2) {//random integer in range [0, max)
+        return Math.floor(Math.random()*max);
+      }
+      function rand0(n=1) {//random number in range (-n, n)
+        return (Math.random()*2-1)*n;
+      }
+      function randProb(p=0.5) {//bool with probability p of being true
+        return p>Math.random();
+      }
+      function randRange(a, b) {//random number in range [a, b)
+        return Math.random()*(b-a)+a;
+      }
+      function clamp(num, val) {//number to clamp in range [0, inf), special value, return range [0, 1)
+        return 1+(val/(num+val));
+      }
+      function colorLerp(x, n1, n2) {//lerp for objects (originally colors)
+        return n2.sub(n1).mult(x).add(n1);
+      }
+      function dot(a, b) {//dot product of two arrays
+        var res=0;
+        for (var i = 0; i < a.length; i++) {
+          res+=a[i]*b[i];
+        }
+        return res;
+      }
+      function atan4(x1, y1, x2, y2) {//get the angle of the x-axis and the line made by two points 1 and 2
+        return Math.atan2(y2-y1, x2-x1);
+      }
+      function modify(obj, prop, val) {//return obj with the property obj[prop] changed to val (shorthand for single line actions)
+        obj[prop]=val;
+        return obj;
+      }
+      function round(v, p=2) {//return v rounded to p decimal places
+        return Math.round(v*10**p+Number.EPSILON)/10**p;
+      }
+      function roughEquals(v1, v2, prec=0.01) {
+        return Math.abs(v2-v1)<prec;
+      }
+      function arrayContains(arr, val) {
+        for (var i = 0; i < arr.length; i++) {
+          if (arr[i]==val) return true;
+        }
+        return false;
+      }
+      function map(v, a1, a2, b1, b2) {//input: v in range [a1, a2], output: range [b1, b2];
+        return (v-a1)/(a2-a1)*(b2-b1)+b1;
+      }
+      // function bucketedTableLog(arr, bSize, minBucket=0) {//supposed to be a console.table command returning values of arr split into groups of size bSize
+      //   var raw=[];
+      //   for (var i = 0; i < arr.length; i++) {
+      //     // var curB=(i%bSize+bSize)%bSize;
+      //     var curB=Math.floor(i/bSize)-minBucket;
+      //     // console.log(curB);
+      //     raw[curB]=raw[curB]+1||1;
+      //
+      //   }
+      //   var res=[];
+      //   for (var i = 0; i < raw.length; i++) {
+      //     res.push([round((i+minBucket)*bSize), raw[i]||0])
+      //   }
+      //   console.table(res);
+      // }
+      //
+      // var asdf=[]
+      // for (var i = 0; i < 20; i++) {
+      //   asdf[i]=randRange(-20, 50);
+      // }
+      // console.log(asdf);
+      //
+      // bucketedTableLog(asdf, 1, -20);
+
+      /*// TODO:
+        check to-do's
+        add drawing of
+          polgons
+          cylinders (lines)
+          spheres
+        more and better textures
+        proper light transport
+          transparent objects with refractive index
+          follow light rays more than the first object
+          actual rangle
+        orientation helper while dragging
+      */
+
+      var canvas=document.getElementById("canvas");//html canvas element
+        var context=canvas.getContext("2d");//drawing context of canvas
+        var loops=0;//how many rays have been shot since last clear() call
+        var TAU=Math.PI*2;//math constant declaration (shorthand)
+          var PI=Math.PI;
+          var HPI=Math.PI/2;
+          var PHI=Math.sqrt(5)/2+0.5;
+          var PHIBAR=1/(Math.sqrt(5)/2+0.5);
+        var raysPerFrame=80;//how many rays to shoot out at each update() call
+        var pixsize=16;//how many actual pixels across each "pixel" making up the image is
+
+        if (true) {//boring empty declarations
+          var camAng=0; var camVertAng=0; //direction the middle of the virtual camera, in spherical coordinates
+          var preDragAng=0; var preDragVertAng=0; //like camAng and camVertAng but saved at the start of a drag
+
+          var usew=10; var useh=10;//how many "pixels" wide and tall is the screen
+          var keys=[];//which keys are currently being pressed ( keys[keyID]= true or false )
+          var arr=[];//pixel information (2d array, each element is an array [r, g, b, weight])
+          var things=[];//list of objects getting drawn
+
+          var paused=false;
+          var layering=false;//do or don't go over the same pixels multiple times to get supersampling
+
+          var lastMouse=new Vec2();//mouse position in pixels last time it was moved
+          var mousePressed=0;//which mouse button was pressed last time it was moved
+          var mouseDragging=false;//is mouse currently dragging
+          var mouseDragStart=new Vec2();//where the drag began
+
+          var colPass=new Color();
+          var colRes=new Color();
+
+          var updateNum=0;//update() calls while not paused
+        }
+
+        var minColorCast=0.005;//minimum color value to render, stop if all colors are less than it
+        // var colors=32;
+        // var fogBase=0.96;
+        var fogBase=1;
+        var globalLightDirection=new Vec3(-0.2, -0.5, -1).unit();
+
+        // var sphereRadius=PHIBAR-0.01;
+        // var sphereRadius=PHI;
+        // var edgeWidth=0.1;
+        // var startpos=new Vec3(0, 0, 0);
+        var startpos=new Vec3(-6, 0, 0);
+        // var startpos=new Vec3(-10.5, 0, 0);
+        // var startpos=new Vec3(-30, 0, 0);
+
+        if (true) {//calculations about real life sizes (assuming square pixels) */
+          var interocularDistance=7;//irl distance between eyes (cm)
+          var eyesToMonitor=60;//irl distance from eyes to monitor (cm)
+          // var eyesToMonitor=120;//irl distance from eyes to monitor (cm)
+          var monitorWidth=34.15;//irl monitor width (cm)
+          var monitorPixelWidth=screen.width;
+          var monitorPixelHeight=screen.height;
+          var monitorHeight=monitorWidth*monitorPixelHeight/monitorPixelWidth;
+        }
+
+      function Color(r, g, b) {
+        if (g!=undefined) {//all colors defined, set as those
+          this.r=r;
+          this.g=g;
+          this.b=b;
+        }
+        else {//one color defined, set to that gray
+          this.r=r;
+          this.g=r;
+          this.b=r;
+        }
+        this.each=function(f) {
+          return new Color(f(this.r), f(this.g), f(this.b));
+        }
+        this.mult=function (c) {
+          if (typeof c=="number") {
+            return new Color(this.r*c, this.g*c, this.b*c);
+          }
+          else {
+            return new Color(this.r*c.r, this.g*c.g, this.b*c.b);
+          }
+        }
+        this.div=function(v) {
+          return new Color(this.r/v, this.g/v, this.b/v);
+        }
+        this.add=function(v) {
+          if (typeof v=="number") {
+            return new Color(this.r+v, this.g+v, this.b+v);
+          }
+          else {
+            return new Color(this.r+v.r, this.g+v.g, this.b+v.b);
+          }
+        }
+        this.sub=function(v) {
+          if (typeof v=="number") {
+            return new Color(this.r-v, this.g-v, this.b-v);
+          }
+          else {
+            return new Color(this.r-v.r, this.g-v.g, this.b-v.b);
+          }
+        }
+        this.lighten=function(v) {
+          return new Color(v*(256-this.r)+this.r, v*(256-this.g)+this.g, v*(256-this.b)+this.b);
+        }
+        this.lerp=function(x, c) {
+          return c.sub(this).mult(x).add(this);
+        }
+        this.modify=function(amp) {
+          return this.each(function(n) {
+            var x=n+rand0(amp);
+            if (x>255) {
+              return 255;
+            }
+            else if (x<0) {
+              return 0;
+            }
+            else {
+              return x;
+            }
+          });
+        }
+        this.rgb=function() {
+          return "rgb("+this.r+","+this.g+","+this.b+")";
+        }
+        this.log=function() {
+          return "r: "+round(this.r)+",  g: "+round(this.g)+",  b: "+round(this.b);
+        }
+      }
+      function colorFromHSL(h, s, l) {
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        var p = 2 * l - q;
+        function hue2rgb(t){
+          if (t < 0) t += 1;
+          else if (t > 1) t -= 1;
+          if (t < 1/6) return p + (q - p) * 6 * t;
+          if (t < 1/2) return q;
+          if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+          return p;
+        }
+        return new Color(hue2rgb(h + 1/3), hue2rgb(h), hue2rgb(h - 1/3));
+      }
+      var colors={
+        mist: new Color(110, 130, 210),
+        sky: new Color(50, 150, 210),
+        darkBrown: new Color(40, 17, 2),
+        lightBrown: new Color(200, 160, 60),
+        granite: new Color(200, 140, 130),
+        // sand: new Color(200, 170, 120),
+
+        white: new Color(255, 255, 255),
+        black: new Color(0, 0, 0),
+        red: new Color(255, 0, 0),
+        green: new Color(0, 255, 0),
+        blue: new Color(0, 0, 255),
+        yellow: new Color(255, 255, 0),
+        magenta: new Color(255, 0, 255),
+        cyan: new Color(0, 255, 255),
+
+        darkRed: new Color(127, 0, 0),
+        orange: new Color(255, 127, 0),
+        gray: new Color(127, 127, 127),
+        slate: new Color(50, 67, 127)
+        // brown: new Color(64, 32, 0)
+      }
+      function Vec2(x=0, y=0) {
+        this.x=x;
+        this.y=y;
+        this.copy=function() {
+          return new Vec2(this.x, this.y);
+        }
+        this.add=function(v) {
+          return new Vec2(this.x+v.x, this.y+v.y);
+        }
+        this.sub=function(v) {
+          return new Vec2(this.x-v.x, this.y-v.y);
+        }
+        this.mult=function(n) {
+          return new Vec2(this.x*n, this.y*n);
+        }
+        this.dot=function(v) {
+          return this.x*v.x+this.y*v.y;
+        }
+        this.draw=function(col="rgb(155, 255, 10)", size=3) {
+          if (typeof col=="string") {
+            context.fillStyle=col;
+          }
+          else if (typeof col=="object") {
+            context.fillStyle=col.rgb();
+          }
+          context.fillRect(this.x, this.y, size, size);
+        }
+      }
+      function Vec3(x=0, y=0, z=0) {
+        if (typeof x=="number") {
+          this.x=x;
+          this.y=y;
+          this.z=z;
+        }
+        else {
+          this.x=x[0];
+          this.y=x[1];
+          this.z=x[2];
+        }
+        this.copy=function() {
+          return new Vec3(this.x, this.y, this.z);
+        }
+        this.neg=function() {
+          return new Vec3(-this.x, -this.y, -this.z);
+        }
+        this.sub=function(v) {
+          return new Vec3(this.x-v.x, this.y-v.y, this.z-v.z);
+        }
+        this.add=function(v) {
+          return new Vec3(this.x+v.x, this.y+v.y, this.z+v.z);
+        }
+        this.mult=function(sc) {
+          return new Vec3(this.x*sc, this.y*sc, this.z*sc);
+        }
+        this.len=function() {
+          return Math.sqrt(this.x**2+this.y**2+this.z**2);
+        }
+        this.unit=function(sc) {
+          var len=this.len();
+          return new Vec3(this.x/len, this.y/len, this.z/len);
+        }
+        this.div=function(sc) {
+          return new Vec3(this.x/sc, this.y/sc, this.z/sc);
+        }
+        this.cross=function(v) {
+          return new Vec3(this.y*v.z-this.z*v.y, -(this.x*v.z-this.z*v.x), this.x*v.y-this.y*v.x);
+        }
+        this.dot=function(v) {
+          return this.x*v.x+this.y*v.y+this.z*v.z;
+        }
+        this.dist=function(v) {
+          return Math.sqrt((this.x-v.x)**2+(this.y-v.y)**2+(this.z-v.z)**2);
+        }
+        this.rotateY=function(a) {
+          return new Vec3(this.z*Math.sin(a)+this.x*Math.cos(a), this.y, this.z*Math.cos(a)-this.x*Math.sin(a));
+        }
+        this.rotateZ=function(a) {
+          return new Vec3(this.x*Math.cos(a)-this.y*Math.sin(a), this.x*Math.sin(a)+this.y*Math.cos(a), this.z);
+        }
+        this.randNudge=function(a) {
+          return new Vec3(this.x+rand0(a), this.y+rand0(a), this.z+rand0(a));
+        }
+      }
+      function sphericalToVec3(hor, ver, mag=1) {
+        return new Vec3(Math.cos(ver)*Math.cos(hor)*mag, Math.cos(ver)*Math.sin(hor)*mag, Math.sin(ver)*mag);
+      }
+
+      if (true) {//noise functions
+        var getSmoothWeightedAverage= function(x, v1=0, v2=1) {//interpolation with smootherStep
+          return x * x * x * (x * (x * 6 - 15) + 10)*(v2-v1)+v1;
+        }
+
+        var getWeightedSquareAverage= function(x, y, v1, v2, v3, v4) {//smooth interpolation of square vertices
+          return getSmoothWeightedAverage(y, getSmoothWeightedAverage(x, v1, v2), getSmoothWeightedAverage(x, v3, v4));
+        }
+
+        var getNoise= function(i, j, seed=0) {//perlin noise (with particular 2d PRNG)
+          var fi=Math.floor(i);
+          var fj=Math.floor(j);
+          var reli=i-fi;
+          var relj=j-fj;
+          function getCurrentDot(iOff, jOff) {
+            var ang=((fi+iOff)*2+((fj+jOff+seed)*(seed+1))**2)**2;
+            return Math.cos(ang)*(reli-iOff)+Math.sin(ang)*(relj-jOff);
+          }
+          return getWeightedSquareAverage(reli, relj, getCurrentDot(0, 0), getCurrentDot(1, 0), getCurrentDot(0, 1), getCurrentDot(1, 1))*0.8591+0.5;// TODO: values appear to be out of range
+        }
+
+        var getGranite= function(i, j, seed, color) {//get color of granite texture from UV coordinates
+          var seed=seed || 0;
+
+          var granite2Color=color || new Color(200, 140, 130);
+          // var granite1Color=new Color(granite2Color.r/1.12, granite2Color.g/1.08, granite2Color.b/1.63);
+          var granite1Color=new Color(granite2Color.r/1.254, granite2Color.g/1.166, granite2Color.b/2.657);
+
+          var multipliers=[0.028, 0.0442, 0.043, 0.029, 0.12, 0.074, 0.2, 0.09, 0.05, 0.1242, 0.073, 0.028];
+
+          var noises=[];
+          for (var m = 0; m < multipliers.length; m++) {
+            noises[m]=getNoise(i*multipliers[m], j*multipliers[m], seed+m);
+          }
+
+          var c=new Color();
+          var v1=(noises[0]+noises[1]*2+noises[9]/2)/3.5;
+          // var th1=0.4;
+          // if (v1>0.4) {
+            c=colorLerp(noises[2], granite1Color, granite2Color);
+            // if (noises[4]>0.8/* && noises[3]>0.8*/)c=c.lighten(1/2);
+            if (noises[4]>0.7/* && noises[3]>0.8*/)c=c.lighten((noises[4]-0.7)*1.5);
+            if (noises[5]>0.7/* && noises[3]>0.8*/)c=c.lighten((noises[5]-0.7)*1);
+            if (noises[11]>0.5/* && noises[3]>0.8*/)c=c.lighten((noises[11]-0.5)*1);
+          // }
+          // else if (v1) {
+          //
+          // }
+          // else {
+          if (v1<0.5) {
+            // c=colors.gray;
+            var c1=colorLerp((noises[6]+noises[7])/3, new Color(127, 127, 127), new Color(255, 255, 255));
+            c1=c1.mult(noises[8]/2+0.5);
+            // c1=c1.mult((noises[8]+noises[10])/3+0.1);
+            c=colorLerp((v1/0.5)**2, c1, c);
+          }
+          // c=colorLerp(getNoise(i*0.02, j*0.02, globSeed), colors.black, colors.white);
+
+          return c;
+        }
+      }
+
+      // var sines=[0, 0, 1/2, 0, 1/3, 0, 1/4, 0, 1/5];
+      var sines=[0, 1, 0, 1/3, 0, 1/5, 0, 1/7, 0, 1/9, 0, 1/11, 0, 1/13];
+      // var sines=[0, 1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9];
+      var paused=false;
+
+      var panels= {
+        graph: {
+          x: 20,
+          y: 20,
+          w: 400,
+          h: 200
+        },
+        arrows: {
+          x: 20,
+          y: 240,
+          w: 150,
+          h: 200
+        },
+        drawOutline: function (p) {
+          context.strokeStyle="rgb(60, 60, 60)";
+          var width=4;
+          context.lineWidth=width;
+          context.strokeRect(panels[p].x-width/2, panels[p].y-width/2, panels[p].w+width, panels[p].h+width);
+        },
+        clear: function (p) {
+          context.clearRect(panels[p].x, panels[p].y, panels[p].w, panels[p].h);
+        }
+      }
+
+      function draw() {
+
+      }
+      function update() {
+        if (!paused) {
+          panels.clear("arrows");
+          panels.drawOutline("graph");
+          panels.drawOutline("arrows");
+          var lastPos=0;
+        	for (var i=0; i<sines.length; i++) {
+            // var newPos=lastPos+Math.cos(updateNum*i*0.02)*sines[i];
+            var newPos=lastPos+Math.sin(updateNum*i*0.02)*sines[i];
+          	context.lineWidth=3;
+          	context.strokeStyle="rgb(170, 170, 170)";
+      	    context.beginPath();
+      	    context.moveTo(panels.arrows.x+7*i+10, panels.arrows.y+panels.arrows.h/2-lastPos*30);
+      	    context.lineTo(panels.arrows.x+7*i+10, panels.arrows.y+panels.arrows.h/2-newPos*30);
+          	context.stroke();
+
+            context.fillStyle="rgb(190, 0, 0)"
+            context.fillRect(panels.arrows.x+7*i-2.5+10, panels.arrows.y+panels.arrows.h/2-lastPos*30-2.5, 5, 5)
+          	lastPos=newPos;
+        	}
+
+          if (updateNum*0.6<panels.graph.w) {
+            context.fillStyle="rgb(0, 0, 255)"
+            context.fillRect(panels.graph.x+updateNum*0.6, panels.graph.y+panels.graph.h/2-lastPos*30, 3, 3)
+          }
+
+
+          updateNum++;
+          window.requestAnimationFrame(update);//loop
+        }
+      }
+
+      function clear() {
+        usew=Math.ceil(canvas.width/pixsize)+1;
+        useh=Math.ceil(canvas.height/pixsize)+1;
+        arr=new Array(usew);
+        for (var i = 0; i < arr.length; i++) {
+          arr[i]=new Array(useh);
+          for (var j = 0; j < arr[i].length; j++) {
+            arr[i][j]=[0,0,0,0];
+          }
+        }
+        loops=0;
+
+        // console.log("--------------------------------------------");
+      }
+      function restart() {
+        clear();
+        update();
+      }
+      function resize() {
+        canvas.width=window.innerWidth;
+        canvas.height=window.innerHeight;
+        restart();
+      }
+
+      resize();
+      draw();
+
+      // window.addEventListener("resize",function(){resize();});
+      window.addEventListener("mousemove",function(){
+        // console.log("a");
+        lastMouse=new Vec2(event.clientX, event.clientY);
+        mousePressed=event.which;
+      });
+      // window.addEventListener("click",function(){});
+      // window.addEventListener("dblclick",function(){location.reload();});
+      window.addEventListener("keypress",function(){
+        var keys=event.keyCode;
+        //console.log(keys);
+        if (keys<58 && keys>48) {//numbers - pixsize
+          pixsize=2**(keys-49);
+          console.log(pixsize);
+          restart();
+        }
+        else {
+          switch (keys) {
+            case 114://r - resize and restart
+              console.log("Restart");
+              resize();
+              restart();
+              break;
+            case 32://space - pause
+              paused=!paused;
+              if (paused) {
+                var e=classels("panel")
+                for (var i=0; i<e.length; i++) {
+                  e[i].style.display="block";
+                }
+              }
+              if (!paused) {
+                var e=classels("panel")
+                for (var i=0; i<e.length; i++) {
+                  e[i].style.display="none";
+                }
+                update();
+              }
+              break;
+            // case 43://+ - stepsize++
+            //   stepsize*=1.1;
+            //   console.log("Step++");
+            //   restart();
+            //   break;
+            // case 45://- - stepsize--
+            //   stepsize*=0.9;
+            //   console.log("Step--");
+            //   restart();
+            //   break;
+            case 120://x - multilayering
+              layering=!layering;
+              break;
+            default:
+              // console.log("Key: "+keys);
+          }
+        }
+      });
+      window.addEventListener("keydown",function(){
+        keys[event.keyCode]=true;
+      });
+      window.addEventListener("keyup",function(){
+        keys[event.keyCode]=false;
+      });
+    </script>
+  </body>
+</html>

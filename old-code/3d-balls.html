@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Rays 4</title>
+    <style media="screen">
+      body{
+        background-color: rgb(50,50,50);
+        color: rgb(200, 200, 200);
+        font-size: 40px;
+        overflow: hidden;
+        font-size: 300%;
+      }
+      canvas{
+        position: absolute;
+        left: 0;
+        top: 0;
+        outline: 2px dashed navy;
+      }
+      #panel{
+        position:absolute;
+        left: 0;
+        top: 0;
+        background-color: rgba(0,0,0,100);
+        color: rgb(255,255,255);
+      }
+
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="300" height="300"></canvas>
+    <script type="text/javascript">
+      function rand(maxi) {
+        var max=maxi | 1;
+        return Math.random()*max;
+      }
+      function randint(max) {
+        return Math.floor(Math.random()*max);
+      }
+      function clamp(num, val) {//num to clamp, special value
+        return 1+(val/(num+val));
+      }
+
+      var canvas=document.getElementById("canvas");
+      var context=canvas.getContext("2d");
+      var loops=0;
+      var TAU=6.2832;
+      var PI=3.1416;
+      var anghor=angver=rayx=rayy=rayz=0;
+      var len=0;
+      var hit=paused=false;
+      var pixsize=8;
+      var usew=useh=10;
+      var fog=0;
+      var fogging=0.02;
+      var stepsize=0.001;
+      var rmod=gmod=bmod=0;
+      var e=0;
+      var mods=[false,false,false];
+
+      function draw() {
+        if (loops==0) {
+          //console.log("Size:"+useh+", "+usew);
+        }
+        if (!paused) {
+          //if (loops%40==0) {
+          	//for(var j=0; j<useh; j++){
+              var j=loops;
+          		for(var i=0; i<usew; i++){
+          			// anghor=TAU*i/5/usew+PI*1.2;
+                // angver=PI/3*j/useh-PI/6;
+                anghor=TAU*i/usew;
+                angver=PI*j/useh-PI/2;
+                rayx=0.6;
+                rayy=0.3;
+                rayz=0.2;
+                fog=0;
+                rmod=gmod=bmod=0;
+          			hit=false;
+                mods=[false,false,false];
+          			while(fog<255){
+          				rayx+=stepsize*Math.cos(anghor)*Math.cos(angver);
+          				rayy+=stepsize*Math.sin(anghor)*Math.cos(angver);
+                  rayz+=stepsize*Math.sin(angver);
+                  e=0.1;
+                  // if (rayy+rayz<-5-e||rayy+rayz>5+e||-rayy+rayz>5+e||-rayy+rayz<-5-e||
+                  //     rayx+rayz<-5-e||rayx+rayz>5+e||-rayx+rayz>5+e||-rayx+rayz<-5-e||
+                  //     rayy+rayx<-5-e||rayy+rayx>5+e||-rayy+rayx>5+e||-rayy+rayx<-5-e){
+
+                  /*if (rayy+rayz<-5-e||
+                      rayx+rayz<-5-e||
+                      rayy+rayx<-5-e){
+                    /*if (mods[0]) {
+                      rmod-=250;
+                    }
+                    if (mods[1]) {
+                      gmod-=250;
+                    }
+                    if (mods[2]) {
+                      bmod-=250;
+                    }*/
+                  /*if (fog>fogging*(1/stepsize) && Math.abs(rayx)+Math.abs(rayy)+Math.abs(rayz)<1) {
+                    hit=true;
+          					break;
+                  }*/
+                  if (true) {
+                    if ((rayx-1)**2+(rayy-1)**2+(rayz-1)**2<1) {
+                      hit=true;
+                      break;
+                    }
+                    else if ((rayx-1)**2+(rayy-1)**2+(rayz+1)**2<1) {
+                      hit=true;
+                      break;
+                    }
+                    else if ((rayx-1)**2+(rayy+1)**2+(rayz-1)**2<1) {
+                      hit=true;
+                      break;
+                    }
+                    else if ((rayx-1)**2+(rayy+1)**2+(rayz+1)**2<1) {
+                      hit=true;
+                      break;
+                    }
+                    else if ((rayx+1)**2+(rayy-1)**2+(rayz-1)**2<1) {
+                      hit=true;
+                      break;
+                    }
+                    else if ((rayx+1)**2+(rayy-1)**2+(rayz+1)**2<1) {
+                      hit=true;
+                      break;
+                    }
+                    else if ((rayx+1)**2+(rayy+1)**2+(rayz-1)**2<1) {
+                      hit=true;
+                      break;
+                    }
+                    else if ((rayx+1)**2+(rayy+1)**2+(rayz+1)**2<1) {
+                      hit=true;
+                      break;
+                    }
+                  }
+                  if (true) {
+                    if (rayx<-2) {
+                      rayx+=2;
+                      rayz*=2;
+                      rayy*=2;
+                    }
+                    else if (rayx>2) {
+                      rayx-=2;
+                      rayz*=2;
+                      rayy*=2;
+                    }
+                    if (rayy<-2) {
+                      rayy+=2;
+                      rayz*=2;
+                      rayx*=2;
+                    }
+                    else if (rayy>2) {
+                      rayy-=2;
+                      rayz*=2;
+                      rayx*=2;
+                    }
+                    if (rayz<-2) {
+                      rayz+=2;
+                      rayy*=2;
+                      rayx*=2;
+                    }
+                    else if (rayz>2) {
+                      rayz-=2;
+                      rayy*=2;
+                      rayx*=2;
+                    }
+                  }
+
+                  /*else{
+                    if (rayx<-3||rayx>3) {
+                      anghor=-anghor+PI;
+                      mods[0]=!mods[0];
+                    }
+                    if (rayy<-3||rayy>3) {
+                      anghor=-anghor;
+                      mods[1]=!mods[1];
+                    }
+                    if (rayz<-3||rayz>3) {
+                      angver=-angver;
+                      mods[2]=!mods[2];
+                    }
+                  }*/
+                  fog+=fogging;
+          			}
+                //len=Math.floor(10*len);
+                len=fog;
+          			if(hit){
+                  var br=Math.abs(255-len);
+                  // var br=clamp(len, -1000)*100;
+          				context.fillStyle="rgb("+(br+rmod)+","+(br+gmod)+","+(br+bmod)+")";
+                  context.fillRect(i*pixsize,j*pixsize,pixsize,pixsize);
+          			}
+          			else{
+                  //context.fillStyle="rgb(20,170,255)";
+                  context.fillStyle="rgb(0,0,0)";
+                  //context.fillStyle="rgb(255,255,255)";
+                  context.fillRect(i*pixsize,j*pixsize,pixsize,pixsize);
+          			}
+          		}
+          	//}
+          //}
+
+          loops++;
+          if (loops<useh) {
+            window.requestAnimationFrame(draw);
+          }
+        }
+      }
+
+      function restart() {
+        usew=canvas.width/pixsize;
+        useh=canvas.height/pixsize;
+        loops=0;
+        draw();
+      }
+      function resize() {
+        canvas.width=window.innerWidth;
+        canvas.height=window.innerHeight;
+        restart();
+      }
+      resize();
+
+      //window.addEventListener("resize",function(){resize();});
+      window.addEventListener("click",function(){});
+      window.addEventListener("dblclick",function(){location.reload();});
+      window.addEventListener("keypress",function(){
+        var k=event.keyCode;
+        //console.log(k);
+        if (k<58 && k>48) {
+          pixsize=2**(k-49);
+          console.log(pixsize);
+          restart();
+        }
+        else {
+          switch (k) {
+            case 119://w
+              break;
+            case 97://a
+              break;
+            case 115://s
+              break;
+            case 100://d
+              break;
+            case 111://o
+              break;
+            case 113://q
+              break;
+            case 114://r
+              restart();
+              break;
+            case 32://space
+              paused=!paused;
+              draw();
+              break;
+            case 43://+
+              stepsize*=1.1;
+              restart();
+              break;
+            case 45://-
+              stepsize*=0.9;
+              restart();
+              break;
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
