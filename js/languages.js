@@ -11,11 +11,13 @@ style.id = "language-hider"
 let languageColors = {
   "lv": [new Color(100, 0, 0), colors.white],
   "tok": [new Color(230, 220, 20), new Color(10, 30, 180)],
+  "unlws": [new Color(6, 54, 99), new Color(106, 168, 79)],
 }
 let languageNamesAlt = {
   "en": "English",
   "lv": "Latvian",
-  "tok": "toki pona"
+  "tok": "toki pona",
+  "unlws": "Unker nonlinear writing system",
 }
 
 let languagesString = document.currentScript.getAttribute("data-page-languages")
@@ -69,6 +71,7 @@ function setLanguageStyles(language) {
   // Elements of one language inside an element of (another) language aren't translated, so this selects all the elements that need to be shown/hidden to change the language of the page. To be clear, this is jank.
   let style = document.getElementById('language-hider')
   style.textContent = "[lang]:not([lang] [lang]):not([lang='"+language+"']) {display: none;}"
+  style.textContent += ".linear-langs {display:" + (language=="unlws" ? "none" : "default") + ";}"
 }
 function setLanguage(language) {
   // Set the URL query and styles

@@ -113,9 +113,6 @@ txt-pop {
 	height: min-content;
 	/* FIXME: if the title is short enough, it'll float in the middle between the end of the title and the language select */
 }
-/* .language-btn {
-	TODO
-} */
 .basic-btn {
 	color: var(--main-color);
 	user-select: none;
@@ -126,6 +123,9 @@ txt-pop {
 	margin: 3px;
 	border: none;
 	text-decoration: none;
+}
+.language-btn {
+	min-width: 4em;
 }
 .basic-btn:hover {
 	color: var(--subtler);
