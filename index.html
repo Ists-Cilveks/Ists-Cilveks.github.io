@@ -5,11 +5,6 @@
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link href="/css/style.css" rel="stylesheet">
-		<style>
-			a:hover .svg-link-bubble{
-				fill: var(--framing);
-			}
-		</style>
 	</head>
 	<body>
 	
@@ -19,7 +14,6 @@
 	<script src="/js/SVGRequests.js"></script>
 	
 	<div tabindex="-1" class="main-content">
-		
 		<a lang="en" href="https://github.com/Ists-Cilveks">My github</a>
 		<a lang="tok" href="https://github.com/Ists-Cilveks">lipu pi toki ilo</a>
 		<a lang="lv" href="https://github.com/Ists-Cilveks">Mans github</a>
@@ -31,9 +25,18 @@
 		</header>
 		<script src="/js/themes.js"></script>
 		<script src="/js/languages.js" data-page-languages="en,lv,tok,unlws"></script>
+		
+		<div lang="unlws" id="main-unlws">
+			<script type="text/javascript">
+				insertSVG("img/unlws-homepage.svg", invisibleSVGContainer)
+			</script>
+			<svg style="width: 100%;" viewBox="0 0 338.5 294.33">
+				<use xlink:href="#unlws-index"/>
+			</svg>
+		</div>
 
-		<div class="landscape-row linear-langs">
-			<div class="landscape-column">
+		<div class="landscape-row">
+			<div class="landscape-column linear-langs">
 				<h2 lang="en">cool things i've done</h2>
 				<h2 lang="tok">mi pali e ijo suli ni:</h2>
 				<h2 lang="lv">foršas lietas, ko esmu uztaisījis</h2>
@@ -138,19 +141,26 @@
 						<span lang="en">Start</span>
 						<span lang="lv">Sākt</span>
 						<span lang="tok">o musi!</span>
+						<span lang="unlws">
+							<script type="text/javascript">
+								insertSVG("img/unlws-play.svg", invisibleSVGContainer)
+							</script>
+							<svg viewBox="0 0 14.474 10.86">
+								<use xlink:href="#unlws-play"/>
+							</svg>
+						</span>
 					</button>
+					<div lang="unlws" id="main-unlws">
+						<script type="text/javascript">
+							insertSVG("img/unlws-rhythm-explanation.svg", invisibleSVGContainer)
+						</script>
+						<svg style="width: 100%;" viewBox="0 0 113.34 79.488">
+							<use xlink:href="#unlws-rhythm-explanation"/>
+						</svg>
+					</div>
 				</div>
 			</div>
 			
-		</div>
-
-		<div lang="unlws" id="main-unlws">
-			<script type="text/javascript">
-				insertSVG("img/unlws-homepage.svg", invisibleSVGContainer)
-			</script>
-			<svg style="width: 100%;" viewBox="0 0 338.5 294.33">
-				<use xlink:href="#unlws-index"/>
-			</svg>
 		</div>
 
 		<p class="centered deco-text">·✧<non-portrait>*✭✧</non-portrait>✾<txt-pop>❀</txt-pop>❉<txt-pop>✿</txt-pop>❉<txt-pop>❀</txt-pop>✾<non-portrait>✧✭*</non-portrait>✧·</p>

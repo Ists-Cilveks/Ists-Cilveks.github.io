@@ -47,11 +47,24 @@ a {
 a:visited {
 	color: var(--subtler);
 }
-a:hover{
+a:hover {
 	color: var(--subtle-light);
 }
-a:active{
+a:active {
 	color: var(--subtle-glow);
+}
+a .svg-link-bubble {
+	fill: var(--subtle-tinted);
+}
+a:visited .svg-link-bubble {
+	fill: var(--subtler);
+}
+a:hover .svg-link-bubble {
+	fill: var(--subtle-light);
+	/* filter: drop-shadow(3px 5px 2px var(--main-color)); TODO: play with this */
+}
+a:active .svg-link-bubble {
+	fill: var(--subtle-glow);
 }
 
 p {
