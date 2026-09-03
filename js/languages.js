@@ -52,7 +52,7 @@ if (languageHeader && languages.length > 1) {// Add the language selection
 function resetLanguageFromURL() {
   // Set the language to whatever the 'l' query is set to, or English as a default
   let urlParams = new URLSearchParams(window.location.search)
-  let language = urlParams.get('l')  
+  let language = urlParams.get('l')
 
   // Resorts to English if you attempt to use an unsupported language
   if (!languages.includes(language)) {
