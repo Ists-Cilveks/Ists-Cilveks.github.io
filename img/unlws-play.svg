@@ -9,6 +9,7 @@
    id="svg1"
    inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
    sodipodi:docname="unlws-play.svg"
+   style="stroke:black"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -38,8 +39,7 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="unlws-play"
-     transform="translate(0.36659,-109.32)"
-     style="stroke:var(--main-color)">
+     transform="translate(0.36659,-109.32)">
     <path
        style="opacity:1;fill:none;stroke-width:1;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;paint-order:markers fill stroke"
        d="M 13.607,119.68 C 8.5096,119.27 6.9707,119.45 3.4109,119.6"

@@ -10,9 +10,9 @@ function insertSVG(fileName, container=invisibleSVGContainer, customOnload) {
   xhr.overrideMimeType("image/svg+xml") // just to be on the safe side; not needed if your server delivers SVG with correct MIME type
   xhr.onload = function(e) {
     // You might also want to check for xhr.readyState/xhr.status here
-    doc = xhr.responseXML.documentElement
-    container.appendChild(doc)
-    if (customOnload) customOnload(e, container.firstElementChild)
+    let svgElement = xhr.responseXML.documentElement
+    container.appendChild(svgElement)
+    if (customOnload) customOnload(e, svgElement)
   };
   xhr.send("");
 }

@@ -9,6 +9,7 @@
    id="svg1"
    inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
    sodipodi:docname="unlws-rhythm-explanation.svg"
+   style="stroke:black"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -38,8 +39,7 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="unlws-rhythm-explanation"
-     transform="translate(36.974,-70.86)"
-     style="stroke: var(--main-color)">
+     transform="translate(36.974,-70.86)">
     <path
        style="opacity:0.62357;fill:none;stroke-width:0.999993;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:3.99997, 1.99998;stroke-dashoffset:0;paint-order:markers fill stroke"
        d="M 29.774,79.055 C 16.906,78.224 9.2393,77.986 3.1863,80.325 c -6.816,2.634 -11.626,12.9 -10.078,20.925"
