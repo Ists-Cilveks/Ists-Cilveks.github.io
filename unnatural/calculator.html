@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Unnatural calculator</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+      input {
+        background-color: var(--hc-bg);
+        color: var(--main-color);
+        font-size: 100%;
+        width: 8em;
+        padding: 0.1em;
+      }
+      span {
+        outline: 2px solid var(--secondary-bg-color);
+        background-color: var(--hc-bg);
+        padding: 0.1em;
+        line-break: anywhere;
+      }
+    </style>
+  </head>
+  <body class="main-content">
+    <script src="/js/Color.js"></script>
+    <script src="/css/palettize.js"></script>
+    <script src="/js/particles.js"></script>
+    <script src="/js/SVGRequests.js"></script>
+    
+    <a class="basic-btn home-btn" href="/" lang="en">home</a>
+    <a class="basic-btn home-btn" href="/index.html?l=lv" lang="lv">uz sākumu</a>
+    <a class="basic-btn home-btn ll" href="/index.html?l=tok" style="font-size: 250%;" lang="tok">lipu-open</a>
+    
+    <header id="main-header">
+      <h1 lang="en">Unnatural calculator</h1>
+    </header>
+		<script src="/js/themes.js"></script>
+    <script src="/js/languages.js" my-languges="en"></script>
+    
+    <p>
+      <input type="number" name="in1" id="in1" onchange="myCalcContainer.update()" min="0" value="1">
+      ··
+      <input type="number" name="in2" id="in2" onchange="myCalcContainer.update()" min="0" value="1.61803398875">
+      =
+      <span id="out0"></span>
+    </p>
+    <p>
+      <span id="out1"></span>
+      ··
+      <span id="out2"></span>
+      =
+      <span id="out3"></span>
+    </p>
+
+    <script>
+      const phi = (1+5**(1/2))/2
+      const logphi = Math.log(phi)
+      const BASE = 9
+      const HTMLDigits = {
+        "0":"1", "1":"φ", "2":"θ", "3":"ᘔ", "4":"ᘔ<sub>φ</sub>", "5":"ᘔ<sub>θ</sub>", "6":"ε", "7":"ε<sub>φ</sub>", "8":"ε<sub>θ</sub>",
+        ".":".", "-":"/",
+      }
+      
+
+      class CalcContainer {
+        constructor(input1, input2, output0, output1, output2, output3) {
+          this.input1 = input1
+          this.input2 = input2
+          this.output0 = output0
+          this.output1 = output1
+          this.output2 = output2
+          this.output3 = output3
+        }
+
+        readInputs() {
+          this.v1 = Number(this.input1.value)
+          this.v2 = Number(this.input2.value)
+        }
+
+        represent(v) {
+          let standardRepresentation = (Math.log(v)/logphi).toString(BASE) // Represent in base 9
+          let res = ""
+          for (const digit of standardRepresentation) {
+            if (digit in HTMLDigits) {
+              res += HTMLDigits[digit]
+            }
+          }
+          return res
+        }
+
+        update() {
+          this.readInputs()
+          this.res = phi**(Math.log(this.v1)*Math.log(this.v2)/logphi/logphi)
+          this.output0.innerHTML = this.res
+          this.output1.innerHTML = this.represent(this.v1)
+          this.output2.innerHTML = this.represent(this.v2)
+          this.output3.innerHTML = this.represent(this.res)
+        }
+      }
+
+      let elements = ["in1", "in2", "out0", "out1", "out2", "out3"].map((a)=>document.getElementById(a))
+      let myCalcContainer = new CalcContainer(...elements)
+      myCalcContainer.update()
+      
+
+    </script>
+    
+  </body>
+</html>
