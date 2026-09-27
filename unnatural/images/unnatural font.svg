@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   height="1000"
+   width="10000"
+   sodipodi:docname="unnatural font.svg"
+   version="1.1"
+   id="unnatural-font"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.3"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.17678"
+     inkscape:cx="2545.6"
+     inkscape:cy="828.73"
+     inkscape:document-units="px"
+     inkscape:current-layer="g10"
+     showgrid="false"
+     showguides="true"
+     inkscape:window-width="1920"
+     inkscape:window-height="1051"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1"
+     showborder="true"
+     inkscape:showpageshadow="false"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1">
+    <sodipodi:guide
+       id="guide_baseline"
+       inkscape:label="baseline"
+       position="0,253"
+       orientation="0,1"
+       inkscape:locked="false"
+       inkscape:color="rgb(0,134,229)" />
+    <sodipodi:guide
+       id="guide_ascender"
+       inkscape:label="ascender"
+       position="0,945"
+       orientation="0,1"
+       inkscape:locked="false"
+       inkscape:color="rgb(0,134,229)" />
+    <sodipodi:guide
+       id="guide_caps"
+       inkscape:label="caps"
+       position="0,896"
+       orientation="0,1"
+       inkscape:locked="false"
+       inkscape:color="rgb(0,134,229)" />
+    <sodipodi:guide
+       id="guide_xheight"
+       inkscape:label="xheight"
+       position="0,729"
+       orientation="0,1"
+       inkscape:locked="false"
+       inkscape:color="rgb(0,134,229)" />
+    <sodipodi:guide
+       id="guide_descender"
+       inkscape:label="descender"
+       position="0,28"
+       orientation="0,1"
+       inkscape:locked="false"
+       inkscape:color="rgb(0,134,229)" />
+  </sodipodi:namedview>
+  <defs
+     id="defs4" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+   <g> 
+    <path
+       glyph-name="Dot"
+       unicode="."
+       id="unnatural-dot"
+       d="M 256 627 C 212 628 190 669 174 712 c -69 185 42 65 83 26 c 41 -40 64 -113 -1 -111 z"
+       horiz-adv-x="250" />
+   </g>
+   <g transform="translate(1000,0)"> 
+    <path
+       glyph-name="One"
+       unicode="1"
+       id="unnatural-1"
+       horiz-adv-x="550"
+       d="M 271 135 C 179 172 239 210 287 179 C 427 88 509 213 512 306 C 516 425 448 592 293 692 C 222 733 255 782 325 737 C 347 723 596 545 588 306 C 582 139 437 69 271 135 Z" />
+   </g>
+   <g transform="translate(2000,0)"> 
+    <path
+       glyph-name="Phi"
+       unicode="2"
+       id="unnatural-2"
+       d="M 541 265 C 375 280 385 489 377 609 c -64 -10 -130 -27 -157 -91 c -10 -24 -39 -21 -20 16 c 36 69 95 115 174 126 c 0 178 -12 251 8 313 c 10 30 44 24 52 1 c 21 -61 0 -99 -4 -311 c 120 -6 226 -119 253 -235 c 6 -24 7 -164 -141 -164 v 0 z m 7 65 c 130 0 45 257 -116 282 c 5 -87 13 -281 116 -282 z"
+       horiz-adv-x="650" />
+   </g>
+   <g transform="translate(3000,0)"> 
+    <path
+       glyph-name="Theta"
+       unicode="3"
+       id="unnatural-3"
+       d="m 343 585 c -39 -4 -118 -37 -147 -69 c -34 -37 -58 -23 -36 8 C 216 605 258 620 335 646 C 327 808 429 977 610 973 C 812 970 961 742 755 543 C 876 392 807 241 605 266 C 446 285 364 456 343 585 Z m 364 -76 c -94 103 -210 121 -302 94 c 12 -98 51 -255 206 -280 c 118 -19 185 88 96 187 z M 610 915 C 445 913 399 764 401 657 C 426 658 579 702 716 581 C 865 749 732 916 610 915 Z"
+       horiz-adv-x="840" />
+   </g>
+   <g transform="translate(4000,0)"> 
+    <path
+       glyph-name="Ona"
+       unicode="4"
+       id="unnatural-4"
+       d="M 208 78 C 268 155 317 196 376 244 C 196 383 219 557 365 619 C 446 652 660 655 735 478 C 754 432 713 422 689 466 C 615 603 474 577 423 562 C 329 533 220 387 504 219 C 403 162 307 121 235 60 c -19 -16 -51 -12 -28 18 z"
+       horiz-adv-x="680" />
+   </g>
+   <g transform="translate(5000,0)"> 
+    <path
+       glyph-name="Ophi"
+       unicode="5"
+       id="unnatural-5"
+       d="M 238 74 C 249 133 296 211 344 252 C 188 364 214 542 374 601 C 344 740 351 932 384 967 c 12 13 42 16 50 -8 c 23 -64 -50 -173 -8 -342 C 717 698 772 511 703 401 C 628 284 461 290 388 543 C 327 519 199 387 453 240 c -83 -67 -129 -93 -178 -181 c -18 -33 -43 -18 -37 14 z m 404 365 c 44 60 27 184 -202 123 c 59 -204 149 -195 202 -123 z"
+       horiz-adv-x="680" />
+   </g>
+   <g transform="translate(6000,0)"> 
+    <path
+       glyph-name="Othey"
+       unicode="6"
+       id="unnatural-6"
+       d="M 182 84 C 224 164 260 228 329 274 C 120 475 190 619 354 677 C 253 1205 1104 985 770 570 C 1013 314 503 124 366 616 C 288 589 149 483 452 246 C 325 190 281 148 213 60 c -19 -25 -56 -25 -31 24 z M 714 549 C 642 606 491 621 425 619 C 509 244 927 379 714 549 Z m 11 58 C 969 906 337 1109 413 678 c 105 -2 228 -19 311 -72 z"
+       horiz-adv-x="820" />
+   </g>
+   <g transform="translate(7000,0)"> 
+    <path
+       glyph-name="Epsilon"
+       unicode="7"
+       id="unnatural-7"
+       d="M 262 127 C 228 176 186 336 343 365 C 149 442 220 676 420 682 c 114 4 189 -41 257 -133 c 37 -50 14 -108 -23 -42 c -43 75 -134 116 -225 113 c -191 -8 -165 -235 20 -222 c 51 4 62 -85 -17 -83 c -151 3 -157 -111 -118 -158 c 53 -63 194 -70 229 10 c 37 48 76 33 54 -23 c -53 -122 -261 -121 -334 -16 z"
+       horiz-adv-x="630" />
+   </g>
+   <g transform="translate(8000,0)"> 
+    <path
+       glyph-name="Epsiphi"
+       unicode="8"
+       id="unnatural-8"
+       d="M 229 107 C 174 181 166 315 261 360 C 162 429 159 672 444 668 C 455 851 422 903 456 960 c 14 24 38 19 48 -2 c 29 -61 4 -110 0 -287 c 195 -4 355 -161 256 -315 C 661 202 424 273 446 608 C 182 623 233 384 371 385 c 83 1 90 -98 1 -82 c -154 29 -152 -121 -95 -163 c 15 -11 62 -64 157 -4 c 52 33 96 -41 28 -66 c -97 -36 -185 -27 -233 38 z M 700 360 c 70 96 -5 239 -195 250 c 8 -294 146 -316 195 -250 z"
+       horiz-adv-x="770" />
+   </g>
+   <g transform="translate(9000,0)"> 
+    <path
+       glyph-name="Epsithey"
+       unicode="9"
+       id="unnatural-9"
+       d="M 448 611 c -78 506 574 304 276 -75 c -133 64 -165 60 -276 75 Z M 710 463 c 102 -123 -175 -222 -248 90 c 79 -15 197 -29 248 -90 Z M 267 296 C 84 242 206 -63 470 35 c 49 18 29 102 -31 64 C 247 -24 139 280 360 240 c 67 -12 82 79 12 92 c -176 33 -180 272 22 228 c 95 -433 515 -265 377 -71 c 392 477 -484 780 -384 125 c -256 30 -247 -192 -120 -318 Z"
+       horiz-adv-x="830" />
+   </g>
+</svg>

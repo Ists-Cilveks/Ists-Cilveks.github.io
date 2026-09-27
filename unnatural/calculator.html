@@ -16,7 +16,7 @@
       span {
         outline: 2px solid var(--secondary-bg-color);
         background-color: var(--hc-bg);
-        padding: 0.1em;
+        /* padding: 0.1em; */
         line-break: anywhere;
       }
     </style>
@@ -44,19 +44,25 @@
       =
       <span id="out0"></span>
     </p>
-    <p>
+    <p style="font-size: 130%;">
       <span id="out1"></span>
       ··
       <span id="out2"></span>
       =
       <span id="out3"></span>
     </p>
-
+    
     <script>
       const phi = (1+5**(1/2))/2
       const logphi = Math.log(phi)
       const BASE = 9
-      const HTMLDigits = {
+
+      // class Unnatural {
+      //   // TODO
+      // }
+
+
+      const UTF8Digits = {
         "0":"1", "1":"φ", "2":"θ", "3":"ᘔ", "4":"ᘔ<sub>φ</sub>", "5":"ᘔ<sub>θ</sub>", "6":"ε", "7":"ε<sub>φ</sub>", "8":"ε<sub>θ</sub>",
         ".":".", "-":"/",
       }
@@ -77,31 +83,93 @@
           this.v2 = Number(this.input2.value)
         }
 
-        represent(v) {
-          let standardRepresentation = (Math.log(v)/logphi).toString(BASE) // Represent in base 9
+        digit_utf8(d){
+          if (d in UTF8Digits) {
+            return UTF8Digits[d]
+          }
+          return d
+        }
+        digit_svg(d){
+          let text = document.createTextNode(d)
+          if (d in UTF8Digits) {
+            if (d == "-") return text
+            if (d == ".") d = "dot"
+            else d = String(1+Number(d))
+            
+            let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+            let w = 800
+            let h_em = 1
+            let id = "unnatural-"+d
+            let font = document.getElementById("unnatural-font")
+            if (font) {
+              let el = font.getElementById(id)
+              if (!el) return text
+              let neww = el.getAttribute("horiz-adv-x").split(",")[0]
+              if (neww) {
+                w = Number(neww)
+              }
+            }
+            svg.style = "height: "+h_em+"em; width:"+(h_em*w/1000)+"em;"
+            svg.setAttribute("viewBox", "200 0 "+w+" 1000")
+            var use = document.createElementNS("http://www.w3.org/2000/svg", 'use')
+            use.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#"+id)
+            svg.appendChild(use)
+            return svg
+            // var useSVG = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+            // useSVG.setAttributeNS('http://www.w3.org/1999/xlink','href','http://ists-cilveks.github.io/buttons/me.png');
+            // useSVG.setAttribute('x','10');
+            // useSVG.setAttribute('y','40');
+            // useSVG.setAttribute('width','180');
+            // useSVG.setAttribute('height','120');
+            // return useSVG
+          }
+          return text
+        }
+
+        represent_standard(v) {
+          return (Math.log(v)/logphi).toString(BASE) // Represent in base 9
+        }
+        represent_utf8(v) {
+          let standardRepresentation = this.represent_standard(v)
           let res = ""
           for (const digit of standardRepresentation) {
-            if (digit in HTMLDigits) {
-              res += HTMLDigits[digit]
-            }
+            res += this.digit_utf8(digit)
           }
           return res
+        }
+
+        writeUnnaturalToOutput_utf8(out, val) {
+          out.innerHTML = this.represent_utf8(val)
+        }
+        writeUnnaturalToOutput_svg(out, val) {
+          let standardRepresentation = this.represent_standard(val)
+          out.innerHTML = ""
+          for (const digit of standardRepresentation) {
+            out.appendChild(this.digit_svg(digit))
+          }
+        }
+        
+        writeUnnaturalToOutput(out, val) {
+          this.writeUnnaturalToOutput_svg(out, val)
         }
 
         update() {
           this.readInputs()
           this.res = phi**(Math.log(this.v1)*Math.log(this.v2)/logphi/logphi)
           this.output0.innerHTML = this.res
-          this.output1.innerHTML = this.represent(this.v1)
-          this.output2.innerHTML = this.represent(this.v2)
-          this.output3.innerHTML = this.represent(this.res)
+          this.writeUnnaturalToOutput(this.output1, this.v1)
+          this.writeUnnaturalToOutput(this.output2, this.v2)
+          this.writeUnnaturalToOutput(this.output3, this.res)
         }
       }
 
       let elements = ["in1", "in2", "out0", "out1", "out2", "out3"].map((a)=>document.getElementById(a))
       let myCalcContainer = new CalcContainer(...elements)
       myCalcContainer.update()
-      
+
+      insertSVG("images/unnatural font.svg", undefined, function(){
+        myCalcContainer.update()
+      })
 
     </script>
     
