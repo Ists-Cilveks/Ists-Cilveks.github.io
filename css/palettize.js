@@ -83,6 +83,11 @@ class Palette {
     this.isDarkMode = this.isLightMode=="1" ? "0" : "1"
     document.body.style.setProperty('--is-dark-mode', this.isDarkMode)
     this["is-dark-mode"] = this.isDarkMode
+    let styleEl = document.createElement("style");
+    document.head.appendChild(styleEl);
+    styleEl.sheet.insertRule(".only-in-light-mode {display: "+(this.isLightMode=="1"?"initial":"none")+"}");
+    styleEl.sheet.insertRule(".only-in-dark-mode {display: "+(this.isDarkMode=="1"?"initial":"none")+"}");
+    // TODO: this keeps adding more and more stylesheets... ¯\_(ツ)_/¯
 
     this.callListeners()
   }

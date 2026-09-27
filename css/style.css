@@ -283,6 +283,10 @@ svg {
 	filter: invert(var(--is-light-mode));
 }
 
+.only-in-light-mode {
+	display: none
+}
+
 ul.no-bullets {
   list-style-type: none;
   padding: 0;
@@ -340,9 +344,7 @@ details {
 	justify-content: center;
 	gap: 0.5em;
 }
-.container-8831 > * {
+.container-8831 img {
 	height: 62px;
-}
-.btn-8831 {
 	image-rendering: pixelated;
 }
